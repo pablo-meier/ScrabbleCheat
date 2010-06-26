@@ -1,7 +1,6 @@
 -module(dict_parser).
 -export([parse/1]).
 -import(tries, [empty_trie/0, add_word/2]).
--import(re, [compile/1,replace/4]).
 
 parse(Filename) ->
 	Result = file:open(Filename, read),
@@ -20,17 +19,9 @@ parse_each_line(IoHandle, Curr) ->
 		eof ->
 			Curr;
 		A_Line ->
-			Stripped = format_for_dict(A_Line),
-			io:format("Parsing ~p~n", [A_Line]),
+			Stripped = string_utils:format_string_for_trie(A_Line),
+			io:format("Parsing ~p~n", [Stripped]),
 			NewTrie = add_word(Stripped, Curr),
 			parse_each_line(IoHandle, NewTrie)
 	end.
 
-
-%% format_for_dict :: String -> String
-%% 
-%% Tests the line for a newline, strips it and all whitespace.  
-%% Converts to uppercase.
-format_for_dict(Line) ->
-	No_Newline = replace(Line, "\\s+", "", [global]),
-	string:to_upper(No_Newline).

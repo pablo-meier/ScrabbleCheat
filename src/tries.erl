@@ -19,7 +19,7 @@ has_word([Char|Rest], Trie) ->
 	Result = get_branch(Char, Trie),
 	case Result of
 		none -> false;
-		_ -> has_word(Rest, Result)
+		_Success -> has_word(Rest, Result)
 	end.
 
 
@@ -33,7 +33,7 @@ get_branch(Char, Trie) ->
 	Result = lookup(Char, Trie),
 	case Result of
 		{value, Return} -> Return;
-		_ -> none
+		_Fail -> none
 	end.
 
 
