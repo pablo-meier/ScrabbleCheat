@@ -31,6 +31,7 @@ ERL_RUN = $(ERL) $(ERL_FLAGS)
 test: compile compile-tests
 	$(ERL) $(ERL_TEST_FLAGS) $(ERL_FLAGS) -run trie_test test $(ERL_END)
 	$(ERL) $(ERL_TEST_FLAGS) $(ERL_FLAGS) -run parser_test test $(ERL_END)
+	$(ERL) $(ERL_TEST_FLAGS) $(ERL_FLAGS) -run wordsearch_test test $(ERL_END)
 
 run: compile
 	$(ERL_RUN) -run main args
