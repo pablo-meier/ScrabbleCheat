@@ -1,11 +1,50 @@
 -module(tries).
--export([add_word/2, empty_trie/0, has_branch/2, get_branch/2, is_terminator/1]).
+
+-export([add_word/2, 
+		has_word/2,
+		empty_trie/0, 
+		has_branch/2, 
+		get_branch/2, 
+		is_terminator/1]).
 
 -import(gb_trees, [empty/0, lookup/2, is_defined/2, enter/3]).
-
-
 %% Mostly a wrapper for gb_tries, allowing me to sub out if I like.
 %% The atoms |terminator| and |blank_tile| are used rather than a macro.
+
+
+
+%% has_word :: String * Trie -> Bool
+has_word([], Trie) -> is_terminator(Trie);
+has_word([Char|Rest], Trie) ->
+	Result = get_branch(Char, Trie),
+	case Result of
+		none -> false;
+		_ -> has_word(Rest, Result)
+	end.
+
+
+%% has_branch :: Char * Trie -> Bool
+has_branch(Char, Trie) ->
+	is_defined(Char, Trie).
+
+
+%% get_branch :: Char * Trie -> Trie
+get_branch(Char, Trie) ->
+	Result = lookup(Char, Trie),
+	case Result of
+		{value, Return} -> Return;
+		_ -> none
+	end.
+
+
+%% is_terminator :: Trie -> Bool
+is_terminator(Trie) ->
+	has_branch(terminator, Trie).
+
+
+%% empty_trie :: () -> Trie
+empty_trie() ->
+	gb_trees:empty().
 
 
 %% add_word :: String * Trie -> Trie
@@ -22,21 +61,3 @@ add_word(Word, Trie) ->
 			New_Trie = add_word(Rest, Empty_Trie),
 			enter(Char, New_Trie, Trie)
 	end.
-
-
-%% has_branch :: Char * Trie -> Bool
-has_branch(Char, Trie) ->
-	is_defined(Char, Trie).
-
-empty_trie() ->
-	gb_trees:empty().
-
-%% get_branch :: Char * Trie -> Trie
-get_branch(Char, Trie) ->
-	{value, Return} = lookup(Char, Trie),
-	Return.
-
-%% is_terminator :: Trie -> Bool
-is_terminator(Trie) ->
-	has_branch(terminator, Trie).
-

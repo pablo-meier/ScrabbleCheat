@@ -17,8 +17,11 @@ ERLC_TEST_FLAGS = -v -o $(BUILD_TEST_DIR) -pa $(SRCDIR) -pa $(LIBDIR) -pz $(TEST
 
 
 ERL = erl
+ERL_INCLUDE_FLAGS = -pa $(BUILD_BEAM_DIR)
 ERL_TEST_FLAGS = -pa $(BUILD_TEST_DIR) 
-ERL_FLAGS = -pa $(BUILD_BEAM_DIR) -noshell
+ERL_RUN_FLAGS = -noshell
+
+ERL_FLAGS = $(ERL_INCLUDE_FLAGS) $(ERL_RUN_FLAGS)
 ERL_END = -run erlang halt
 ERL_RUN = $(ERL) $(ERL_FLAGS)
 
@@ -27,10 +30,14 @@ ERL_RUN = $(ERL) $(ERL_FLAGS)
 
 test: compile compile-tests
 	$(ERL) $(ERL_TEST_FLAGS) $(ERL_FLAGS) -run trie_test test $(ERL_END)
+	$(ERL) $(ERL_TEST_FLAGS) $(ERL_FLAGS) -run parser_test test $(ERL_END)
 
 run: compile
 	$(ERL_RUN) -run main args
   
+shell: compile
+	$(ERL) $(ERL_TEST_FLAGS) $(ERL_INCLUDE_FLAGS)
+
 compile: prepare
 	$(ERLC) $(ERLC_SRC_FLAGS) $(SRCDIR)/*.erl
 
