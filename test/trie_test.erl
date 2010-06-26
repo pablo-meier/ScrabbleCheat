@@ -1,0 +1,30 @@
+-module(trie_test).
+-include_lib("eunit/include/eunit.hrl").
+
+-import(tries, [empty_trie/0, add_word/2, is_terminator/1, has_branch/2, get_branch/2]).
+
+get_fixture_trie() ->
+	EmptyTrie = empty_trie(),
+	New1 = add_word("ow", EmptyTrie),
+	New2 = add_word("wow", New1),
+	add_word("ox", New2).
+
+has_branch_test() ->
+	Trie = get_fixture_trie(),
+	?assert(has_branch($o, Trie) =:= true),
+	?assert(has_branch($w, Trie) =:= true).
+
+get_branch_test() ->
+	Trie = get_fixture_trie(),
+	Trie1 = get_branch($w, Trie),
+	Trie2 = get_branch($o, Trie),
+	?assert(has_branch($o, Trie1) =:= true),
+	?assert(has_branch($x, Trie2) =:= true).
+	
+adding_test() ->
+	Trie = get_fixture_trie(),
+	New_Trie = add_word("always", Trie),
+	?assert(has_branch($a, New_Trie) =:= true),
+	Sub_Trie = get_branch($a, New_Trie),
+	?assert(has_branch($l, Sub_Trie) =:= true).
+
