@@ -1,18 +1,9 @@
 -module(wordsearch).
--export([test_program/0, make_word_function/1]).
--define(DICT_FILE, "lib/twl06.txt").
+-export([make_word_function/1]).
 -import(string_utils, [format_string_for_trie/1]).
 -import(lists, [flatmap/2, usort/1]).
 -import(tries, [has_branch/2, get_branch/2, is_terminator/1]).
 
-
-%% main :: () -> ()
-%% Test
-test_program() ->
-	Trie = dict_parser:parse(?DICT_FILE),
-	Word_Function = make_word_function(Trie),
-	List_Of_Words = Word_Function("dog"),
-	io:format("~p~n", [List_Of_Words]).
 
 %% make_word_function :: Trie -> ([Char] -> [String])
 %%

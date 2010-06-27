@@ -34,7 +34,7 @@ test: compile compile-tests
 	$(ERL) $(ERL_TEST_FLAGS) $(ERL_FLAGS) -run wordsearch_test test $(ERL_END)
 
 run: compile
-	$(ERL_RUN) -run main args
+	$(ERL_RUN) -run main main 
   
 shell: compile
 	$(ERL) $(ERL_TEST_FLAGS) $(ERL_INCLUDE_FLAGS)
