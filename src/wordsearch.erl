@@ -30,50 +30,42 @@ make_word_function(Trie) ->
 %% Traverses the parametrized Trie and finds all words that can
 %% be built with the following letters.
 find_all_words(Char, Remaining, Trie) ->
-	io:format("Starting!~n"),
 	find_all_words(Char, Remaining, [], [], Trie).
 
 find_all_words(Char, [], Curr_Word, Accum, Trie) ->
-	io:format("End of the line!  Last checks with ~p, building on ~p~n", [[Char], lists:reverse(Curr_Word)]),
 	Result = get_branch(Char, Trie),
 	case Result of
 		none ->
-			io:format("   No branch, alas!~n"),
 			Accum;
 		Branch ->
-			io:format("  Does branch, but terminate?~n"),
 			Termination = is_terminator(Branch),
 			case Termination of
 				true ->
 					NewWord = [Char|Curr_Word],
-					io:format("  Aye!  Check out ~p~n", [NewWord]),
 					[lists:reverse(NewWord)|Accum];
 				_False ->
-					io:format("  As the horse says, NAAAAY~n"),
 					Accum
 			end
 	end;
 	
-find_all_words(Char, [Fst|Rst], Curr_Word, Accum, Trie) ->
-	io:format("Checking ~p, building on ~p~n", [[Char], lists:reverse(Curr_Word)]),
+find_all_words(Char, Remaining, Curr_Word, Accum, Trie) ->
 	Result = get_branch(Char, Trie),
 	case Result of
 		none ->
-			io:format("No branch for ~p~n", [[Char]]),
 			Accum;
 		Branch ->
-			io:format("Branch found!~n"),
 			Termination = is_terminator(Branch),
-			case Termination of
-				true ->
-					NewWord = [Char|Curr_Word],
-					io:format("Terminator! New Word is ~p~n", [NewWord]),
-					find_all_words(Fst, Rst, NewWord, [lists:reverse(NewWord)|Accum], Branch);
-				_False ->
-					NewWord = [Char|Curr_Word],
-					io:format("No Terminator! Building up with ~p~n", [NewWord]),
-					find_all_words(Fst, Rst, NewWord, Accum, Branch)
-			end
+			flatmap(fun (X) ->
+						case Termination of
+							true ->
+								NewWord = [Char|Curr_Word],
+								Accumulated = [lists:reverse(NewWord)|Accum],
+								find_all_words(X, lists:delete(X, Remaining), NewWord, Accumulated, Branch);
+							_False ->
+								NewWord = [Char|Curr_Word],
+								find_all_words(X, lists:delete(X, Remaining), NewWord, Accum, Branch)
+						end
+					end, Remaining)
 	end.
 
 

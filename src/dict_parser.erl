@@ -7,6 +7,7 @@ parse(Filename) ->
 	case Result of
 		{ok, FileHandle} ->
 			Empty = empty_trie(),
+			io:format("Parsing...~n"),
 			parse_each_line(FileHandle, Empty);
 		{error, Reason} ->
 			io:format("Whoops! Can't read file -> ~p~n", [Reason])
@@ -17,10 +18,10 @@ parse_each_line(IoHandle, Curr) ->
 	Line = io:get_line(IoHandle, ''),
 	case Line of
 		eof ->
+			io:format("Done Parsing.~n"),
 			Curr;
 		A_Line ->
 			Stripped = string_utils:format_string_for_trie(A_Line),
-			io:format("Parsing ~p~n", [Stripped]),
 			NewTrie = add_word(Stripped, Curr),
 			parse_each_line(IoHandle, NewTrie)
 	end.

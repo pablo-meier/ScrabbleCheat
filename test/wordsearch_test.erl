@@ -1,7 +1,7 @@
 -module(wordsearch_test).
 -include_lib("eunit/include/eunit.hrl").
 
--import(main, [make_word_function/1]).
+-import(wordsearch, [make_word_function/1]).
 -import(dict_parser, [parse/1]).
 -define(TEST_FILE, "test/smalldict.txt").
 
