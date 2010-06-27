@@ -1,0 +1,39 @@
+ScrabbleCheat
+=============
+
+Revenge of the Verbally Challenged
+----------------------------------
+
+ScrabbleCheat is a tool I'm developing to finally beat my girlfriend in Scrabble.
+Developing it in Erlang, mostly for fun.  Use it yourself, or explore the code!
+
+We'll do this in phases;  I'm finishing the first one now.  First we build a 
+word-generator, which will efficiently find candidate words based on collections 
+of letters.  
+
+###Contents
+
+ScrabbleCheat has the following contents:
+
+* Makefile -> Builds the project, targets below.
+* src/ -> Contains the .erl source files.
+* lib/ -> Contains any extraneous support, such as testing macros or dictionary files.
+* test/ -> Contains unit tests for each of the modules, some rigorous, some not.
+
+###Makefile
+
+The Makefile has the following targets:
+
+* test (default) -> Compiles the project and runs the Unit tests.
+* shell -> Compiles the project and loads the definitions into an Erlang shell.
+* clean -> Removes all compilation bits.
+* compile -> Builds the project and stores the .beam files into build/
+* compile-test -> Builds the Unit tests.
+
+For now this is just loose code that will piece together into actual usable software; in 
+the meantime, I'm putting it here as well as my local machine.  Enjoy, and email
+about any questions, concerns!
+
+- Paul Meier
+06/27/2010
+www.morepaul.com
