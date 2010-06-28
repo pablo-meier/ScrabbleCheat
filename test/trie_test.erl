@@ -21,8 +21,8 @@ has_branch_test() ->
 
 get_branch_test() ->
 	Trie = get_fixture_trie(),
-	Trie1 = get_branch($w, Trie),
-	Trie2 = get_branch($o, Trie),
+	{branch, Trie1} = get_branch($w, Trie),
+	{branch, Trie2} = get_branch($o, Trie),
 	?assert(has_branch($o, Trie1)),
 	?assert(has_branch($x, Trie2)).
 	
@@ -30,7 +30,7 @@ adding_test() ->
 	Trie = get_fixture_trie(),
 	New_Trie = add_word("always", Trie),
 	?assert(has_branch($a, New_Trie)),
-	Sub_Trie = get_branch($a, New_Trie),
+	{branch, Sub_Trie} = get_branch($a, New_Trie),
 	?assert(has_branch($l, Sub_Trie)).
 
 word_search_test() ->

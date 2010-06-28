@@ -7,7 +7,10 @@
 		get_branch/2, 
 		is_terminator/1]).
 
--import(gb_trees, [empty/0, lookup/2, is_defined/2, enter/3]).
+-define(WILDCARD, $*).
+
+-import(gb_trees, [empty/0, lookup/2, is_defined/2, enter/3, to_list/1]).
+-import(lists, [filter/2]).
 %% Mostly a wrapper for gb_tries, allowing me to sub out if I like.
 %% The atoms |terminator| and |blank_tile| are used rather than a macro.
 
@@ -16,24 +19,34 @@
 %% has_word :: String * Trie -> Bool
 has_word([], Trie) -> is_terminator(Trie);
 has_word([Char|Rest], Trie) ->
-	Result = get_branch(Char, Trie),
-	case Result of
+	case get_branch(Char, Trie) of
 		none -> false;
-		_Success -> has_word(Rest, Result)
+		{branch, Success} -> has_word(Rest, Success);
+		{wildcard, BranchList} -> lists:any(fun(X) -> has_word(Rest, X) end, BranchList) 
 	end.
 
 
 %% has_branch :: Char * Trie -> Bool
 has_branch(Char, Trie) ->
-	is_defined(Char, Trie).
+	if
+		Char =:= ?WILDCARD ->
+			true;
+		true ->
+			is_defined(Char, Trie)
+	end.
 
 
 %% get_branch :: Char * Trie -> Trie
 get_branch(Char, Trie) ->
-	Result = lookup(Char, Trie),
-	case Result of
-		{value, Return} -> Return;
-		_Fail -> none
+	if
+		Char =:= ?WILDCARD ->
+			{wildcard, filter(fun ({Key,_}) -> Key /= terminator end, to_list(Trie))};
+		true ->
+			Result = lookup(Char, Trie),
+			case Result of
+				{value, Return} -> {branch, Return};
+				_Fail -> none
+			end
 	end.
 
 
@@ -53,7 +66,7 @@ add_word(Word, Trie) ->
 	[Char|Rest] = Word,
 	case has_branch(Char, Trie) of	
 		true ->
-			Sub_Trie = get_branch(Char, Trie),
+			{branch, Sub_Trie} = get_branch(Char, Trie),
 			New_Trie = add_word(Rest, Sub_Trie),
 			enter(Char, New_Trie, Trie);
 		_False ->

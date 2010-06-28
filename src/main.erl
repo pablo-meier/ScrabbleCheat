@@ -1,7 +1,7 @@
 -module(main).
 -import(wordsearch, [make_word_function/1]).
 -import(dict_parser, [parse/1]).
--import(lists, [foreach/2, keysort/2, sort/2, map/2]).
+-import(lists, [reverse/1,foreach/2, keysort/2, sort/2, map/2]).
 -define(DICT_FILE, "lib/twl06.txt").
 -export([main/0]).
 
@@ -36,7 +36,8 @@ print_results(ResultList) ->
 %% order_results :: [String] -> [String]
 order_results(ResultList) ->
 	WithLength = map(fun (X) -> {X, length(X), score(X)} end, ResultList),
-	keysort(3, keysort(2, WithLength)).
+	reverse(keysort(3, reverse(keysort(2, WithLength)))).
+
 
 
 

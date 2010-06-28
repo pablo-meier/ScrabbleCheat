@@ -11,8 +11,11 @@ parse_file_test() ->
 	?assert(has_branch($A, TestingTrie)),
 	?assert(has_branch($N, TestingTrie)),
 	?assert(has_branch($R, TestingTrie)),
-	Deeper = get_branch($A, get_branch($P, TestingTrie)),
+	{_, Deeper} = get_branch($A, get_second(get_branch($P, TestingTrie))),
 	?assert(has_branch($U, Deeper)),
-	End = get_branch($L, get_branch($U, Deeper)),
-	?assert(is_terminator(End)).
+	{_, End} = get_branch($L, get_second(get_branch($U, Deeper))),
+	?assert(is_terminator(End)),
+	?assert(has_branch($H, TestingTrie)).
+
+get_second({_, Second}) -> Second.
 

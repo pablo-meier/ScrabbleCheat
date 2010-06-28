@@ -11,6 +11,12 @@ get_fun() ->
 simple_test() ->
 	Search = get_fun(),
 	Words = Search("dog"),
-	io:format("Search on \"dog\" returns ~p~n", [Words]),
 	?assert(lists:member("DOG", Words)),
 	?assert(lists:member("GOD", Words)).
+
+wildcard_test() ->
+	Search = get_fun(),
+	Words = Search("A*"),
+	io:format("~p~n", [Words]),
+	?assert(lists:member("AS", Words)),
+	?assert(lists:member("HA", Words)).
