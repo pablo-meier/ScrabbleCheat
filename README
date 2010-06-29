@@ -7,9 +7,12 @@ Revenge of the Verbally Challenged
 ScrabbleCheat is a tool I'm developing to finally beat my girlfriend in Scrabble.
 Developing it in Erlang, mostly for fun.  Use it yourself, or explore the code!
 
-We'll do this in phases;  I'm finishing the first one now.  First we build a 
-word-generator, which will efficiently find candidate words based on collections 
-of letters.  
+We'll do this in phases;  First we build a word-generator, which will efficiently 
+find candidate words based on collections of letters.  This has mostly been completed, 
+and running the program ('make run') has a bare text interface to generate combinations.
+
+The next phase is to model the actual Scrabble board with scoring, then designing
+an algorithm to find the (an?) optimal move.
 
 ###Contents
 
@@ -25,15 +28,17 @@ ScrabbleCheat has the following contents:
 The Makefile has the following targets:
 
 * test (default) -> Compiles the project and runs the Unit tests.
+* run -> Opens a bare client in your terminal: you to enter characters and receive words.
 * shell -> Compiles the project and loads the definitions into an Erlang shell.
 * clean -> Removes all compilation bits.
 * compile -> Builds the project and stores the .beam files into build/
 * compile-test -> Builds the Unit tests.
 
-For now this is just loose code that will piece together into actual usable software; in 
-the meantime, I'm putting it here as well as my local machine.  Enjoy, and email
+For now this is just loose code that will hopefully piece together into actual usable software; 
+in the meantime, I'm putting it here as well as my local machine.  Enjoy, and email
 about any questions, concerns!
 
 - Paul Meier
 06/27/2010
+pablo.a.meier@gmail.com  
 www.morepaul.com

@@ -29,6 +29,10 @@ wildcard_test() ->
 	
 	run_pattern_on_list(get_compare_list(), Search).
 
+empty_test() ->
+	Search = get_fun(),
+	Words = Search(""),
+	?assert(length(Words) =:= 0).
 
 run_pattern_on_list({Pattern, List}, Search) ->
 	MoreWords = Search(Pattern),

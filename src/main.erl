@@ -31,7 +31,7 @@ loop(Search) ->
 
 %% print_results :: [{String, Length, RawScore}] -> IO ()
 print_results(ResultList) ->
-	foreach(fun (X) -> {W, L, S} = X, io:format("~p ~p ~p~n", [W,L,S]) end, ResultList).
+	foreach(fun (X) -> {W, _, _} = X, io:format("~p~n", [W]) end, ResultList).
 
 %% order_results :: [String] -> [String]
 order_results(ResultList) ->
