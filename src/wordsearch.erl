@@ -1,8 +1,8 @@
 -module(wordsearch).
 -export([make_word_function/1]).
--import(string_utils, [format_string_for_trie/1]).
+-import(string_utils, [format_string_for_gaddag/1]).
 -import(lists, [flatmap/2, usort/1]).
--import(tries, [get_branch/2, is_terminator/1]).
+-import(gaddag, [get_branch/2, is_terminator/1]).
 
 
 %% make_word_function :: Trie -> ([Char] -> [String])
@@ -11,7 +11,7 @@
 %% function that returns a list of words that can be formed from a list of letters.
 make_word_function(Trie) ->
 	fun (Letters) ->
-		Upcased = format_string_for_trie(Letters),
+		Upcased = format_string_for_gaddag(Letters),
 		Words = flatmap(fun (X) -> find_all_words(X, lists:delete(X, Upcased), Trie) end, Upcased),
 		usort(Words)		
 	end.

@@ -1,12 +1,12 @@
 -module(dict_parser).
 -export([parse/1]).
--import(tries, [empty_trie/0, add_word/2]).
+-import(gaddag, [empty_gaddag/0, add_word/2]).
 
 parse(Filename) ->
 	Result = file:open(Filename, read),
 	case Result of
 		{ok, FileHandle} ->
-			Empty = empty_trie(),
+			Empty = empty_gaddag(),
 			io:format("Parsing...~n"),
 			parse_each_line(FileHandle, Empty);
 		{error, Reason} ->
@@ -21,7 +21,7 @@ parse_each_line(IoHandle, Curr) ->
 			io:format("Done Parsing.~n"),
 			Curr;
 		A_Line ->
-			Stripped = string_utils:format_string_for_trie(A_Line),
+			Stripped = string_utils:format_string_for_gaddag(A_Line),
 			NewTrie = add_word(Stripped, Curr),
 			parse_each_line(IoHandle, NewTrie)
 	end.
