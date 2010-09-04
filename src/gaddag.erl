@@ -2,7 +2,6 @@
 
 -export([add_word/2, 
 		add_char_string/2,
-		has_word/2,
 		empty_gaddag/0, 
 		has_branch/2, 
 		get_branch/2, 
@@ -18,18 +17,6 @@
 %% Mostly a wrapper for gb_trees, allowing me to sub out if I like.
 %% The atom |terminator| is used rather than a macro.
 
-
-
-%% has_word :: String * Trie -> Bool
-%%
-%% Returns whether or not the GADDAG contains the word in question.
-has_word([], Trie) -> is_terminator(Trie);
-has_word([Char|Rest], Trie) ->
-	case get_branch(Char, Trie) of
-		none -> false;
-		{branch, Success} -> has_word(Rest, Success);
-		{wildcard, BranchList} -> lists:any(fun(X) -> has_word(Rest, X) end, BranchList) 
-	end.
 
 
 %% has_branch :: Char * Trie -> Bool
@@ -94,12 +81,11 @@ add_word(String, Trie) ->
 %% Splits a single string into its multiple representations.
 split_into_representations(Word) ->
 	Results = splitter([], Word, []),
-	io:format("Word ~p is ~p~n", [Word, Results]),
 	Results.
 
 
 %% splitter :: String * String * [String] -> [String]
-splitter(Prefix, [], Accum) -> Accum;
+splitter(_, [], Accum) -> Accum;
 splitter(Prefix, Suffix, Accum) ->
 	NewPrefix = concat(Prefix, [head(Suffix)]),
 	NewSuffix = tail(Suffix),
