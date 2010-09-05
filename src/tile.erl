@@ -1,6 +1,7 @@
 -module(tile).
 
 
+-define(SPACE, 32).
 -export([new_tile/2, print_tile/1]).
 
 %% Datatype for a tile, which is what the board is composed of. Keeps track of 
@@ -14,13 +15,19 @@
 new_tile(Occupied, Bonus) ->
 	{Occupied, Bonus}.
 
+
+print_tile({none, Bonus}) ->
+	print_tile_skeleton(?SPACE, Bonus);
 print_tile({Letter, Bonus}) ->
+	print_tile_skeleton(Letter, Bonus).
+
+print_tile_skeleton(Letter, Bonus) ->
 	case Bonus of
-		none -> io:format(" ~p ", [[Letter]]);
-		triple_word_score -> io:format("*~p*", [[Letter]]);
-		double_word_score -> io:format("^~p^", [[Letter]]);
-		triple_letter_score -> io:format("-~p-", [[Letter]]);
-		double_letter_score -> io:format("_~p_", [[Letter]]);
+		none -> io:format(" ~s ", [[Letter]]);
+		triple_word_score -> io:format("*~s*", [[Letter]]);
+		double_word_score -> io:format("^~s^", [[Letter]]);
+		triple_letter_score -> io:format("-~s-", [[Letter]]);
+		double_letter_score -> io:format("_~s_", [[Letter]]);
 		_false -> uh_oh
 	end.
 

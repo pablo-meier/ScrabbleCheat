@@ -24,9 +24,9 @@ print_board(Board) ->
 	print_key(),
 	AsList = array:to_list(Board),
 	PrintRow = fun (Row) ->
-				lists:foreach(fun tile:print_tile/1, array:to_list (Row)),
+				lists:foreach(fun tile:print_tile/1, array:to_list(Row)),
 				io:format("~n") end,
 	lists:foreach(PrintRow, AsList).
 
 print_key() ->
-	io:format("~nKey (for any character 'p'):~n  *p* -> Triple Word!~n ^p^ -> Double Word!~n  -p- -> Triple Letter!~n  _p_ -> Double Letter~n~n").
+	io:format("~nKey (for any character 'p'):~n  *p* -> Triple Word!~n  ^p^ -> Double Word!~n  -p- -> Triple Letter!~n  _p_ -> Double Letter~n~n").
