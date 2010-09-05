@@ -1,4 +1,4 @@
--module(wordsearch).
+-module(movesearch).
 -export([make_word_function/1]).
 -import(string_utils, [format_string_for_gaddag/1]).
 -import(lists, [flatmap/2, usort/1]).

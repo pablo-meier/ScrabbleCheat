@@ -1,5 +1,5 @@
 -module(main).
--import(wordsearch, [make_word_function/1]).
+-import(movesearch, [make_word_function/1]).
 -import(dict_parser, [parse/1]).
 -import(lists, [reverse/1,foreach/2, keysort/2, sort/2, map/2]).
 -define(DICT_FILE, "lib/twl06.txt").

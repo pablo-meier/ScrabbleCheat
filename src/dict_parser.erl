@@ -22,7 +22,7 @@ parse_each_line(IoHandle, Curr) ->
 			Curr;
 		A_Line ->
 			Stripped = string_utils:format_string_for_gaddag(A_Line),
-			NewTrie = add_word(Stripped, Curr),
-			parse_each_line(IoHandle, NewTrie)
+			NewGaddag = add_word(Stripped, Curr),
+			parse_each_line(IoHandle, NewGaddag)
 	end.
 
