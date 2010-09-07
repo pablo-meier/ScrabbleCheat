@@ -6,14 +6,12 @@
 				is_terminator/1, 
 				has_branch/2, 
 				get_branch/2,
-				has_word/2]).
+				has_word/2,
+				naive_path_search/2]).
 
 get_fixture_gaddag() ->
-	EmptyTrie = empty_gaddag(),
-	New1 = add_word("ow", EmptyTrie),
-	New2 = add_word("wow", New1),
-	New3 = add_word("paulie", New2),
-	add_word("ox", New3).
+	Words = ["ow", "wow", "paulie", "ox", "pamper", "wizard"],
+	lists:foldl(fun gaddag:add_word/2, empty_gaddag(), Words).
 
 has_branch_test() ->
 	Trie = get_fixture_gaddag(),
@@ -38,3 +36,22 @@ adding_test() ->
 	{branch, Sub_Trie} = get_branch($a, New_Trie),
 	?assert(has_branch($w, Sub_Trie)).
 
+search_test() -> 
+	Gaddag = get_fixture_gaddag(),
+	?assert(has_word("pamper", Gaddag)),
+	?assert(has_word("wizard", Gaddag)),
+	?assert(has_word("ox", Gaddag)),
+	?assert(has_word("paulie", Gaddag)).
+
+one_letter_word_test() ->
+	Gaddag = get_fixture_gaddag(),
+	?assert(is_terminator(Gaddag) =:= false).
+
+representations_test() ->
+	Words = ["silly", "putty", "as"],
+	Gaddag = lists:foldl(fun gaddag:add_word/2, empty_gaddag(), Words),
+	Rep1 = ["s&illy","is&lly", "lis&ly", "llis&y", "yllis&"],
+	Rep2 = ["p&utty", "up&tty", "tup&ty", "ttup&y", "yttup&"],
+	Rep3 = ["a&s", "sa&"],
+	Representations = Rep1 ++ Rep2 ++ Rep3,
+	lists:all(fun (X) -> naive_path_search(X, Gaddag) end, Representations).

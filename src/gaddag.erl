@@ -25,7 +25,9 @@
 		empty_gaddag/0, 
 		has_branch/2, 
 		get_branch/2, 
-		is_terminator/1]).
+		has_word/2,
+		is_terminator/1,
+		naive_path_search/2]).
 
 -define(WILDCARD, $*).
 -define(SEPARATOR, $&).
@@ -66,6 +68,37 @@ get_branch(Char, Trie) ->
 			end
 	end.
 
+
+%% has_word :: String * Trie -> Bool
+%%
+%% Returns whether or not the Trie contains a word.  We do this by removing the
+%% first letter and separator, and doing a naive path search on the rest of the
+%% word.
+has_word([H|T], Trie) ->
+	case get_branch(H, Trie) of
+		{branch, Next} -> 
+			case get_branch(?SEPARATOR, Next) of
+				{branch, GaddagToSearch} -> 
+					naive_path_search(T, GaddagToSearch);
+				_Else -> false
+			end;
+		none -> false
+	end.
+
+
+%% naive_path_search :: String * Trie -> Bool
+%%
+%% Exported primarily for testing, DO NOT USE IN PRODUCTION. Checks whether a
+%% naive sequence of characters can be followed to completion on the Trie.
+naive_path_search([], Gaddag) -> is_terminator(Gaddag);
+naive_path_search([FirstChar|Rest], Gaddag) ->
+	io:format("First is ~p~n", [FirstChar]),
+	case get_branch(FirstChar, Gaddag) of
+		none -> false;
+		{branch, NextGaddag} ->
+			io:format("Succeeded, moving on~n---~n"),
+			naive_path_search(Rest, NextGaddag)
+	end.
 
 %% is_terminator :: Trie -> Bool
 %%
