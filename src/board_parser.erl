@@ -2,7 +2,7 @@
 
 -export([new_board/0]).
 
--import(board, [place_in_board/4]).
+-import(board, [place_bonus_on_board/4]).
 -import(tile, [new_tile/2]).
 -import(lists, [foldl/3]).
 
@@ -12,6 +12,14 @@
 
 -define(BOARD_LENGTH, 15).
 -define(BOARD_HEIGHT, ?BOARD_LENGTH).
+
+
+%% Parses files representing boards, either partially completed or create 
+%% empty new ones.  Also generates the template for a blank board (see 
+%% the text file in lib/board.txt. A board in this implementation is an array 
+%% of arrays, and we access it in row-major format.  We also 1-index, contrary 
+%% to native Erlang arrays.
+
 
 -define(TRIPLE_WORD_SCORE_LOCATIONS, 
 	[{1,1},{1,8},{1,15},{8,1},{8,15},{15,1},{15,8},{15,15}]).
@@ -24,27 +32,21 @@
 	[{1,4},{1,12},{3,7},{3,9},{4,1},{4,8},{4,15},{7,3},{7,7},{7,9},{7,13},{8,4},{8,12},
 	{9,3},{9,7},{9,9},{9,13},{12,1},{12,8},{12,15},{13,7},{13,9},{15,4},{15,12}]).
 
-%% Parses files representing boards, either partially completed or create 
-%% empty new ones.  Also generates the template for a blank board (see 
-%% the text file in lib/board.txt. A board in this implementation is an array 
-%% of arrays, and we access it in row-major format.  We also 1-index, contrary 
-%% to native Erlang arrays.
-
 %% new_board :: () -> Board
 %%
 %% Generates a new, blank Scrabble board.  This includes all the bonuses, but
 %% no tiles in place.
 new_board() ->
 	Empty = empty_board_template(),
-	TripleWords = mass_inject(Empty, triple_word_score, ?TRIPLE_WORD_SCORE_LOCATIONS),
-	DoubleWords = mass_inject(TripleWords, double_word_score, ?DOUBLE_WORD_SCORE_LOCATIONS),
-	TripleLetters = mass_inject(DoubleWords, triple_letter_score, ?TRIPLE_LETTER_SCORE_LOCATIONS),
-	mass_inject(TripleLetters, double_letter_score, ?DOUBLE_LETTER_SCORE_LOCATIONS).
+	foldl(fun ({BonusType, Lst}, Acc) -> mass_inject(Acc, BonusType, Lst) end,
+		Empty,
+		[{triple_word_score, ?TRIPLE_WORD_SCORE_LOCATIONS}, {double_word_score, ?DOUBLE_WORD_SCORE_LOCATIONS},
+		{triple_letter_score, ?TRIPLE_LETTER_SCORE_LOCATIONS}, {double_letter_score, ?DOUBLE_LETTER_SCORE_LOCATIONS}]).
 
 mass_inject(Board, Type, Locations) ->
 	foldl( fun (Loc, Acc) ->
 			{Row, Col} = Loc,
-			place_in_board(Row, Col, tile:new_tile(none, Type), Acc)
+			place_bonus_on_board(Row, Col, Type, Acc)
 		end, Board, Locations).
 
 
