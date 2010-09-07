@@ -1,3 +1,23 @@
+%% Copyright (c) 2010 Paul Meier
+%% 
+%% Permission is hereby granted, free of charge, to any person obtaining a copy
+%% of this software and associated documentation files (the "Software"), to deal
+%% in the Software without restriction, including without limitation the rights
+%% to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+%% copies of the Software, and to permit persons to whom the Software is
+%% furnished to do so, subject to the following conditions:
+%% 
+%% The above copyright notice and this permission notice shall be included in
+%% all copies or substantial portions of the Software.
+%% 
+%% THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+%% IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+%% FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+%% AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+%% LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+%% OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+%% THE SOFTWARE.
+
 -module(gaddag).
 
 -export([add_word/2, 
@@ -15,7 +35,7 @@
 -import(string, [concat/2]).
 
 %% Mostly a wrapper for gb_trees, allowing me to sub out if I like.
-%% The atom |terminator| is used rather than a macro.
+%% The atom 'terminator' is used rather than a macro.
 
 
 
@@ -24,7 +44,7 @@
 %% Asks whether the subtree (GADDAG) contains a branch for the parameter.
 has_branch(Char, Trie) ->
 	if
-		Char =:= ?WILDCARD ->
+		Char =:= ?WILDCARD andalso Char /= terminator ->
 			true;
 		true ->
 			is_defined(Char, Trie)
@@ -53,8 +73,7 @@ get_branch(Char, Trie) ->
 is_terminator(Trie) ->
 	HasTerminator = has_branch(terminator, Trie), 
 	HasSeparator = has_branch(?SEPARATOR, Trie),
-	Cases = {HasTerminator, HasSeparator},
-	case Cases of
+	case {HasTerminator, HasSeparator} of
 		{true, _} -> true;
 		{_, true} -> is_terminator(get_branch(?SEPARATOR, Trie));
 		_Else -> false
@@ -87,8 +106,8 @@ split_into_representations(Word) ->
 %% splitter :: String * String * [String] -> [String]
 splitter(_, [], Accum) -> Accum;
 splitter(Prefix, Suffix, Accum) ->
-	NewPrefix = concat(Prefix, [head(Suffix)]),
-	NewSuffix = tail(Suffix),
+	NewPrefix = concat(Prefix, [hd(Suffix)]),
+	NewSuffix = tl(Suffix),
 	NewAddition = concat(concat(reverse(NewPrefix), [?SEPARATOR]), NewSuffix),
 	splitter(NewPrefix, NewSuffix, [NewAddition|Accum]).
 	
@@ -110,6 +129,3 @@ add_char_string(Word, Trie) ->
 			enter(Char, New_Trie, Trie)
 	end.
 
-
-head([H|_]) -> H.
-tail([_|T]) -> T.
