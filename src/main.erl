@@ -44,7 +44,7 @@ order_results(ResultList) ->
 
 %% Calculates the score of a string, without bonuses applied.
 score(String) ->
-	10.
+	length(String).
 
 
 

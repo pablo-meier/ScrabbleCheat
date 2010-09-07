@@ -36,4 +36,4 @@ empty_test() ->
 
 run_pattern_on_list({Pattern, List}, Search) ->
 	MoreWords = Search(Pattern),
-	lists:map(fun (X) -> ?assert(lists:member(X, List)) end, List).
+	lists:map(fun (X) -> ?assert(lists:member(X, List)) end, MoreWords).

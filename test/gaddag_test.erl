@@ -1,4 +1,5 @@
--module(gaddag_test).  -include_lib("eunit/include/eunit.hrl").
+-module(gaddag_test).  
+-include_lib("eunit/include/eunit.hrl").
 
 -import(gaddag, [empty_gaddag/0, 
 			 	add_word/2, 
