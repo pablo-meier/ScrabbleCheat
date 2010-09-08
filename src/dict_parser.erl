@@ -23,14 +23,13 @@
 -import(gaddag, [empty_gaddag/0, add_word/2]).
 
 parse(Filename) ->
-	Result = file:open(Filename, read),
-	case Result of
+	case file:open(Filename, read) of
 		{ok, FileHandle} ->
 			Empty = empty_gaddag(),
 			io:format("Parsing...~n"),
 			parse_each_line(FileHandle, Empty);
-		{error, Reason} ->
-			io:format("Whoops! Can't read file -> ~p~n", [Reason])
+		{error, enoent} ->
+			throw({file_not_found, Filename})
 	end.
 
 %% parse_each_line
