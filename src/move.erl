@@ -72,4 +72,4 @@ check_adjacency(Row, Col, Move) ->
 
 %% check_integrity :: Int * Int -> Bool
 check_integrity(Row, Col) ->
-	Row < 16 andalso Row > 0 andalso Col < 16 andalso Col > 0.
+	Row =< 15 andalso Row >= 1 andalso Col =< 15 andalso Col >= 1.

@@ -21,7 +21,6 @@
 -module(gaddag).
 
 -export([add_word/2, 
-		add_char_string/2,
 		empty_gaddag/0, 
 		has_branch/2, 
 		get_branch/2, 
@@ -92,11 +91,9 @@ has_word([H|T], Trie) ->
 %% naive sequence of characters can be followed to completion on the Trie.
 naive_path_search([], Gaddag) -> is_terminator(Gaddag);
 naive_path_search([FirstChar|Rest], Gaddag) ->
-	io:format("First is ~p~n", [FirstChar]),
 	case get_branch(FirstChar, Gaddag) of
 		none -> false;
 		{branch, NextGaddag} ->
-			io:format("Succeeded, moving on~n---~n"),
 			naive_path_search(Rest, NextGaddag)
 	end.
 

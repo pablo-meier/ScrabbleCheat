@@ -1,3 +1,10 @@
+------
+SHORT-TERM:
+
+- grep TODO in the source to find something to do!
+
+------
+BROADER:
 
 - Generalize the board and board parser to take different default 
   configurations, such as a Lexulous board, or a custom board.  The hard-coding

@@ -22,7 +22,10 @@
 
 
 -define(SPACE, 32).
--export([new_tile/2, print_tile/1]).
+-export([new_tile/2, 
+		print_tile/1,
+		get_tile_letter/1,
+		get_tile_bonus/1]).
 
 %% Datatype for a tile, which is what the board is composed of. Keeps track of 
 %% bonuses, and which letter is where.  
@@ -35,6 +38,9 @@
 new_tile(Occupied, Bonus) ->
 	{Occupied, Bonus}.
 
+get_tile_bonus({_, Bonus}) -> Bonus.
+
+get_tile_letter({Letter, _}) -> Letter.
 
 print_tile({none, Bonus}) ->
 	print_tile_skeleton(?SPACE, Bonus);
