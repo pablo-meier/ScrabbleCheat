@@ -20,10 +20,19 @@
 
 -module(board).
 
+-import(tile, [get_tile_letter/1, 
+			get_tile_location/1, 
+			get_tile_bonus/1,
+			set_tile_letter/2,
+			set_tile_bonus/2]).
+
 -export([place_bonus_on_board/4,
 		place_letter_on_board/4,
 		get_tile/3,
-		print_board/1]).
+		print_board/1
+%		get_adjacent/2,
+%		get_adjacents/1,
+		]).
 
 %% The actual board datatype.  Queried lots to generate moves.
 
@@ -32,15 +41,15 @@
 %% The primary place where moves are employed, adds a letter to the board.
 %% Returns 'fail' if the board location has been occupied by another letter tile.
 place_letter_on_board(Row, Col, Char, Board) ->
-	RowIndex = make_array_index(Row),
-	ColIndex = make_array_index(Col),
+	{RowIndex, ColIndex} = make_array_indices(Row, Col),
 	ThisRow = array:get(RowIndex, Board),
-	case array:get(ColIndex, ThisRow) of 
-		{none, Bonus} -> 
-			NewRow = array:set(ColIndex, tile:new_tile(Char, Bonus), ThisRow),
+	Tile = array:get(ColIndex, ThisRow),
+	case get_tile_letter(Tile) of
+		none ->
+			NewRow = array:set(ColIndex, set_tile_letter(Char, Tile), ThisRow),
 			array:set(RowIndex, NewRow, Board);
-		{Else, _Bonus} ->
-			throw({tile_already_occupied, [Else]})
+		Else ->
+			throw({tile_already_occupied, Else})
 	end.
 
 
@@ -51,22 +60,21 @@ place_letter_on_board(Row, Col, Char, Board) ->
 %% indexing.  This is used in board creation, because it allows you to change a
 %% tile's bonus.  For placement of letter, see place_letter_on_board/4
 place_bonus_on_board(Row, Col, Bonus, Board) ->
-	RowIndex = make_array_index(Row),
-	ColIndex = make_array_index(Col),
+	{RowIndex, ColIndex} = make_array_indices(Row, Col),
 	ThisRow = array:get(RowIndex, Board),
-	case array:get(ColIndex, ThisRow) of
-		{Letter, none} ->
-			NewRow = array:set(ColIndex, tile:new_tile(Letter, Bonus), ThisRow),
+	Tile = array:get(ColIndex, ThisRow), 
+	case get_tile_bonus(Tile) of 
+		none ->
+			NewRow = array:set(ColIndex, set_tile_bonus(Bonus, Tile), ThisRow),
 			array:set(RowIndex, NewRow, Board);
-		{_Letter, ABonus} ->
+		ABonus ->
 			throw({tile_already_with_bonus, ABonus})
 	end.
 
 
 %% get_tile :: Int * Int * Board -> Tile
 get_tile(Row, Col, Board) ->
-	RowIndex = make_array_index(Row),
-	ColIndex = make_array_index(Col),
+	{RowIndex, ColIndex} = make_array_indices(Row, Col),
 	RowArray = array:get(RowIndex, Board),
 	array:get(ColIndex, RowArray).
 
@@ -87,4 +95,4 @@ print_key() ->
 
 
 %% A little silly, but DRY...
-make_array_index(Num) -> Num - 1.
+make_array_indices(Num1, Num2) -> {Num1 - 1, Num2 - 1}.

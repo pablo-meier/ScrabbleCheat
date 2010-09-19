@@ -29,6 +29,6 @@ preservation_test() ->
 	AndWithC = place_letter_on_board(13, 4, $C, WithDoubleWordBonus),
 	?assert(get_tile_bonus(get_tile(13, 4, AndWithC)) =:= double_word_score),
 
-	?assertException(throw, {tile_already_occupied, "C"}, place_letter_on_board(13, 4, $M, AndWithC)),
+	?assertException(throw, {tile_already_occupied, $C}, place_letter_on_board(13, 4, $M, AndWithC)),
 	?assertException(throw, {tile_already_with_bonus, double_word_score}, place_bonus_on_board(13, 4, triple_letter_score, AndWithC)).
 	

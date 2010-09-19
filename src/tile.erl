@@ -22,29 +22,49 @@
 
 
 -define(SPACE, 32).
--export([new_tile/2, 
+-export([new_tile/4, 
 		print_tile/1,
 		get_tile_letter/1,
-		get_tile_bonus/1]).
+		get_tile_bonus/1,
+		get_tile_location/1,
+		set_tile_letter/2,
+		set_tile_bonus/2,
+		set_tile_location/2,
+		is_wildcard/1]).
 
 %% Datatype for a tile, which is what the board is composed of. Keeps track of 
 %% bonuses, and which letter is where.  
 
-%% Bonus types are none, triple_letter_score, double_letter_score, 
-%% triple_word_score, double_word_score.
-%% 'Occupied' means, what's in the tile.  It can be none, {character, Char} or 
-%% {wildcard, Char}.
+%% Bonus types are none, triple_letter_score, double_letter_score, triple_word_score, double_word_score.
+%% 'Occupied' means, what's in the tile.  It can be none, {character, Char}, {wildcard, Char}, or none.
+%% Tiles store their own locations.  This is 1-indexed, following convention with the rest of the program.
 
-new_tile(Occupied, Bonus) ->
-	{Occupied, Bonus}.
+new_tile(Occupied, Bonus, Row, Col) ->
+	{Occupied, Bonus, {Row, Col}}.
 
-get_tile_bonus({_, Bonus}) -> Bonus.
 
-get_tile_letter({Letter, _}) -> Letter.
+get_tile_letter({{_, Letter}, _, _}) -> Letter;
+get_tile_letter({none, _, _}) -> none.
 
-print_tile({none, Bonus}) ->
+get_tile_bonus({_, Bonus, _}) -> Bonus.
+get_tile_location({_, _, Location}) -> Location.
+
+
+is_wildcard({{wildcard,_}, _, _}) -> true;
+is_wildcard(_Else) -> false.
+
+
+set_tile_letter(NewLetter, {{character, _}, Bonus, Location}) -> {{character, NewLetter}, Bonus, Location};
+set_tile_letter(NewLetter, {{wildcard, _}, Bonus, Location}) -> {{wildcard, NewLetter}, Bonus, Location};
+set_tile_letter(NewLetter, {none, Bonus, Location}) -> {{character, NewLetter}, Bonus, Location}.
+
+set_tile_bonus(NewBonus, {Letter, _, Location}) -> {Letter, NewBonus, Location}.
+set_tile_location(NewLocation, {Letter, Bonus, _}) -> {Letter, Bonus, NewLocation}.
+
+
+print_tile({none, Bonus, _}) ->
 	print_tile_skeleton(?SPACE, Bonus);
-print_tile({Letter, Bonus}) ->
+print_tile({{_, Letter}, Bonus, _}) ->
 	print_tile_skeleton(Letter, Bonus).
 
 print_tile_skeleton(Letter, Bonus) ->

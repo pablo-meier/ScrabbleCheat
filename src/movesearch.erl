@@ -24,7 +24,7 @@
 %% move for that player given its inputs.  The logical progression goes
 %% something like this:
 %%
-%% Board -> [Candidate] 
+%% get_candidate_moves :: Board -> [Candidate] 
 %% 
 %% From the board you get a list of candidates.  This is pretty much all squares
 %% adjacent to a square already in play.

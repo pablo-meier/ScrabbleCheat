@@ -23,7 +23,7 @@
 -export([new_board/0]).
 
 -import(board, [place_bonus_on_board/4]).
--import(tile, [new_tile/2]).
+-import(tile, [new_tile/4]).
 -import(lists, [foldl/3]).
 
 -import(array, [new/2, set/3, get/2]).
@@ -76,7 +76,12 @@ empty_board_template() ->
 
 
 %% make_board_rows :: Int * [Array<Tile>] -> [Array<Tile>]
-make_board_rows(?BOARD_HEIGHT, Accum) -> Accum;
+make_board_rows(?BOARD_HEIGHT, Accum) -> lists:reverse(Accum);
 make_board_rows(Index, Accum) ->
-	ArrayRow = array:new(?BOARD_LENGTH, [{fixed, true}, {default, new_tile(none, none)}]),
-	make_board_rows(1 + Index, [ArrayRow|Accum]).
+	ArrayRow = array:from_list(make_board_columns(Index, 0, [])),
+	Fixed = array:fix(ArrayRow),
+	make_board_rows(1 + Index, [Fixed|Accum]).
+
+make_board_columns(_, ?BOARD_HEIGHT, Accum) -> lists:reverse(Accum);
+make_board_columns(RowNumber, ColNumber, Accum) ->
+	make_board_columns(RowNumber, ColNumber + 1, [new_tile(none, none, RowNumber + 1, ColNumber + 1)|Accum]).
