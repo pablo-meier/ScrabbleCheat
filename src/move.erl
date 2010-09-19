@@ -44,12 +44,10 @@ add_to_move(Proposed, Move) ->
 			case Adjacent of 
 				true -> [Proposed|Move];
 				_False -> 
-					io:format("Not adjacent to the rest of the move"),
-					fail
+					throw({piece_not_adjacent_to_move})
 			end;
 		_False -> 
-			io:format("Move at location ~p, ~p not within bounds.", [Row, Col]),
-			fail
+			throw({out_of_bounds, {Row, Col}})
 	end.
 
 

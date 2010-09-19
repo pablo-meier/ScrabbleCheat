@@ -58,7 +58,7 @@ place_bonus_on_board(Row, Col, Bonus, Board) ->
 		{Letter, none} ->
 			NewRow = array:set(ColIndex, tile:new_tile(Letter, Bonus), ThisRow),
 			array:set(RowIndex, NewRow, Board);
-		{Letter, ABonus} ->
+		{_Letter, ABonus} ->
 			throw({tile_already_with_bonus, ABonus})
 	end.
 
