@@ -26,9 +26,7 @@
 -import(tile, [new_tile/2]).
 -import(lists, [foldl/3]).
 
--compile({no_auto_import,[size/1]}).
-
--import(array, [new/2, size/1, fix/1, set/3, get/2]).
+-import(array, [new/2, set/3, get/2]).
 
 -define(BOARD_LENGTH, 15).
 -define(BOARD_HEIGHT, ?BOARD_LENGTH).
@@ -74,7 +72,7 @@ mass_inject(Board, Type, Locations) ->
 empty_board_template() ->
 	ListOfRows = make_board_rows(0, []),
 	ArrayOfRows = array:from_list(ListOfRows),
-	fix(ArrayOfRows).
+	array:fix(ArrayOfRows).
 
 
 %% make_board_rows :: Int * [Array<Tile>] -> [Array<Tile>]
