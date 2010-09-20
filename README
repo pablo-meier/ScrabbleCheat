@@ -7,14 +7,18 @@ Revenge of the Verbally Challenged
 ScrabbleCheat is a tool I'm developing to finally beat my girlfriend in Scrabble.
 Developing it in Erlang, mostly for fun.  Use it yourself, or explore the code!
 
-We'll do this in phases;  First we build a word-generator, which will efficiently 
-find candidate words based on collections of letters.  This has mostly been completed, 
-and running the program ('make run') has a bare text interface to generate combinations.
+Originally development was considered in phases: generate words from your rack,
+then place the words on the board.  This was using a DAWG algorithm most popular
+in other Scrabble AIs such as Maven.  If you revert to the tag WORDSEARCH, you 
+will see this!  Run 'make run' from that commit and you get a simple trie-based
+search to generate words from your rack of tiles.
 
-The next phase is to model the actual Scrabble board with scoring, then designing
-an algorithm to find the (an?) optimal move.
+This was eschewed in favor of a GADDAG-based approach, such as the one used in
+Quackle (http://people.csail.mit.edu/jasonkb/quackle/).  A GADDAG, for those who
+don't know, is a perverted trie that is fat and fast, designed specifically for
+Scrabble and games with similar rules (http://en.wikipedia.org/wiki/GADDAG).
 
-###Contents
+### Contents
 
 ScrabbleCheat has the following contents:
 
@@ -23,12 +27,11 @@ ScrabbleCheat has the following contents:
 * lib/ -> Contains any extraneous support, such as testing macros or dictionary files.
 * test/ -> Contains unit tests for each of the modules, some rigorous, some not.
 
-###Makefile
+### Makefile
 
 The Makefile has the following targets:
 
-* test (default) -> Compiles the project and runs the Unit tests.
-* run -> Opens a bare client in your terminal: you to enter characters and receive words.
+* test (default) -> Compiles the project and runs the unit tests.
 * shell -> Compiles the project and loads the definitions into an Erlang shell.
 * clean -> Removes all compilation bits.
 * compile -> Builds the project and stores the .beam files into build/
@@ -39,6 +42,6 @@ in the meantime, I'm putting it here as well as my local machine.  Enjoy, and em
 about any questions, concerns!
 
 - Paul Meier
-06/27/2010
+09/20/2010
 pablo.a.meier@gmail.com  
 www.morepaul.com
