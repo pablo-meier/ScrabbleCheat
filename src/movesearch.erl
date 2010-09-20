@@ -53,7 +53,7 @@ generate_move_candidate_locations(Board) ->
 	Flat = lists:flatten(as_list(Board)),
 	Occupied = lists:filter(fun (X) -> get_tile_letter(X) =/= none end, Flat),
 	Adjacents = lists:map(fun (X) -> get_adjacents(X, Board) end, Occupied),
-	OpenFlat = lists:flatten(Adjacents),
+	OpenFlat = lists:filter(fun (X) -> get_tile_letter(X) =:= none end, lists:flatten(Adjacents)),
 	remove_duplicate_candidates(OpenFlat).
 
 
@@ -82,7 +82,7 @@ duplicate_remove_helper(Compare, [H|T], Accum) ->
 		ThisRow =:= ThatRow andalso ThisCol =:= ThatCol ->
 			duplicate_remove_helper(Compare, T, Accum);
 		true ->
-			duplicate_remove_helper(Compare, T, [H|T])
+			duplicate_remove_helper(Compare, T, [H|Accum])
 	end.
 
 
