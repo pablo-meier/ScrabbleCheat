@@ -20,6 +20,8 @@
 
 -module(board).
 
+-define(BOARD_HEIGHT, 15).
+
 -import(tile, [get_tile_letter/1, 
 			get_tile_location/1, 
 			get_tile_bonus/1,
@@ -29,10 +31,11 @@
 -export([place_bonus_on_board/4,
 		place_letter_on_board/4,
 		get_tile/3,
-		print_board/1
-%		get_adjacent/2,
-%		get_adjacents/1,
-		]).
+		print_board/1,
+		get_adjacent/3,
+		get_adjacents/2,
+		place_word/4,
+		as_list/1]).
 
 %% The actual board datatype.  Queried lots to generate moves.
 
@@ -74,9 +77,84 @@ place_bonus_on_board(Row, Col, Bonus, Board) ->
 
 %% get_tile :: Int * Int * Board -> Tile
 get_tile(Row, Col, Board) ->
-	{RowIndex, ColIndex} = make_array_indices(Row, Col),
-	RowArray = array:get(RowIndex, Board),
-	array:get(ColIndex, RowArray).
+	if 
+		Row < 1 orelse Col < 1 orelse Row > ?BOARD_HEIGHT orelse Col > ?BOARD_HEIGHT ->
+			throw({tile_request_out_of_bounds, Row, Col});
+		true ->
+			{RowIndex, ColIndex} = make_array_indices(Row, Col),
+			RowArray = array:get(RowIndex, Board),
+			array:get(ColIndex, RowArray)
+	end.
+
+%% get_adjacent :: Tile * atom(Direction) -> Tile | none
+%% 
+%% Returns the tile that is adjacent to the parametrized tile,
+%% in the direction specified by the paramter (left, down, right, up).
+%% Returns none if the tile is a border case.
+get_adjacent(Tile, Board, left) -> 
+	{Row, Col} = get_tile_location(Tile),
+	if 
+		Col =:= 1 -> 
+			none;
+		Col < 16 ->
+			get_tile(Row, Col - 1, Board)
+	end;
+get_adjacent(Tile, Board, right) -> 
+	{Row, Col} = get_tile_location(Tile),
+	if 
+		Col =:= 15 -> 
+			none;
+		Col > 0 ->
+			get_tile(Row, Col + 1, Board)
+	end;
+get_adjacent(Tile, Board, up) -> 
+	{Row, Col} = get_tile_location(Tile),
+	if 
+		Row =:= 1 -> 
+			none; 
+		Row < 16 -> 
+			get_tile(Row - 1, Col, Board)
+	end;
+get_adjacent(Tile, Board, down) -> 
+	{Row, Col} = get_tile_location(Tile),
+	if 
+		Row =:= 15 -> 
+			none;
+		Row > 0 ->
+			get_tile(Row + 1, Col, Board)
+	end.
+
+
+%% get_adjacents :: Tile -> [Tile]
+%%
+%% Returns all ajacent tiles to the parametrized one.
+get_adjacents(Tile, Board) ->
+	AllAdjacents = lists:map(fun (X) -> get_adjacent(Tile, Board, X) end, [left,down,up,right]),
+	lists:filter(fun (X) -> X =/= none end, AllAdjacents).
+
+
+%% as_list :: Board -> [[Tile]]
+%%
+%% Returns the board as a list of lists.
+as_list(Board) ->
+	lists:map(fun (X) -> array:to_list(X) end, array:to_list(Board)).
+
+
+%% place_word :: String * Direction * {Int, Int} * Board -> Board
+%%
+%% Direction :: right | down
+%% Places a word in the specified direction on the board.
+place_word([], _, _, Board) -> Board;
+place_word(Word, Direction, {Row, Col}, Board) ->
+	[H|T] = Word,
+	case Direction of 
+		down ->
+			NewBoard = place_letter_on_board(Row, Col, H, Board),
+			place_word(T, down, {Row + 1, Col}, NewBoard);
+		right ->
+			NewBoard = place_letter_on_board(Row, Col, H, Board),
+			place_word(T, right, {Row, Col + 1}, NewBoard)
+	end.
 
 
 %% print_board :: Board -> ()
@@ -92,7 +170,6 @@ print_board(Board) ->
 
 print_key() ->
 	io:format("~nKey (for any character 'p'):~n  *p* -> Triple Word!~n  ^p^ -> Double Word!~n  -p- -> Triple Letter!~n  _p_ -> Double Letter~n~n").
-
 
 %% A little silly, but DRY...
 make_array_indices(Num1, Num2) -> {Num1 - 1, Num2 - 1}.

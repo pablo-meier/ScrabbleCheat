@@ -20,6 +20,11 @@
 
 -module(movesearch).
 
+-import(board, [as_list/1, get_adjacents/2]).
+-import(tile, [get_tile_letter/1, get_tile_location/1]).
+-export([get_best_move/2,
+		generate_move_candidate_locations/1]). 
+
 %% The 'meat' of the program, takes a board and a rack and generates the best
 %% move for that player given its inputs.  The logical progression goes
 %% something like this:
@@ -39,18 +44,53 @@
 %%
 %% We then take all the moves we've generated and test them against each other
 %% for fitness, and pick the best one.
+get_best_move(Board, _Rack) ->
+	generate_move_candidate_locations(Board).
 
 
-%% generate_candidate_moves ::  Board -> [Candidate] 
+%% generate_move_candidate_locations ::  Board -> [Candidate] 
 generate_move_candidate_locations(Board) ->
-	ok.
+	Flat = lists:flatten(as_list(Board)),
+	Occupied = lists:filter(fun (X) -> get_tile_letter(X) =/= none end, Flat),
+	Adjacents = lists:map(fun (X) -> get_adjacents(X, Board) end, Occupied),
+	OpenFlat = lists:flatten(Adjacents),
+	remove_duplicate_candidates(OpenFlat).
+
+
+%% remove_duplicate_candidates :: [Tile] -> [Tile]
+%%
+%% removes the duplicate items of the list of candidates spaces (occurs when a 
+%% tile is adjacent to two occupied tiles).
+remove_duplicate_candidates(List) ->
+	duplicate_remove_iterator(0, List).
+
+duplicate_remove_iterator(Index, List) ->
+	if 
+		Index =:= length(List) ->
+			List;
+		true ->
+			{Pred, [H|T]} = lists:split(Index, List),
+			WithRemovals = duplicate_remove_helper(H, T, []),
+			duplicate_remove_iterator(Index + 1, lists:append(Pred, WithRemovals))
+	end.
+
+duplicate_remove_helper(Compare, [], Accum) -> [Compare|Accum];
+duplicate_remove_helper(Compare, [H|T], Accum) ->
+	{ThisRow, ThisCol} = get_tile_location(Compare),
+	{ThatRow, ThatCol} = get_tile_location(H),
+	if
+		ThisRow =:= ThatRow andalso ThisCol =:= ThatCol ->
+			duplicate_remove_helper(Compare, T, Accum);
+		true ->
+			duplicate_remove_helper(Compare, T, [H|T])
+	end.
 
 
 %% Candidate * Rack -> [Move]
-find_all_moves(Candidate, Rack) ->
+find_all_moves(_Candidate, _Rack) ->
 	ok.
 
 
 %% [Move] * Board -> Move
-select_best_move(Moves, Board) ->
+select_best_move(_Moves, _Board) ->
 	ok.
