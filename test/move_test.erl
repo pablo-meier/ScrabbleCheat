@@ -62,6 +62,23 @@ zoomtile_first_test() ->
 					?assert(Result == Solution)
 				end, SolutionPairs).
 
+zoomtile_second_test() ->
+	Board = board:place_word("BLE", right, {8, 8}, sample_board()),
+	Gaddag = empty_gaddag(),
+	SolutionPairs = [{new_tile(none,none,6,7), [{get_tile(10, 7, Board), up, Gaddag}]},
+					{new_tile(none,none,7,6), [{get_tile(7, 7, Board), left, Gaddag}]},
+					{new_tile(none,none,8,6), [{get_tile(8, 10, Board), left, Gaddag}]},
+					{new_tile(none,none,8,11), [{get_tile(8, 7, Board), right, Gaddag}]},
+					{new_tile(none,none,9,8), [{get_tile(9, 7, Board), right ,Gaddag},
+												{get_tile(8, 8, Board), down, Gaddag}]},
+					{new_tile(none,none,7,8), [{get_tile(7, 7, Board), right ,Gaddag},
+												{get_tile(8, 8, Board), up, Gaddag}]}],
+	lists:foreach(fun ({Candidate, Solution}) ->
+					Result = get_zoomtiles(Candidate, Board, Gaddag),
+					io:format("Candidate is ~p, Solution is ~p, Result is ~p~n", [Candidate, Solution, Result]),
+					?assert(Result == Solution)
+				end, SolutionPairs).
+
 
 %% Test whether or not the list contains the parametrized tile.
 contains_tile({Row, Col}, Lst) ->
