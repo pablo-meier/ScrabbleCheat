@@ -24,7 +24,9 @@
 -import(tile, [get_tile_letter/1, get_tile_location/1]).
 -import(move, [new_move/0, add_to_move/2]).
 -export([get_best_move_function/1,
-		generate_move_candidate_locations/1]). 
+		generate_move_candidate_locations/1,
+		
+		get_zoomtiles/3]). 
 
 %% The 'meat' of the program, takes a board and a rack and generates the best
 %% move for that player given its inputs.  The logical progression goes
@@ -134,18 +136,25 @@ find_all_moves(Candidate, Rack, Board, Gaddag) ->
 %% the furthest progression.  Then it traverses back to the candidate square, 
 %% moving along the Gaddag the whole time.
 get_zoomtiles(Candidate, Board, Gaddag) ->
-	StartPoints = lists:map(fun (X) -> {get_adjacent(Candidate, Board, X), X, Gaddag} end, [up,down,left,right]),
+	Adjacents = lists:map(fun (X) -> {get_adjacent(Candidate, Board, X), X, Gaddag} end, [left,right,up,down]),
+	StartPoints = lists:filter(fun ({X,_,_}) -> tile:is_occupied(X) end, Adjacents),
 	WithZooms = lists:map(fun(X) -> zoom(X, Board) end, StartPoints),
-	lists:filter(fun (X) -> X =/= none end, WithZooms).
+	lists:filter(fun (X) -> X =/= edge_of_board end, WithZooms).
 
 
-zoom(ThisTriple, Board) ->
-	{Tile, Direction, Gaddag} = ThisTriple,
-	case {Tile, get_adjacent(Tile, Board, Direction)} of
-		{none, _} -> none;
-		{_, none} -> ThisTriple;
-		{_, Further} -> zoom({Further, Direction, Gaddag}, Board)
+zoom({Tile, Direction, Gaddag}, Board) ->
+	Adjacent = get_adjacent(Tile, Board, Direction),
+	case {Tile, get_tile_letter(Adjacent)} of
+		{none, _} -> edge_of_board;
+		{_, none} -> {Tile, flip(Direction), Gaddag};
+		_Else -> zoom({Adjacent, Direction, Gaddag}, Board)
 	end.
+
+
+flip(up) -> down;
+flip(down) -> up;
+flip(left) -> right;
+flip(right) -> left.
 
 
 %% get_moves_from_candidate :: {Int,Int} * Tile * Direction * [Char] * Gaddag * Move * [Move] * Board -> [Move]

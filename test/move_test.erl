@@ -22,9 +22,10 @@
 -include_lib("eunit/include/eunit.hrl").
 
 -import(board_parser, [new_board/0]).
--import(board, [place_word/4]).
--import(movesearch, [generate_move_candidate_locations/1]). 
--import(tile, [get_tile_location/1]).
+-import(board, [place_word/4, get_tile/3]).
+-import(movesearch, [generate_move_candidate_locations/1, get_zoomtiles/3]). 
+-import(gaddag, [empty_gaddag/0]).
+-import(tile, [get_tile_location/1, new_tile/4]).
 
 
 
@@ -45,6 +46,21 @@ candidate_location2_test() ->
 					?assert(contains_tile(X, Lst))
 					end, [{6,1},{6,11},{7,2},{7,3},{7,4},{7,5},{7,8},{7,9},{7,10},
 						{5,2},{5,3},{5,4},{5,5},{5,8},{5,9},{5,10}]).
+
+
+zoomtile_first_test() ->
+	Board = sample_board(),
+	Gaddag = empty_gaddag(),
+	SolutionPairs = [{new_tile(none,none,6,7), [{get_tile(10, 7, Board), up, Gaddag}]},
+					{new_tile(none,none,7,6), [{get_tile(7, 7, Board), left, Gaddag}]},
+					{new_tile(none,none,8,6), [{get_tile(8, 7, Board), left, Gaddag}]},
+					{new_tile(none,none,11,7), [{get_tile(7, 7, Board), down, Gaddag}]},
+					{new_tile(none,none,9,8), [{get_tile(9, 7, Board), right ,Gaddag}]}],
+	lists:foreach(fun ({Candidate, Solution}) ->
+					Result = get_zoomtiles(Candidate, Board, Gaddag),
+					io:format("Candidate is ~p, Solution is ~p, Result is ~p~n", [Candidate, Solution, Result]),
+					?assert(Result == Solution)
+				end, SolutionPairs).
 
 
 %% Test whether or not the list contains the parametrized tile.

@@ -30,7 +30,8 @@
 		set_tile_letter/2,
 		set_tile_bonus/2,
 		set_tile_location/2,
-		is_wildcard/1]).
+		is_wildcard/1,
+		is_occupied/1]).
 
 %% Datatype for a tile, which is what the board is composed of. Keeps track of 
 %% bonuses, and which letter is where.  
@@ -41,6 +42,10 @@
 
 new_tile(Occupied, Bonus, Row, Col) ->
 	{Occupied, Bonus, {Row, Col}}.
+
+
+is_occupied(Tile) ->
+	get_tile_letter(Tile) =/= none.
 
 
 get_tile_letter({{_, Letter}, _, _}) -> Letter;
