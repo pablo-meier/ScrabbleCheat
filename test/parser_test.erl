@@ -22,7 +22,7 @@
 -include_lib("eunit/include/eunit.hrl").
 
 -import(dict_parser, [parse/1]).
--import(gaddag, [naive_path_search/2]).
+-import(gaddag, [naive_path_search/2, has_word/2]).
 -define(TEST_FILE, "test/testdict.txt").
 
 
@@ -41,6 +41,15 @@ parse_file_test() ->
 	?assert(naive_path_search("ON&LINEENDING",TestingGaddag)),
 	?assert(naive_path_search("ILON&NEENDING",TestingGaddag)),
 	?assert(naive_path_search("ILANNA&SA",TestingGaddag)).
+
+
+with_care_test() ->
+  	TestingGaddag = parse(?TEST_FILE),
+	?assert(naive_path_search("C&ARE", TestingGaddag)),
+	?assert(naive_path_search("AC&RE", TestingGaddag)),
+	?assert(naive_path_search("RAC&E", TestingGaddag)),
+	?assert(naive_path_search("ERAC&", TestingGaddag)),
+	?assert(has_word("CARE", TestingGaddag)).
 
 parse_fail_test() ->
 	?assertException(throw, {file_not_found, "Fakey McFakerson"}, parse("Fakey McFakerson")).

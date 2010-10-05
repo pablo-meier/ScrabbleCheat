@@ -21,11 +21,16 @@
 -module(move_test).
 -include_lib("eunit/include/eunit.hrl").
 
+-define(TESTDICT, "test/testdict.txt").
+
 -import(board_parser, [new_board/0]).
 -import(board, [place_word/4, get_tile/3]).
--import(movesearch, [generate_move_candidate_locations/1, get_zoomtiles/3]). 
 -import(gaddag, [empty_gaddag/0]).
 -import(tile, [get_tile_location/1, new_tile/4]).
+-import(dict_parser, [parse/1]).
+-import(movesearch, [generate_move_candidate_locations/1, 
+					get_zoomtiles/3,
+					traverse_back_to_candidate/2]). 
 
 
 
@@ -78,6 +83,29 @@ zoomtile_second_test() ->
 					io:format("Candidate is ~p, Solution is ~p, Result is ~p~n", [Candidate, Solution, Result]),
 					?assert(Result == Solution)
 				end, SolutionPairs).
+
+back_to_origin_test() ->
+	Board = board:place_word("BLE", right, {8, 8}, sample_board()),
+	Gaddag = parse(?TESTDICT),
+	SolutionPairs = [{new_tile(none,none,6,7), [{get_tile(6, 7, Board), up, none}]},
+					{new_tile(none,none,7,6), [{get_tile(7, 6, Board), left, none}]},
+					{new_tile(none,none,8,6), [{get_tile(8, 6, Board), left, none}]},
+					{new_tile(none,none,8,11), [{get_tile(8, 11, Board), right, none}]},
+					{new_tile(none,none,9,8), [{get_tile(9, 8, Board), right, none},
+												{get_tile(9, 8, Board), down, none}]},
+					{new_tile(none,none,7,8), [{get_tile(7, 8, Board), right, none},
+												{get_tile(7, 8, Board), up, none}]}],
+	lists:foreach(fun ({Candidate, Solution}) ->
+					Result = lists:map(fun (X) -> traverse_back_to_candidate(X, Board) end, get_zoomtiles(Candidate, Board, Gaddag)),
+					io:format("Solution is ~p, Result is ~p~n", [Solution, Result]),
+					?assert(compare_origin_test_lists(Solution, Result))
+				end, SolutionPairs).
+
+compare_origin_test_lists(List1, List2) ->
+	lists:all(fun (X) -> lists:any(fun (Y) -> compare_origin_test_elements(X,Y) end, List2) end, List1).
+
+compare_origin_test_elements({Tile1, Direction1, _Gaddag1}, {Tile2, Direction2, _Gaddag2}) ->
+	Tile1 == Tile2 andalso Direction1 == Direction2.
 
 
 %% Test whether or not the list contains the parametrized tile.

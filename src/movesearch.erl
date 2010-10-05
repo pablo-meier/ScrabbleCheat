@@ -20,13 +20,18 @@
 
 -module(movesearch).
 
+-define(SEPARATOR, $&).
+
 -import(board, [as_list/1, get_adjacents/2, get_adjacent/3]).
--import(tile, [get_tile_letter/1, get_tile_location/1]).
+-import(tile, [get_tile_letter/1, get_tile_location/1, is_occupied/1]).
+-import(gaddag, [get_branch/2]).
 -import(move, [new_move/0, add_to_move/2]).
+-import(lists, [map/2, filter/2, flatmap/2, flatten/1, append/2]).
 -export([get_best_move_function/1,
 		generate_move_candidate_locations/1,
 		
-		get_zoomtiles/3]). 
+		get_zoomtiles/3,
+		traverse_back_to_candidate/2]). 
 
 %% The 'meat' of the program, takes a board and a rack and generates the best
 %% move for that player given its inputs.  The logical progression goes
@@ -59,7 +64,7 @@
 get_best_move_function(Gaddag) ->
 	fun (Board, Rack) ->
 		Candidates = generate_move_candidate_locations(Board),
-		MoveList = lists:flatmap(fun (X) -> find_all_moves(X, Rack, Board, Gaddag) end, Candidates),
+		MoveList = flatmap(fun (X) -> find_all_moves(X, Rack, Board, Gaddag) end, Candidates),
 		select_best_move(MoveList,Board)
 	end.
 
@@ -67,10 +72,10 @@ get_best_move_function(Gaddag) ->
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% generate_move_candidate_locations ::  Board -> [Candidate] 
 generate_move_candidate_locations(Board) ->
-	Flat = lists:flatten(as_list(Board)),
-	Occupied = lists:filter(fun (X) -> get_tile_letter(X) =/= none end, Flat),
-	Adjacents = lists:map(fun (X) -> get_adjacents(X, Board) end, Occupied),
-	OpenFlat = lists:filter(fun (X) -> get_tile_letter(X) =:= none end, lists:flatten(Adjacents)),
+	Flat = flatten(as_list(Board)),
+	Occupied = filter(fun (X) -> get_tile_letter(X) =/= none end, Flat),
+	Adjacents = map(fun (X) -> get_adjacents(X, Board) end, Occupied),
+	OpenFlat = filter(fun (X) -> get_tile_letter(X) =:= none end, flatten(Adjacents)),
 	remove_duplicate_candidates(OpenFlat).
 
 
@@ -88,7 +93,7 @@ duplicate_remove_iterator(Index, List) ->
 		true ->
 			{Pred, [H|T]} = lists:split(Index, List),
 			WithRemovals = duplicate_remove_helper(H, T, []),
-			duplicate_remove_iterator(Index + 1, lists:append(Pred, WithRemovals))
+			duplicate_remove_iterator(Index + 1, append(Pred, WithRemovals))
 	end.
 
 duplicate_remove_helper(Compare, [], Accum) -> [Compare|Accum];
@@ -124,9 +129,10 @@ duplicate_remove_helper(Compare, [H|T], Accum) ->
 %% back.
 find_all_moves(Candidate, Rack, Board, Gaddag) ->
 	ZoomTiles = get_zoomtiles(Candidate, Board, Gaddag),
-	lists:flatmap(fun ({ZoomTile, Direction, Path}) -> 
+	StartLocations = map(fun (X) -> traverse_back_to_candidate(X, Board) end, ZoomTiles),
+	flatmap(fun ({ZoomTile, Direction, Path}) -> 
 					get_moves_from_candidate(Candidate, ZoomTile, Direction, Rack, Path, new_move(), [], Board)
-				end, ZoomTiles).
+				end, StartLocations).
 
 
 %% get_zoomtiles :: Candidate * Board * Gaddag -> [{Tile, Direction, Gaddag}]
@@ -136,10 +142,10 @@ find_all_moves(Candidate, Rack, Board, Gaddag) ->
 %% the furthest progression.  Then it traverses back to the candidate square, 
 %% moving along the Gaddag the whole time.
 get_zoomtiles(Candidate, Board, Gaddag) ->
-	Adjacents = lists:map(fun (X) -> {get_adjacent(Candidate, Board, X), X, Gaddag} end, [left,right,up,down]),
-	StartPoints = lists:filter(fun ({X,_,_}) -> tile:is_occupied(X) end, Adjacents),
-	WithZooms = lists:map(fun(X) -> zoom(X, Board) end, StartPoints),
-	lists:filter(fun (X) -> X =/= edge_of_board end, WithZooms).
+	Adjacents = map(fun (X) -> {get_adjacent(Candidate, Board, X), X, Gaddag} end, [left,right,up,down]),
+	StartPoints = filter(fun ({X,_,_}) -> tile:is_occupied(X) end, Adjacents),
+	WithZooms = map(fun(X) -> zoom(X, Board) end, StartPoints),
+	filter(fun (X) -> X =/= edge_of_board end, WithZooms).
 
 
 zoom({Tile, Direction, Gaddag}, Board) ->
@@ -155,6 +161,41 @@ flip(up) -> down;
 flip(down) -> up;
 flip(left) -> right;
 flip(right) -> left.
+
+
+%% traverse_back_to_candidate :: {ZoomTile, Direction, Gaddag} -> {Tile, Direction, Gaddag}
+%%
+%% From the Zoomtile, we traverse the GADDAG back to the origin candidate 
+%% location, getting ready to start building words.  Note that we split forward travel 
+%% since the follow-branch model breaks when you want a simple forward word (P&AUL).  We
+%% hack around this by getting up to the &, and then doing this recursively.  It's an awful
+%% hack, and one should FIXME to something like putting this in the GADDAG code.
+traverse_back_to_candidate(ThisTriple, Board) ->
+	{ZoomTile, Direction, Gaddag} = ThisTriple,
+	if
+		Direction =:= left orelse Direction =:= up ->
+			travel(ThisTriple, Board);	
+		Direction =:= right orelse Direction =:= down ->
+			{branch, NewGaddag} = get_branch(get_tile_letter(ZoomTile), Gaddag),
+			NextTile = get_adjacent(ZoomTile, Board, Direction),
+			{branch, GoForward} = get_branch(?SEPARATOR, NewGaddag),
+			travel({NextTile, Direction, GoForward}, Board)
+	end.
+
+
+travel(ThisTriple, Board) ->
+	{ZoomTile, Direction, Gaddag} = ThisTriple,
+	case is_occupied(ZoomTile) of
+		true -> 
+			Key = get_tile_letter(ZoomTile),
+			io:format("Key is ~p~n", [[Key]]),
+			{branch, NewGaddag} = get_branch(Key, Gaddag),
+			io:format("Made it!~n"),
+			NextTile = get_adjacent(ZoomTile, Board, Direction),
+			travel({NextTile, Direction, NewGaddag}, Board);
+		false -> ThisTriple
+	end.
+
 
 
 %% get_moves_from_candidate :: {Int,Int} * Tile * Direction * [Char] * Gaddag * Move * [Move] * Board -> [Move]
