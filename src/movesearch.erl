@@ -22,16 +22,21 @@
 
 -define(SEPARATOR, $&).
 
+-import(followstruct, [make_followstruct/4, next/2, flip_followstruct/2]).
 -import(board, [as_list/1, get_adjacents/2, get_adjacent/3]).
 -import(tile, [get_tile_letter/1, get_tile_location/1, is_occupied/1]).
 -import(gaddag, [get_branch/2]).
 -import(move, [new_move/0, add_to_move/2]).
 -import(lists, [map/2, filter/2, flatmap/2, flatten/1, append/2]).
+
+
 -export([get_best_move_function/1,
-		generate_move_candidate_locations/1,
+		generate_move_candidate_locations/1
 		
-		get_zoomtiles/3,
-		traverse_back_to_candidate/2]). 
+		, get_zoomtiles/3
+		, traverse_back_to_candidate/2
+		
+		]). 
 
 %% The 'meat' of the program, takes a board and a rack and generates the best
 %% move for that player given its inputs.  The logical progression goes
@@ -120,19 +125,24 @@ duplicate_remove_helper(Compare, [H|T], Accum) ->
 %% the space to the left of 'A'.  When you hit the separator character on the
 %% GADDAG, you need to know to continue forward past E, and furthermore, that
 %% your word should contain all of ABLE, not just A.  So TABLEMAKER can be made
-%% by assigning the ZoomTile to E, traversing the GADDAG to via 'ELBA'.  
+%% by assigning the ZoomTile to E ("zooming" to the right as far as you can), 
+%% traversing the GADDAG to via 'ELBA'.  
 %%
 %% At that point the recursive routine can pick T from your rack and GADDAG, 
 %% find the seperator, and 'jump' past the ZoomTile to complete the word 
 %% (MAKER).  The idea is that you begin each search of a candidate square by
 %% 'zooming' as far forward as you can, and using the Gaddag to find your way
-%% back.
+%% back, THEN traversing the GADDAG greedily using backtracking and 
+%% accumulators to slowly build up a move.
 find_all_moves(Candidate, Rack, Board, Gaddag) ->
 	ZoomTiles = get_zoomtiles(Candidate, Board, Gaddag),
 	StartLocations = map(fun (X) -> traverse_back_to_candidate(X, Board) end, ZoomTiles),
-	flatmap(fun ({ZoomTile, Direction, Path}) -> 
-					get_moves_from_candidate(Candidate, ZoomTile, Direction, Rack, Path, new_move(), [], Board)
+	flatmap(fun ({FollowStruct, ZoomTile}) -> 
+					NewMove = new_move(),
+					Accum = [],
+					get_moves_from_candidate(FollowStruct, ZoomTile, Rack, NewMove, Accum)
 				end, StartLocations).
+
 
 
 %% get_zoomtiles :: Candidate * Board * Gaddag -> [{Tile, Direction, Gaddag}]
@@ -163,7 +173,10 @@ flip(left) -> right;
 flip(right) -> left.
 
 
-%% traverse_back_to_candidate :: {ZoomTile, Direction, Gaddag} -> {Tile, Direction, Gaddag}
+%% traverse_back_to_candidate :: {ZoomTile, Direction, Gaddag} -> {FollowStruct, ZoomTile}
+%%
+%% FollowStruct is a {Tile, Direction, Gaddag, Board}.  Tile eventually gets replaced with NewTile.
+%%
 %%
 %% From the Zoomtile, we traverse the GADDAG back to the origin candidate 
 %% location, getting ready to start building words.  Note that we split forward travel 
@@ -174,53 +187,39 @@ traverse_back_to_candidate(ThisTriple, Board) ->
 	{ZoomTile, Direction, Gaddag} = ThisTriple,
 	if
 		Direction =:= left orelse Direction =:= up ->
-			travel(ThisTriple, Board);	
+			{travel(ThisTriple, Board), ZoomTile};	
 		Direction =:= right orelse Direction =:= down ->
 			{branch, NewGaddag} = get_branch(get_tile_letter(ZoomTile), Gaddag),
 			NextTile = get_adjacent(ZoomTile, Board, Direction),
 			{branch, GoForward} = get_branch(?SEPARATOR, NewGaddag),
-			travel({NextTile, Direction, GoForward}, Board)
+			{travel({NextTile, Direction, GoForward}, Board), ZoomTile}
 	end.
 
 
-travel(ThisTriple, Board) ->
-	{ZoomTile, Direction, Gaddag} = ThisTriple,
+%% travel :: {Tile * Direction * Gaddag} * Board -> FollowStruct
+%%
+%% Travels along a direction, following the GADDAG as applicable (should always
+%% be possible, as only valid words are present on the board).  Returns a 
+%% followstruct. TODO:  This whole sement on generating FollowStructs from 
+%% Candidates needs to be cleaned out, this has all the trappings of hacked code.
+travel({ZoomTile, Direction, Gaddag}, Board) ->
 	case is_occupied(ZoomTile) of
 		true -> 
 			Key = get_tile_letter(ZoomTile),
-			io:format("Key is ~p~n", [[Key]]),
 			{branch, NewGaddag} = get_branch(Key, Gaddag),
-			io:format("Made it!~n"),
 			NextTile = get_adjacent(ZoomTile, Board, Direction),
 			travel({NextTile, Direction, NewGaddag}, Board);
-		false -> ThisTriple
+		false -> make_followstruct(ZoomTile, Direction, Gaddag, Board)
 	end.
 
 
 
-%% get_moves_from_candidate :: {Int,Int} * Tile * Direction * [Char] * Gaddag * Move * [Move] * Board -> [Move]
+%% get_moves_from_candidate :: FollowStruct * Tile * [Char] * Move * [Move] -> [Move]
 %%
-%% THERE BE BUGS HERE.
-get_moves_from_candidate({_Row, _Col}, _ZoomTile, _Direction, _Rack, _Gaddag, _Move, _Moves, _Board) ->
-%%	case board:get_tile(Row, Col, Board) of
-%%		none -> Moves;
-%%		Tile ->
-%%			case tile:get_letter(Tile) of
-%%				none ->
-%%					MoveMaps = lists:map( fun (X) ->
-%%											case gaddag:get_branch(X, Gaddag) of
-%%												none -> false;
-%%												Path ->
-%%													NewRack = Rack -- [X],
-%%													NewMove = move:add_to_move({Row, Col, X}, Move),
-%%											end
-%%										end, Rack),
-%%					lists:filter(fun (X) -> X =/= false end, MoveMaps);
-%%				Letter ->
-%%					throw({lol_occupied, Letter})
-%%			end
-%%	end.
-ok.
+%% THERE BE BUGS HERE. Given all the information, construct every possible move given your
+%% rack and the board by following using your followstruct, containing direction.
+get_moves_from_candidate(_FollowStruct, _ZoomTile, _Rack, _Move, _Accum) ->
+	ok.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
