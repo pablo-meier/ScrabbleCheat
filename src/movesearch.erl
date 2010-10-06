@@ -31,9 +31,10 @@
 
 
 -export([get_best_move_function/1,
-		generate_move_candidate_locations/1
+		generate_move_candidate_locations/1,
+		flip/1, %% This should be in a utils module or something.
 		
-		, get_zoomtiles/3
+		 get_zoomtiles/3
 		, traverse_back_to_candidate/2
 		
 		]). 

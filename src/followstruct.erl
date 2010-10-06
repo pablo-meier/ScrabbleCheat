@@ -66,9 +66,13 @@ make_followstruct(Tile, Direction, Gaddag, Board) -> {Tile, Direction, Gaddag, B
 flip_followstruct({_, Direction, Gaddag, Board}, ZoomTile) ->
 	NewDirection = flip(Direction),
 	NextTile = get_adjacent(ZoomTile, Board, NewDirection),
-	case NextTile of
-		none -> none;
-		_Else -> make_followstruct(NextTile, NewDirection, Gaddag, Board)
+	case get_branch($&, Gaddag) of
+		{branch, NewPath} -> 
+			case NextTile of
+				none -> none;
+				_Else -> make_followstruct(NextTile, NewDirection, NewPath, Board)
+			end;
+		none -> throw(no_flip_path_in_gaddag)
 	end.
 
 
