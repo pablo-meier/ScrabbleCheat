@@ -9,9 +9,9 @@ Developing it in Erlang, mostly for fun.  Use it yourself, or explore the code!
 
 Originally development was considered in phases: generate words from your rack,
 then place the words on the board.  This was using a DAWG algorithm most popular
-in other Scrabble AIs such as Maven.  If you revert to the tag WORDSEARCH, you 
-will see this!  Run 'make run' from that commit and you get a simple trie-based
-search to generate words from your rack of tiles.
+in other Scrabble AIs such as Maven.  If you checkout the repo at tag 
+WORDSEARCH, you will see this!  Run 'make run' from that commit and you get a 
+simple trie-based search to generate words from your rack of tiles.
 
 This was eschewed in favor of a GADDAG-based approach, such as the one used in
 Quackle (http://people.csail.mit.edu/jasonkb/quackle/).  A GADDAG, for those who
