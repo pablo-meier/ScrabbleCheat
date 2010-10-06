@@ -23,8 +23,8 @@
 -import(board, [get_adjacent/3]).
 -import(movesearch, [flip/1]).
 -import(gaddag, [get_branch/2]).
--import(board, [place_tile_on_board/4]).
--import(tile, [get_tile_location/2]).
+-import(board, [place_letter_on_board/4]).
+-import(tile, [get_tile_location/1]).
 
 -export([make_followstruct/4,
 		get_followstruct_tile/1,
@@ -55,7 +55,7 @@ get_followstruct_board({_, _, _, Board}) -> Board.
 %%
 %% Creates a new followstruct.  Silly at this point, but abstraction never
 %% hurts, right?
-make_followstruct(Tile, Direction, Gaddag, Board) -> {Tile, Direction, Gaddag, Board}
+make_followstruct(Tile, Direction, Gaddag, Board) -> {Tile, Direction, Gaddag, Board}.
 
 
 %% flip_followstruct :: FollowStruct * Tile -> FollowStruct
@@ -65,10 +65,10 @@ make_followstruct(Tile, Direction, Gaddag, Board) -> {Tile, Direction, Gaddag, B
 %% beyond the edge of the board when it tries to flip.
 flip_followstruct({_, Direction, Gaddag, Board}, ZoomTile) ->
 	NewDirection = flip(Direction),
-	NextTile = get_adjacent(Tile, Board, NewDirection),
+	NextTile = get_adjacent(ZoomTile, Board, NewDirection),
 	case NextTile of
 		none -> none;
-		_Else -> {PastTile, NewDirection, Gaddag, Board}
+		_Else -> make_followstruct(NextTile, NewDirection, Gaddag, Board)
 	end.
 
 
@@ -84,6 +84,6 @@ next({Tile, Direction, Gaddag, Board}, Char) ->
 			NewBoard = place_letter_on_board(Row, Col, Char, Board),
 			make_followstruct(NewTile, Direction, NextPath, NewBoard);
 		none -> none
-	end
+	end.
 
 
