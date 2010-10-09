@@ -96,12 +96,13 @@ naive_path_search([FirstChar|Rest], Gaddag) ->
 %% is_terminator :: Trie -> Bool
 %%
 %% Determines whether or not a word can end on this sub-GADDAG.
-is_terminator(Trie) ->
-	HasTerminator = has_branch(terminator, Trie), 
-	HasSeparator = has_branch(?SEPARATOR, Trie),
-	case {HasTerminator, HasSeparator} of
+is_terminator(Gaddag) ->
+	Terminator = has_branch(terminator, Gaddag), 
+	Separator = has_branch(?SEPARATOR, Gaddag),
+	case {Terminator, Separator} of
+		{_, true} -> {branch, Path} = get_branch(?SEPARATOR, Gaddag),
+					is_terminator(Path);
 		{true, _} -> true;
-		{_, true} -> is_terminator(get_branch(?SEPARATOR, Trie));
 		_Else -> false
 	end.
 

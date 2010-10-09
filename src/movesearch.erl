@@ -89,37 +89,40 @@ generate_move_candidate_locations(Board) ->
 	Occupied = filter(fun (X) -> get_tile_letter(X) =/= none end, Flat),
 	Adjacents = map(fun (X) -> get_adjacents(X, Board) end, Occupied),
 	OpenFlat = filter(fun (X) -> get_tile_letter(X) =:= none end, flatten(Adjacents)),
-	remove_duplicate_candidates(OpenFlat).
+	remove_duplicates(OpenFlat, fun compare_candidate/2).
 
 
-%% remove_duplicate_candidates :: [Tile] -> [Tile]
+%% remove_duplicate :: [a] * (a * a -> Bool) -> [a]
 %%
-%% removes the duplicate items of the list of candidates spaces (occurs when a 
-%% tile is adjacent to two occupied tiles).
-remove_duplicate_candidates(List) ->
-	duplicate_remove_iterator(0, List).
+%% Removes the duplicate items of the list, provided a function determining equality.
+remove_duplicates(List, Predicate) ->
+	duplicate_remove_iterator(0, List, Predicate).
 
-duplicate_remove_iterator(Index, List) ->
+duplicate_remove_iterator(Index, List, Predicate) ->
 	if 
 		Index =:= length(List) ->
 			List;
 		true ->
-			{Pred, [H|T]} = lists:split(Index, List),
-			WithRemovals = duplicate_remove_helper(H, T, []),
-			duplicate_remove_iterator(Index + 1, append(Pred, WithRemovals))
+			{Predecessor, [H|T]} = lists:split(Index, List),
+			WithRemovals = duplicate_remove_helper(H, T, [], Predicate),
+			duplicate_remove_iterator(Index + 1, append(Predecessor, WithRemovals), Predicate)
 	end.
 
-duplicate_remove_helper(Compare, [], Accum) -> [Compare|Accum];
-duplicate_remove_helper(Compare, [H|T], Accum) ->
-	{ThisRow, ThisCol} = get_tile_location(Compare),
-	{ThatRow, ThatCol} = get_tile_location(H),
-	if
-		ThisRow =:= ThatRow andalso ThisCol =:= ThatCol ->
-			duplicate_remove_helper(Compare, T, Accum);
+duplicate_remove_helper(Compare, [], Accum, _) -> [Compare|Accum];
+duplicate_remove_helper(Compare, [H|T], Accum, Predicate) ->
+	case Predicate(Compare, H) of	
 		true ->
-			duplicate_remove_helper(Compare, T, [H|Accum])
+			duplicate_remove_helper(Compare, T, Accum, Predicate);
+		false ->
+			duplicate_remove_helper(Compare, T, [H|Accum], Predicate)
 	end.
 
+
+%% the predicate we pass to remove_duplicates for comparing candidate spaces.
+compare_candidate(Candidate1, Candidate2) ->
+	{ThisRow, ThisCol} = get_tile_location(Candidate1),
+	{ThatRow, ThatCol} = get_tile_location(Candidate2),
+	ThisRow =:= ThatRow andalso ThisCol =:= ThatCol.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% find_all_moves :: Candidate * Rack * Board -> [Move]
@@ -227,8 +230,11 @@ travel({ZoomTile, Direction, Gaddag}, Board) ->
 %% Given all the information, construct every possible move given your
 %% rack and the board by following using your followstruct, containing direction.
 get_moves_from_candidate(Followstruct, ZoomTile, Rack, Move, Accum) ->
-	%% You have a rack, a current Zoom tile, and a move accumulating move.
-	flatmap(fun (X) -> 
+	remove_duplicates(flatten(get_moves_from_candidate_recur(Followstruct,ZoomTile, Rack, Move, Accum)), fun move:duplicate_moves/2).
+
+get_moves_from_candidate_recur(Followstruct, ZoomTile, Rack, Move, Accum) ->
+	ChecksOtherSide = [$&|Rack],
+	map(fun (X) -> 
 			case can_advance(Followstruct, X) of
 				true ->
 					{Row, Col} = get_tile_location(get_followstruct_tile(Followstruct)),
@@ -237,18 +243,18 @@ get_moves_from_candidate(Followstruct, ZoomTile, Rack, Move, Accum) ->
 					AugmentedMove = add_to_move(NowOccupiedTile, Move),
 					RestOfRack = Rack -- [X],
 					Gaddag = get_followstruct_gaddag(NewFollowstruct),
-					NewAccum = case has_branch(terminator, Gaddag) of true -> [Move|Accum]; false -> Accum end,
+					NewAccum = case is_terminator(Gaddag) of true -> [AugmentedMove|Accum]; false -> Accum end,
 					case has_branch($&, Gaddag) of
 						true ->
 							BranchFollowstruct = flip_followstruct(NewFollowstruct, ZoomTile),
-							append(get_moves_from_candidate(BranchFollowstruct, ZoomTile, RestOfRack, AugmentedMove, NewAccum),
-									get_moves_from_candidate(NewFollowstruct, ZoomTile, RestOfRack, AugmentedMove, NewAccum));
+							append(get_moves_from_candidate_recur(BranchFollowstruct, ZoomTile, RestOfRack, AugmentedMove, NewAccum),
+									get_moves_from_candidate_recur(NewFollowstruct, ZoomTile, RestOfRack, AugmentedMove, NewAccum));
 						false ->
-							get_moves_from_candidate(NewFollowstruct, ZoomTile, RestOfRack, AugmentedMove, NewAccum)	
+							get_moves_from_candidate_recur(NewFollowstruct, ZoomTile, RestOfRack, AugmentedMove, NewAccum)	
 					end;
 				false -> Accum
 			end
-		end, Rack).
+		end, ChecksOtherSide).
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

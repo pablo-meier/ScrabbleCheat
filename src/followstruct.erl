@@ -97,5 +97,6 @@ next({Tile, Direction, Gaddag, Board}, Char) ->
 can_advance({Tile, Direction, Gaddag, Board}, Char) ->
 	HasBranch = has_branch(Char, Gaddag),
 	Adjacent = get_adjacent(Tile, Board, Direction),
+	%io:format("For ~p = ~p, HasBranch is ~p and Adjacent is ~p~n", [[Char], Char, HasBranch, Adjacent]),
 	HasBranch andalso Adjacent =/= none.
 	
