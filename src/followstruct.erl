@@ -22,7 +22,7 @@
 
 -import(board, [get_adjacent/3]).
 -import(movesearch, [flip/1]).
--import(gaddag, [get_branch/2]).
+-import(gaddag, [get_branch/2, has_branch/2]).
 -import(board, [place_letter_on_board/4]).
 -import(tile, [get_tile_location/1]).
 
@@ -32,7 +32,8 @@
 		get_followstruct_gaddag/1,
 		get_followstruct_board/1,
 		flip_followstruct/2,
-		next/2]).
+		next/2,
+		can_advance/2]).
 
 %% An intermediate data type for the construction of moves.  A 'followstruct'
 %% contains all the information you need to 'follow along' the GADDAG and board.
@@ -87,7 +88,14 @@ next({Tile, Direction, Gaddag, Board}, Char) ->
 			{Row, Col} = get_tile_location(Tile),
 			NewBoard = place_letter_on_board(Row, Col, Char, Board),
 			make_followstruct(NewTile, Direction, NextPath, NewBoard);
-		none -> none
+		none -> lolwut
 	end.
 
-
+%% can_advance :: Followstruct * Char -> Bool
+%%
+%% Returns whether or not we can legally call 'next' on this and advance appropriately.
+can_advance({Tile, Direction, Gaddag, Board}, Char) ->
+	HasBranch = has_branch(Char, Gaddag),
+	Adjacent = get_adjacent(Tile, Board, Direction),
+	HasBranch andalso Adjacent =/= none.
+	

@@ -45,12 +45,7 @@
 %%
 %% Asks whether the subtree (GADDAG) contains a branch for the parameter.
 has_branch(Char, Trie) ->
-	if
-		Char =:= ?WILDCARD andalso Char /= terminator ->
-			true;
-		true ->
-			is_defined(Char, Trie)
-	end.
+	is_defined(Char, Trie).
 
 
 %% get_branch :: Char * Trie -> Trie

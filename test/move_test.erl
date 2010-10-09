@@ -25,12 +25,15 @@
 
 -import(board_parser, [new_board/0]).
 -import(board, [place_word/4, get_tile/3]).
--import(gaddag, [empty_gaddag/0]).
+-import(gaddag, [empty_gaddag/0, get_branch_from_string/2]).
 -import(tile, [get_tile_location/1, new_tile/4]).
 -import(dict_parser, [parse/1]).
+-import(move, [new_move/0]).
+-import(followstruct, [make_followstruct/4]).
 -import(movesearch, [generate_move_candidate_locations/1, 
 					get_zoomtiles/3,
-					traverse_back_to_candidate/2]). 
+					traverse_back_to_candidate/2,
+					get_moves_from_candidate/5]). 
 
 
 
@@ -38,6 +41,8 @@ sample_board() ->
 	Empty = new_board(),
 	place_word("CARE", down, {7,7}, Empty).
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Getting candidate locations
 candidate_location1_test() ->
 	Lst = generate_move_candidate_locations(sample_board()),
 	lists:foreach(fun (X) ->
@@ -53,6 +58,8 @@ candidate_location2_test() ->
 						{5,2},{5,3},{5,4},{5,5},{5,8},{5,9},{5,10}]).
 
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Zoomtiles
 zoomtile_first_test() ->
 	Board = sample_board(),
 	Gaddag = empty_gaddag(),
@@ -84,6 +91,8 @@ zoomtile_second_test() ->
 					?assert(Result == Solution)
 				end, SolutionPairs).
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Back to origin
 back_to_origin_test() ->
 	Board = board:place_word("BLE", right, {8, 8}, sample_board()),
 	Gaddag = parse(?TESTDICT),
@@ -100,6 +109,38 @@ back_to_origin_test() ->
 					io:format("Solution is ~p, Result is ~p~n", [Solution, Result]),
 					?assert(compare_origin_test_lists(Solution, Result))
 				end, SolutionPairs).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Move Generation
+
+get_move_from_candidate_test() ->
+	Direction = left,
+	Gaddag = get_branch_from_string("ELBA", parse(?TESTDICT)),
+	Board = place_word("ABLE", right, {7,7}, new_board()),
+	Candidate = get_tile(7, 6, Board),
+
+	Followstruct = make_followstruct(Candidate, Direction, Gaddag, Board),
+	Zoomtile = get_tile(7, 10, Board),
+	Rack = "TRS",
+	Move = new_move(),
+	Accum = [],
+	
+	Run = get_moves_from_candidate(Followstruct, Zoomtile, Rack, Move, Accum),
+
+	%% Should include SABLE, TABLE, ABLER, TABLES
+	Solutions = [{move, [{{character, $S}, none, {7,6}}]}, 
+				{move, [{{character, $R}, none, {7,11}}]},
+				{move, [{{character, $T}, none, {7,6}}]},
+				{move, [{{character, $T}, none, {7,6}},{{character, $S}, none, {7,11}}]}],
+
+	io:format("Run contains ~p~n, Solutions are ~p~n", [Run, Solutions]),
+
+	lists:foreach(fun (X) -> lists:any(fun (Y) -> ?assert(X =:= Y) end, Run) end, Solutions).
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% HELPERS
 
 compare_origin_test_lists(List1, List2) ->
 	lists:all(fun (X) -> lists:any(fun (Y) -> compare_origin_test_elements(X,Y) end, List2) end, List1).

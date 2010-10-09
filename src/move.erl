@@ -20,6 +20,7 @@
 
 -module(move).
 
+-import(tile, [get_tile_location/1]).
 -export([new_move/0, add_to_move/2]).
 
 %% The move datatype.  Checks structural integrity of moves, not
@@ -28,24 +29,21 @@
 
 
 %% new_move :: () -> Move
-new_move() -> [].
-
-
-%% add_to_move :: {Int, Int, Char} * Move -> Move
 %%
-%% Returns 'fail' if the move fails a consistency check.
-%% TODO:  Look up better error handling in Erlang?
-add_to_move(Proposed, Move) ->
-	{Row, Col, _Letter} = Proposed,
+%% The atom prevents move from being flattened.
+new_move() -> {move, []}.
+
+
+%% add_to_move :: Tile * Move -> Move
+%%
+%% Adds to the move, or throws an error.
+add_to_move(Tile, Move) ->
+	{move, MoveList} = Move,
+	{Row, Col} = get_tile_location(Tile),
 	WithinBounds = check_integrity(Row, Col),
 	case WithinBounds of
 		true -> 
-			Adjacent = check_adjacency(Row, Col, Move),
-			case Adjacent of 
-				true -> [Proposed|Move];
-				_False -> 
-					throw({piece_not_adjacent_to_move})
-			end;
+				{move, [Tile|MoveList]};
 		_False -> 
 			throw({out_of_bounds, {Row, Col}})
 	end.
@@ -56,18 +54,18 @@ add_to_move(Proposed, Move) ->
 %% Make sure the piece being added is along a line to another piece.
 %% TODO:  Add an orientation check to make sure you can't add a horizontal piece
 %% followed by a vertical one.  You can currently have a star-shaped move.
-check_adjacency(Row, Col, Move) ->
-	case length(Move) of
-		0 -> true;
-		_True -> 
-			lists:any(fun ({OtherRow, OtherCol}) -> 
-				RowDiff = OtherRow - Row,
-				ColDiff = OtherCol - Col,
-				((RowDiff =:= 1 orelse RowDiff =:= -1) andalso ColDiff =:= 0) orelse
-				((ColDiff =:= 1 orelse ColDiff =:= -1) andalso RowDiff =:= 0)
-			end, Move)
-	end.
-
-%% check_integrity :: Int * Int -> Bool
+%% check_adjacency(Row, Col, MoveList) ->
+%% 	case length(MoveList) of
+%% 		0 -> true;
+%% 		_True -> 
+%% 			lists:any(fun ({OtherRow, OtherCol}) -> 
+%% 				RowDiff = OtherRow - Row,
+%% 				ColDiff = OtherCol - Col,
+%% 				((RowDiff =:= 1 orelse RowDiff =:= -1) andalso ColDiff =:= 0) orelse
+%% 				((ColDiff =:= 1 orelse ColDiff =:= -1) andalso RowDiff =:= 0)
+%% 			end, MoveList)
+%% 	end.
+%% 
+%% %% check_integrity :: Int * Int -> Bool
 check_integrity(Row, Col) ->
 	Row =< 15 andalso Row >= 1 andalso Col =< 15 andalso Col >= 1.

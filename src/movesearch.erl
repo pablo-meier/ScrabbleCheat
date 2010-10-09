@@ -22,10 +22,16 @@
 
 -define(SEPARATOR, $&).
 
--import(followstruct, [make_followstruct/4, next/2, flip_followstruct/2]).
--import(board, [as_list/1, get_adjacents/2, get_adjacent/3]).
+-import(followstruct, [make_followstruct/4, 
+					next/2, 
+					flip_followstruct/2,
+					get_followstruct_board/1,
+					get_followstruct_gaddag/1,
+					get_followstruct_tile/1,
+					can_advance/2]).
+-import(board, [as_list/1, get_adjacents/2, get_adjacent/3, get_tile/3]).
 -import(tile, [get_tile_letter/1, get_tile_location/1, is_occupied/1]).
--import(gaddag, [get_branch/2]).
+-import(gaddag, [get_branch/2, has_branch/2, is_terminator/1]).
 -import(move, [new_move/0, add_to_move/2]).
 -import(lists, [map/2, filter/2, flatmap/2, flatten/1, append/2]).
 
@@ -36,6 +42,7 @@
 		
 		 get_zoomtiles/3
 		, traverse_back_to_candidate/2
+		, get_moves_from_candidate/5
 		
 		]). 
 
@@ -217,10 +224,31 @@ travel({ZoomTile, Direction, Gaddag}, Board) ->
 
 %% get_moves_from_candidate :: FollowStruct * Tile * [Char] * Move * [Move] -> [Move]
 %%
-%% THERE BE BUGS HERE. Given all the information, construct every possible move given your
+%% Given all the information, construct every possible move given your
 %% rack and the board by following using your followstruct, containing direction.
-get_moves_from_candidate(_FollowStruct, _ZoomTile, _Rack, _Move, _Accum) ->
-	ok.
+get_moves_from_candidate(Followstruct, ZoomTile, Rack, Move, Accum) ->
+	%% You have a rack, a current Zoom tile, and a move accumulating move.
+	flatmap(fun (X) -> 
+			case can_advance(Followstruct, X) of
+				true ->
+					{Row, Col} = get_tile_location(get_followstruct_tile(Followstruct)),
+					NewFollowstruct = next(Followstruct, X),
+					NowOccupiedTile = get_tile(Row, Col, get_followstruct_board(NewFollowstruct)),
+					AugmentedMove = add_to_move(NowOccupiedTile, Move),
+					RestOfRack = Rack -- [X],
+					Gaddag = get_followstruct_gaddag(NewFollowstruct),
+					NewAccum = case has_branch(terminator, Gaddag) of true -> [Move|Accum]; false -> Accum end,
+					case has_branch($&, Gaddag) of
+						true ->
+							BranchFollowstruct = flip_followstruct(NewFollowstruct, ZoomTile),
+							append(get_moves_from_candidate(BranchFollowstruct, ZoomTile, RestOfRack, AugmentedMove, NewAccum),
+									get_moves_from_candidate(NewFollowstruct, ZoomTile, RestOfRack, AugmentedMove, NewAccum));
+						false ->
+							get_moves_from_candidate(NewFollowstruct, ZoomTile, RestOfRack, AugmentedMove, NewAccum)	
+					end;
+				false -> Accum
+			end
+		end, Rack).
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
