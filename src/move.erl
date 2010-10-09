@@ -21,7 +21,7 @@
 -module(move).
 
 -import(tile, [get_tile_location/1]).
--export([new_move/0, add_to_move/2]).
+-export([new_move/0, add_to_move/2, duplicate_moves/2]).
 
 %% The move datatype.  Checks structural integrity of moves, not
 %% responsible for legal placement relative to a board, or dictionary
@@ -47,6 +47,15 @@ add_to_move(Tile, Move) ->
 		_False -> 
 			throw({out_of_bounds, {Row, Col}})
 	end.
+
+
+%% duplicate_moves :: Move * Move -> Bool
+%%
+%% Given 2 moves, checks if they add the same tiles in the same places.
+%% Note that while it is prefereable to not generate duplicates in the 
+%% first place, this might be a TODO for later.
+duplicate_moves({move, MoveList1}, {move, MoveList2}) ->
+	lists:all(fun (X) -> lists:any(fun (Y) -> X =:= Y end, MoveList2) end, MoveList1).
 
 
 %% check_adjacency :: Int * Int * Move -> Bool
