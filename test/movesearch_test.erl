@@ -18,7 +18,7 @@
 %% OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 %% THE SOFTWARE.
 
--module(move_test).
+-module(movesearch_test).
 -include_lib("eunit/include/eunit.hrl").
 
 -define(TESTDICT, "test/testdict.txt").
