@@ -26,7 +26,8 @@
 		get_branch/2, 
 		has_word/2,
 		is_terminator/1,
-		naive_path_search/2]).
+		naive_path_search/2,
+		get_branch_from_string/2]).
 
 -define(WILDCARD, $*).
 -define(SEPARATOR, $&).
@@ -159,3 +160,11 @@ add_char_string(Word, Trie) ->
 			enter(Char, New_Trie, Trie)
 	end.
 
+%% get_branch_from_string :: Sting * Gaddag -> Gaddag
+%%
+%% Like an extended get_branch, though without the intermediate {branch, _} values.
+%% Allows you to 'follow-through' an entire tree.  Mostly for testing.
+get_branch_from_string([], Gaddag) -> Gaddag;
+get_branch_from_string([H|T], Gaddag) -> 
+	{branch, Follow} = get_branch(H, Gaddag),
+	get_branch_from_string(T, Follow).

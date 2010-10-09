@@ -25,7 +25,7 @@
 -import(board, [get_tile/3, place_word/4]).
 			
 -import(dict_parser, [parse/1]).
--import(gaddag, [has_branch/2, get_branch/2]).
+-import(gaddag, [has_branch/2, get_branch/2, get_branch_from_string/2]).
 -import(tile, [get_tile_letter/1, get_tile_bonus/1, get_tile_location/1]).
 
 -import(followstruct, [make_followstruct/4, 
@@ -36,18 +36,12 @@
 						get_followstruct_gaddag/1,
 						get_followstruct_board/1]).
 
-make_test_followstruct() ->
+
+flip_horiz_test() ->
 	Board = place_word("ABLE", right, {7,7}, new_board()),
-	Gaddag = lists:foldl(fun (X, Y) -> forward(X, Y) end, parse("test/testdict.txt"), "ELBA"),
+	Gaddag = get_branch_from_string("ELBA", parse("test/testdict.txt")),
 	Tile = get_tile(7,6, Board),
-	make_followstruct(Tile, left, Gaddag, Board).
-
-forward(A, B) -> snd(get_branch(A, B)).
-snd({_, S}) -> S.
-
-flip_test() ->
-	Followstruct = make_test_followstruct(),
-	Board = get_followstruct_board(Followstruct),
+	Followstruct = make_followstruct(Tile, left, Gaddag, Board),
 	Flipped = flip_followstruct(Followstruct, get_tile(7, 10, Board)),
 
 	FTile = get_followstruct_tile(Flipped),
@@ -58,15 +52,36 @@ flip_test() ->
 	?assert(FDir =:= right),
 	?assert(has_branch($R, FGaddag)).
 
-flip2_test() ->
-	ok.
+flip_vert_test() ->
+	Board = place_word("TAR", down, {7,7}, new_board()),
+	Gaddag = get_branch_from_string("RAT", parse("test/testdict.txt")),
+	Tile = get_tile(6,7, Board),
+	Followstruct = make_followstruct(Tile, up, Gaddag, Board),
+	Flipped = flip_followstruct(Followstruct, get_tile(9, 7, Board)),
 
-flip3_test() ->
-	ok.
+	FTile = get_followstruct_tile(Flipped),
+	FDir = get_followstruct_direction(Flipped),
+	FGaddag = get_followstruct_gaddag(Flipped),
+
+	?assert(get_tile_location(FTile) =:= {10,7}),
+	?assert(FDir =:= down),
+	?assert(has_branch($T, FGaddag)).
+
+flip_south_border_test() ->
+	Board = place_word("TANK", down, {12,1}, new_board()),
+	Gaddag = get_branch_from_string("KNAT", parse("test/testdict.txt")),
+	Tile = get_tile(11,1, Board),
+	Followstruct = make_followstruct(Tile, up, Gaddag, Board),
+	Flipped = flip_followstruct(Followstruct, get_tile(15, 1, Board)),
+	io:format("Flipped = ~p~n", [Flipped]),
+	?assert(Flipped =:= none).
 
 
 next_test() ->
-	Followstruct = make_test_followstruct(),
+	Board = place_word("ABLE", right, {7,7}, new_board()),
+	Gaddag = get_branch_from_string("ELBA", parse("test/testdict.txt")),
+	Tile = get_tile(7,6, Board),
+	Followstruct = make_followstruct(Tile, left, Gaddag, Board),
 	Moved = next(Followstruct, $T),
 
 	FTile = get_followstruct_tile(Moved),
@@ -76,8 +91,4 @@ next_test() ->
 	?assert(get_tile_location(FTile) =:= {7,5}),
 	?assert(FDir =:= left),
 	?assert(has_branch($&, FGaddag)).
-
-
-next1_test() ->
-	ok.
 
