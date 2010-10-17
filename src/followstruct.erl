@@ -35,7 +35,6 @@
 		get_followstruct_move/1,
 		flip_followstruct/2,
 		next/2,
-		can_advance/2,
 		can_flip_followstruct/1]).
 
 %% An intermediate data type for the construction of moves.  A 'followstruct'
@@ -105,12 +104,3 @@ next({Tile, Direction, Gaddag, Board, Move}, Char) ->
  			{success, NewFollow, Complete}
 	end.
 
-%% can_advance :: Followstruct * Char -> Bool
-%%
-%% Returns whether or not we can legally call 'next' on this and advance appropriately.
-can_advance({Tile, Direction, Gaddag, Board}, Char) ->
-	HasBranch = has_branch(Char, Gaddag),
-	Adjacent = get_adjacent(Tile, Board, Direction),
-	%io:format("For ~p = ~p, HasBranch is ~p and Adjacent is ~p~n", [[Char], Char, HasBranch, Adjacent]),
-	HasBranch andalso Adjacent =/= none.
-	

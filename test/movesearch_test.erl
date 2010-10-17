@@ -32,7 +32,7 @@
 -import(followstruct, [make_followstruct/5]).
 -import(movesearch, [generate_move_candidate_locations/1, 
 					get_zoomtiles/3,
-					traverse_back_to_candidate/2,
+					create_origin_followstructs/2,
 					get_moves_from_candidate/4]). 
 
 
@@ -91,30 +91,10 @@ zoomtile_second_test() ->
 					?assert(Result == Solution)
 				end, SolutionPairs).
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% Back to origin
-back_to_origin_test() ->
-%% 	Board = board:place_word("BLE", right, {8, 8}, sample_board()),
-%% 	Gaddag = parse(?TESTDICT),
-%% 	SolutionPairs = [{new_tile(none,none,6,7), [{{get_tile(6, 7, Board), up, none, new_move()}, ignore}]},
-%% 					{new_tile(none,none,7,6), [{{get_tile(7, 6, Board), left, none, new_move()}, ignore}]},
-%% 					{new_tile(none,none,8,6), [{{get_tile(8, 6, Board), left, none, new_move()}, ignore}]},
-%% 					{new_tile(none,none,8,11), [{{get_tile(8, 11, Board), right, none, new_move()}, ignore}]},
-%% 					{new_tile(none,none,9,8), [{{get_tile(9, 8, Board), right, none, new_move()}, ignore},
-%% 												{{get_tile(9, 8, Board), down, none, new_move()}, ignore}]},
-%% 					{new_tile(none,none,7,8), [{{get_tile(7, 8, Board), right, none, new_move()}, ignore},
-%% 												{{get_tile(7, 8, Board), up, none, new_move()}, ignore}]}],
-%% 	lists:foreach(fun ({Candidate, Solution}) ->
-%% 					Result = lists:map(fun (X) -> traverse_back_to_candidate(X, Board) end, get_zoomtiles(Candidate, Board, Gaddag)),
-%% 					io:format("Solution is ~p, Result is ~p~n", [Solution, Result]),
-%% 					?assert(compare_origin_test_lists(Solution, Result))
-%% 				end, SolutionPairs).
-	ok.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Move Generation
-
-get_move_from_candidate_test() ->
+get_move_from_candidate_open_horiz_test() ->
 	Direction = left,
 	Gaddag = get_branch_from_string("ELBA", parse(?TESTDICT)),
 	Board = place_word("ABLE", right, {7,7}, new_board()),
@@ -134,8 +114,6 @@ get_move_from_candidate_test() ->
 				{move, [{{character, $T}, none, {7,6}},{{character, $S}, none, {7,11}}]},
 				{move, [{{character, $T}, none, {7,6}},{{character, $S}, none, {7,5}}]}],
 
-	io:format("Run contains ~p~n, Solutions are ~p~n", [Run, Solutions]),
-
 	?assert(length(Run) =:= length(Solutions)),
 	lists:foreach(fun (X) -> ?assert(lists:any(fun (Y) -> duplicate_moves(X, Y) end, Run)) end, Solutions).
 
@@ -143,14 +121,6 @@ get_move_from_candidate_test() ->
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% HELPERS
-
-%% compare_origin_test_lists(List1, List2) ->
-%% 	lists:all(fun (X) -> lists:any(fun (Y) -> compare_origin_test_elements(X,Y) end, List2) end, List1).
-%% 
-%% %% FIXME This whole test suite is coked up from the followstruct refactor.  Refactor further!
-%% compare_origin_test_elements({{Tile1, Direction1, _}, _}, {{Tile2, Direction2, _, _, _}, _}) ->
-%% 	Tile1 == Tile2 andalso Direction1 == Direction2.
-%% 
 
 %% Test whether or not the list contains the parametrized tile.
 contains_tile({Row, Col}, Lst) ->

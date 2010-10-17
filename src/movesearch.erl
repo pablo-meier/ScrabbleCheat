@@ -28,8 +28,8 @@
 					get_followstruct_board/1,
 					get_followstruct_gaddag/1,
 					get_followstruct_tile/1,
-					can_advance/2,
 					can_flip_followstruct/1]).
+
 -import(board, [as_list/1, get_adjacents/2, get_adjacent/3, get_tile/3]).
 -import(tile, [get_tile_letter/1, get_tile_location/1, is_occupied/1]).
 -import(gaddag, [get_branch/2, has_branch/2, is_terminator/1]).
@@ -39,10 +39,10 @@
 
 -export([get_best_move_function/1,
 		generate_move_candidate_locations/1,
-		flip/1, %% This should be in a utils module or something.
+		flip/1, %% This should be in a utils module ?
 		
 		 get_zoomtiles/3
-		, traverse_back_to_candidate/2
+		, create_origin_followstructs/2
 		, get_moves_from_candidate/4
 		
 		]). 
@@ -138,7 +138,7 @@ compare_candidate(Candidate1, Candidate2) ->
 %% GADDAG, you need to know to continue forward past E, and furthermore, that
 %% your word should contain all of ABLE, not just A.  So TABLEMAKER can be made
 %% by assigning the ZoomTile to E ("zooming" to the right as far as you can), 
-%% traversing the GADDAG to via 'ELBA'.  
+%% traversing the GADDAG through the string 'ELBA'.  
 %%
 %% At that point the recursive routine can pick T from your rack and GADDAG, 
 %% find the seperator, and 'jump' past the ZoomTile to complete the word 
@@ -148,7 +148,7 @@ compare_candidate(Candidate1, Candidate2) ->
 %% accumulators to slowly build up a move.
 find_all_moves(Candidate, Rack, Board, Gaddag) ->
 	ZoomTiles = get_zoomtiles(Candidate, Board, Gaddag),
-	StartLocations = map(fun (X) -> traverse_back_to_candidate(X, Board) end, ZoomTiles),
+	StartLocations = map(fun (X) -> create_origin_followstructs(X, Board) end, ZoomTiles),
 	flatmap(fun ({FollowStruct, ZoomTile}) -> 
 					Accum = [],
 					get_moves_from_candidate(FollowStruct, ZoomTile, Rack, Accum)
@@ -160,8 +160,8 @@ find_all_moves(Candidate, Rack, Board, Gaddag) ->
 %%
 %% Given a candidate square, checks on all sides for adjacent occupied squares.  
 %% When encountered, 'zooms' as far down the Gaddag as it can until it reaches
-%% the furthest progression.  Then it traverses back to the candidate square, 
-%% moving along the Gaddag the whole time.
+%% the furthest progression.  We don't travel back up with the Gaddag until
+%% we create the appropriate Followstructs.
 get_zoomtiles(Candidate, Board, Gaddag) ->
 	Adjacents = map(fun (X) -> {get_adjacent(Candidate, Board, X), X, Gaddag} end, [left,right,up,down]),
 	StartPoints = filter(fun ({X,_,_}) -> tile:is_occupied(X) end, Adjacents),
@@ -184,17 +184,13 @@ flip(left) -> right;
 flip(right) -> left.
 
 
-%% traverse_back_to_candidate :: {ZoomTile, Direction, Gaddag} -> {FollowStruct, ZoomTile}
-%%
-%% FollowStruct is a {Tile, Direction, Gaddag, Board}.  Tile eventually gets replaced with NewTile.
-%%
+%% create_origin_followstructs :: {ZoomTile, Direction, Gaddag} -> {FollowStruct, ZoomTile}
 %%
 %% From the Zoomtile, we traverse the GADDAG back to the origin candidate 
-%% location, getting ready to start building words.  Note that we split forward travel 
-%% since the follow-branch model breaks when you want a simple forward word (P&AUL).  We
-%% hack around this by getting up to the &, and then doing this recursively.  It's an awful
-%% hack, and one should FIXME to something like putting this in the GADDAG code.
-traverse_back_to_candidate(ThisTriple, Board) ->
+%% location, getting ready to start building words.  Note that we split the forward-travel 
+%% directions (right, down) into separate cases since the follow-branch model breaks when you 
+%% want a simple forward word (P&AUL).  We just get past the separator (&) and move on.
+create_origin_followstructs(ThisTriple, Board) ->
 	{ZoomTile, Direction, Gaddag} = ThisTriple,
 	if
 		Direction =:= left orelse Direction =:= up ->
@@ -211,8 +207,7 @@ traverse_back_to_candidate(ThisTriple, Board) ->
 %%
 %% Travels along a direction, following the GADDAG as applicable (should always
 %% be possible, as only valid words are present on the board).  Returns a 
-%% followstruct. TODO:  This whole sement on generating FollowStructs from 
-%% Candidates needs to be cleaned out, this has all the trappings of hacked code.
+%% followstruct. 
 travel({ZoomTile, Direction, Gaddag}, Board) ->
 	case is_occupied(ZoomTile) of
 		true -> 
