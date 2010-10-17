@@ -35,7 +35,7 @@
 		get_followstruct_move/1,
 		flip_followstruct/2,
 		next/2,
-		can_flip_followstruct/1]).
+		can_flip_followstruct/2]).
 
 %% An intermediate data type for the construction of moves.  A 'followstruct'
 %% contains all the information you need to 'follow along' the GADDAG and board.
@@ -74,7 +74,7 @@ flip_followstruct({_, Direction, Gaddag, Board, Move}, ZoomTile) ->
 	case get_branch($&, Gaddag) of
 		{branch, NewPath} -> 
 			case NextTile of
-				none -> none;
+				none -> throw(try_to_flip_past_board_edge);
 				_Else -> make_followstruct(NextTile, NewDirection, NewPath, Board, Move)
 			end;
 		none -> throw(no_flip_path_in_gaddag)
@@ -82,8 +82,14 @@ flip_followstruct({_, Direction, Gaddag, Board, Move}, ZoomTile) ->
 
 
 %% can_flip_followstruct :: Followstruct -> Bool
-can_flip_followstruct({_, _, Gaddag, _, _}) ->
-	has_branch($&, Gaddag).
+can_flip_followstruct({_, Direction, Gaddag, Board, _}, ZoomTile) ->
+	NewDirection = flip(Direction),
+	NextTile = get_adjacent(ZoomTile, Board, NewDirection),
+	case {has_branch($&, Gaddag), NextTile} of
+		{false, _} -> false;
+		{true, none} -> false;
+		_Else -> true
+	end.
 
 %% next :: FollowStruct * Char -> {success, FollowStruct, Moves} | fail
 %%

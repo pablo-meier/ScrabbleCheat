@@ -118,6 +118,119 @@ get_move_from_candidate_open_horiz_test() ->
 	lists:foreach(fun (X) -> ?assert(lists:any(fun (Y) -> duplicate_moves(X, Y) end, Run)) end, Solutions).
 
 
+get_move_from_candidate_open_vert_test() ->
+	Direction = up,
+	Gaddag = get_branch_from_string("ELBA", parse(?TESTDICT)),
+	Board = place_word("ABLE", down, {7,7}, new_board()),
+	Candidate = get_tile(6, 7, Board),
+
+	Followstruct = make_followstruct(Candidate, Direction, Gaddag, Board, new_move()),
+	Zoomtile = get_tile(10, 7, Board),
+	Rack = "TRS",
+	Accum = [],
+	
+	Run = get_moves_from_candidate(Followstruct, Zoomtile, Rack, Accum),
+
+	%% Should include SABLE, TABLE, ABLER, TABLES, STABLE
+	Solutions = [{move, [{{character, $S}, none, {6,7}}]}, 
+				{move, [{{character, $R}, none, {11,7}}]},
+				{move, [{{character, $T}, none, {6,7}}]},
+				{move, [{{character, $T}, none, {6,7}},{{character, $S}, none, {11,7}}]},
+				{move, [{{character, $T}, none, {6,7}},{{character, $S}, none, {5,7}}]}],
+
+	?assert(length(Run) =:= length(Solutions)),
+	lists:foreach(fun (X) -> ?assert(lists:any(fun (Y) -> duplicate_moves(X, Y) end, Run)) end, Solutions).
+
+
+%% Walls
+left_wall_candidate_generate_test() ->
+	Direction = right,
+	Gaddag = get_branch_from_string("A&BLE", parse(?TESTDICT)),
+	Board = place_word("ABLE", down, {7,1}, new_board()),
+	Candidate = get_tile(7, 5, Board),
+
+	Followstruct = make_followstruct(Candidate, Direction, Gaddag, Board, new_move()),
+	Zoomtile = get_tile(7, 1, Board),
+	Rack = "TRS",
+	Accum = [],
+	
+	Run = get_moves_from_candidate(Followstruct, Zoomtile, Rack, Accum),
+
+	%% Should include SABLE, TABLE, ABLER, TABLES, STABLE
+	Solutions = [{move, [{{character, $R}, none, {7,5}}]}],
+
+	?assert(length(Run) =:= length(Solutions)),
+	lists:foreach(fun (X) -> ?assert(lists:any(fun (Y) -> duplicate_moves(X, Y) end, Run)) end, Solutions).
+
+
+right_wall_candidate_generate_test() ->
+	Direction = left,
+	Gaddag = get_branch_from_string("ELBA", parse(?TESTDICT)),
+	Board = place_word("ABLE", down, {7,12}, new_board()),
+	Candidate = get_tile(7, 11, Board),
+
+	Followstruct = make_followstruct(Candidate, Direction, Gaddag, Board, new_move()),
+	Zoomtile = get_tile(7, 15, Board),
+	Rack = "TRS",
+	Accum = [],
+	
+	Run = get_moves_from_candidate(Followstruct, Zoomtile, Rack, Accum),
+
+	%% Should include SABLE, TABLE, ABLER, TABLES, STABLE
+	Solutions = [{move, [{{character, $S}, none, {7,11}}]}, 
+				{move, [{{character, $T}, none, {7,11}}]},
+				{move, [{{character, $T}, none, {7,11}},{{character, $S}, none, {7,10}}]}],
+
+	?assert(length(Run) =:= length(Solutions)),
+	lists:foreach(fun (X) -> ?assert(lists:any(fun (Y) -> duplicate_moves(X, Y) end, Run)) end, Solutions).
+
+
+top_wall_candidate_generate_test() ->
+	Direction = down,
+	Gaddag = get_branch_from_string("A&BLE", parse(?TESTDICT)),
+	Board = place_word("ABLE", down, {1,7}, new_board()),
+	Candidate = get_tile(5,7, Board),
+
+	Followstruct = make_followstruct(Candidate, Direction, Gaddag, Board, new_move()),
+	Zoomtile = get_tile(1,7, Board),
+	Rack = "TRS",
+	Accum = [],
+	
+	Run = get_moves_from_candidate(Followstruct, Zoomtile, Rack, Accum),
+
+	%% Should include SABLE, TABLE, ABLER, TABLES, STABLE
+	Solutions = [{move, [{{character, $R}, none, {5,7}}]}],
+
+	?assert(length(Run) =:= length(Solutions)),
+	lists:foreach(fun (X) -> ?assert(lists:any(fun (Y) -> duplicate_moves(X, Y) end, Run)) end, Solutions).
+
+
+bottom_wall_candidate_generate_test() ->
+	Direction = up,
+	Gaddag = get_branch_from_string("ELBA", parse(?TESTDICT)),
+	Board = place_word("ABLE", down, {12,7}, new_board()),
+	Candidate = get_tile(11, 7, Board),
+
+	Followstruct = make_followstruct(Candidate, Direction, Gaddag, Board, new_move()),
+	Zoomtile = get_tile(15, 7, Board),
+	Rack = "TRS",
+	Accum = [],
+	
+	Run = get_moves_from_candidate(Followstruct, Zoomtile, Rack, Accum),
+
+	%% Should include SABLE, TABLE, ABLER, TABLES, STABLE
+	Solutions = [{move, [{{character, $S}, none, {11,7}}]}, 
+				{move, [{{character, $T}, none, {11,7}}]},
+				{move, [{{character, $T}, none, {11,7}},{{character, $S}, none, {10,7}}]}],
+
+	?assert(length(Run) =:= length(Solutions)),
+	lists:foreach(fun (X) -> ?assert(lists:any(fun (Y) -> duplicate_moves(X, Y) end, Run)) end, Solutions).
+
+
+%% Corners?
+%% No Moves?
+%% Crosses
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% HELPERS

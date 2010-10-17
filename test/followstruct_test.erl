@@ -73,9 +73,7 @@ flip_south_border_test() ->
 	Gaddag = get_branch_from_string("KNAT", parse("test/testdict.txt")),
 	Tile = get_tile(11,1, Board),
 	Followstruct = make_followstruct(Tile, up, Gaddag, Board, new_move()),
-	Flipped = flip_followstruct(Followstruct, get_tile(15, 1, Board)),
-	io:format("Flipped = ~p~n", [Flipped]),
-	?assert(Flipped =:= none).
+	?assertException(throw, try_to_flip_past_board_edge, flip_followstruct(Followstruct, get_tile(15, 1, Board))).
 
 
 next_test() ->

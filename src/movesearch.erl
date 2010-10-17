@@ -28,7 +28,7 @@
 					get_followstruct_board/1,
 					get_followstruct_gaddag/1,
 					get_followstruct_tile/1,
-					can_flip_followstruct/1]).
+					can_flip_followstruct/2]).
 
 -import(board, [as_list/1, get_adjacents/2, get_adjacent/3, get_tile/3]).
 -import(tile, [get_tile_letter/1, get_tile_location/1, is_occupied/1]).
@@ -225,30 +225,30 @@ travel({ZoomTile, Direction, Gaddag}, Board) ->
 %% Given all the information, construct every possible move given your
 %% rack and the board by following using your followstruct, containing direction.
 get_moves_from_candidate(Followstruct, ZoomTile, Rack, Accum) ->
-	case can_flip_followstruct(Followstruct) of
+	case can_flip_followstruct(Followstruct, ZoomTile) of
 		false -> get_moves_from_candidate_recur(Followstruct, ZoomTile, Rack, Accum);
 		true -> append(get_moves_from_candidate_recur(Followstruct, ZoomTile, Rack, Accum),
 						get_moves_from_candidate_recur(flip_followstruct(Followstruct, ZoomTile), ZoomTile, Rack, Accum))
 	end.
 
 get_moves_from_candidate_recur(Followstruct, ZoomTile, Rack, Accum) ->
-	io:format("------~nget_moves_from_candidate :: Rack is ~p~n", [Rack]),
-	CurrMove = followstruct:get_followstruct_move(Followstruct),
-	io:format("Move is ~p~n", [CurrMove]),
+%%	io:format("------~nget_moves_from_candidate :: Rack is ~p~n", [Rack]),
+%%	CurrMove = followstruct:get_followstruct_move(Followstruct),
+%%	io:format("Move is ~p~n", [CurrMove]),
 
 	foldl(fun (X, Y) -> 
-			io:format("  Testing on ~p...~n", [[X]]),
+%%			io:format("  Testing on ~p...~n", [[X]]),
 			case next(Followstruct, X) of
 				{success, NewFollowstruct, Complete} ->
 
-					NewMove = followstruct:get_followstruct_move(NewFollowstruct),
-					io:format("    Success!  Complete is ~p~n", [Complete]),
- 					io:format("    NewMove is ~p~n", [NewMove]),
+%%					NewMove = followstruct:get_followstruct_move(NewFollowstruct),
+%%					io:format("    Success!  Complete is ~p~n", [Complete]),
+%% 					io:format("    NewMove is ~p~n", [NewMove]),
 
 					RestOfRack = Rack -- [X],
 					Gaddag = get_followstruct_gaddag(NewFollowstruct),
 					NewAccum = append(Complete, Y),
-					case has_branch($&, Gaddag) of
+					case can_flip_followstruct(Followstruct, ZoomTile) of
 						true ->
 							BranchFollowstruct = flip_followstruct(NewFollowstruct, ZoomTile),
 							foldl(fun (S,T) -> 
@@ -257,7 +257,7 @@ get_moves_from_candidate_recur(Followstruct, ZoomTile, Rack, Accum) ->
 						false ->
 							get_moves_from_candidate_recur(NewFollowstruct, ZoomTile, RestOfRack, NewAccum)	
 					end;
-				fail -> io:format("    fail!~n"), Y
+				fail -> Y % io:format("    fail!~n"), Y
 			end
 		end, Accum, Rack).
 
