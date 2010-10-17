@@ -23,13 +23,16 @@
 -define(BOARD_HEIGHT, 15).
 
 -import(tile, [get_tile_letter/1, 
-			get_tile_location/1, 
 			get_tile_bonus/1,
+			get_tile_location/1, 
 			set_tile_letter/2,
 			set_tile_bonus/2]).
 
+-import(move, [get_move_tiles/1]).
+
 -export([place_bonus_on_board/4,
 		place_letter_on_board/4,
+		place_move_on_board/2,
 		get_tile/3,
 		print_board/1,
 		get_adjacent/3,
@@ -74,6 +77,16 @@ place_bonus_on_board(Row, Col, Bonus, Board) ->
 			throw({tile_already_with_bonus, ABonus})
 	end.
 
+%% place_move_on_board :: Move * Board -> Board
+%%
+%% Returns a board with a full move placed on it.
+place_move_on_board(Move, Board) ->
+	Tiles = get_move_tiles(Move),
+	lists:foldl(fun (Tile, AccBoard) ->
+					{Row, Col} = get_tile_location(Tile),
+					Char = get_tile_letter(Tile),
+					place_letter_on_board(Row, Col, Char, AccBoard)
+				end, Board, Tiles).
 
 %% get_tile :: Int * Int * Board -> Tile
 get_tile(Row, Col, Board) ->

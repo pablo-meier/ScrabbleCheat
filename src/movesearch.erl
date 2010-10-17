@@ -78,8 +78,8 @@
 get_best_move_function(Gaddag) ->
 	fun (Board, Rack) ->
 		Candidates = generate_move_candidate_locations(Board),
-		MoveList = flatmap(fun (X) -> find_all_moves(X, Rack, Board, Gaddag) end, Candidates),
-		select_best_move(MoveList,Board)
+		MoveList = flatmap(fun (X) -> find_all_moves(X, Rack, Board, Gaddag) end, Candidates)
+		%select_best_move(MoveList,Board)
 	end.
 
 
@@ -234,10 +234,12 @@ get_moves_from_candidate(Followstruct, ZoomTile, Rack, Accum) ->
 get_moves_from_candidate_recur(Followstruct, ZoomTile, Rack, Accum) ->
 %%	io:format("------~nget_moves_from_candidate :: Rack is ~p~n", [Rack]),
 %%	CurrMove = followstruct:get_followstruct_move(Followstruct),
+%%	CurrTile = followstruct:get_followstruct_tile(Followstruct),
 %%	io:format("Move is ~p~n", [CurrMove]),
+%%	io:format("Tile is ~p~n", [tile:get_tile_location(CurrTile)]),
 
 	foldl(fun (X, Y) -> 
-%%			io:format("  Testing on ~p...~n", [[X]]),
+%			io:format("  Testing on ~p...~n", [[X]]),
 			case next(Followstruct, X) of
 				{success, NewFollowstruct, Complete} ->
 
@@ -246,9 +248,8 @@ get_moves_from_candidate_recur(Followstruct, ZoomTile, Rack, Accum) ->
 %% 					io:format("    NewMove is ~p~n", [NewMove]),
 
 					RestOfRack = Rack -- [X],
-					Gaddag = get_followstruct_gaddag(NewFollowstruct),
 					NewAccum = append(Complete, Y),
-					case can_flip_followstruct(Followstruct, ZoomTile) of
+					case can_flip_followstruct(NewFollowstruct, ZoomTile) of
 						true ->
 							BranchFollowstruct = flip_followstruct(NewFollowstruct, ZoomTile),
 							foldl(fun (S,T) -> 

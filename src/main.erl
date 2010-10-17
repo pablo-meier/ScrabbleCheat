@@ -19,52 +19,47 @@
 %% THE SOFTWARE.
 
 -module(main).
--import(movesearch, [make_word_function/1]).
+-import(movesearch, [get_best_move_function/1]).
 -import(dict_parser, [parse/1]).
+-import(board, [print_board/1, place_move_on_board/2]).
 -import(lists, [reverse/1,foreach/2, keysort/2, sort/2, map/2]).
--define(DICT_FILE, "lib/twl06.txt").
+-import(string_utils, [format_string_for_gaddag/1]).
+-define(DICT_FILE, "test/testdict.txt"). % "lib/twl06.txt").
 -export([main/0]).
 
 
-%% Main program. Currently will simply accept strings and show you permutations.
+%% Eventually the main program, right now just a testing runtime while I get
+%% move generation/selection up.
 
 %% main :: () -> IO ()
 %% Test
 main() ->
 	greet(),
 	Trie = dict_parser:parse(?DICT_FILE),
-	Word_Function = make_word_function(Trie),
-	loop(Word_Function).
+	Word_Function = get_best_move_function(Trie),
+	Board = sample_board(),
+	loop(Word_Function, Board).
 
 
-%% loop :: ([Char] -> [String]) -> IO ()
-loop(Search) ->
+loop(Search, Board) ->
+	print_board(Board),
 	Chars = prompt(),
-	Results = Search(Chars),
-	print_results(order_results(Results)),
+	Results = Search(Board, Chars),
+	print_results(Results, Board),
+	io:format("~n~n FINITO!~n"),
 	case use_again() of
-		true -> loop(Search);
+		true -> loop(Search, Board);
 		false -> 
 			io:format("Thanks!~n"),
 			erlang:halt()
 	end.
 
-%% print_results :: [{String, Length, RawScore}] -> IO ()
-print_results(ResultList) ->
-	foreach(fun (X) -> {W, _, _} = X, io:format("~p~n", [W]) end, ResultList).
 
-%% order_results :: [String] -> [String]
-order_results(ResultList) ->
-	WithLength = map(fun (X) -> {X, length(X), score(X)} end, ResultList),
-	reverse(keysort(3, reverse(keysort(2, WithLength)))).
+sample_board() ->
+	board:place_word("ABLE", right, {7, 7}, board_parser:new_board()).
 
-
-
-
-
-%% Calculates the score of a string, without bonuses applied.
-score(String) ->
-	length(String).
+print_results(ResultList, Board) ->
+	foreach(fun (X) -> io:format("---~n"), print_board(place_move_on_board(X, Board)) end, ResultList).
 
 
 
@@ -73,7 +68,7 @@ greet() ->
 	io:format("--------~nWelcome to ScrabbleCheat!~n~n").
 
 prompt() ->
-	io:get_line("Enter the letters you'd like to find words for: ").
+	format_string_for_gaddag(io:get_line("Here is a board.  Enter some letters (your rack), see what's possible:  ")).
 
 use_again() ->
 	Answer = io:get_line("Would you like to submit again? [y/n]:  "),

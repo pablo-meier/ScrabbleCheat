@@ -21,7 +21,7 @@
 -module(move).
 
 -import(tile, [get_tile_location/1]).
--export([new_move/0, add_to_move/2, duplicate_moves/2]).
+-export([new_move/0, add_to_move/2, duplicate_moves/2, get_move_tiles/1]).
 
 %% The move datatype.  Checks structural integrity of moves, not
 %% responsible for legal placement relative to a board, or dictionary
@@ -47,6 +47,12 @@ add_to_move(Tile, Move) ->
 		_False -> 
 			throw({out_of_bounds, {Row, Col}})
 	end.
+
+
+%% get_move_tiles :: Move -> [Tile]
+%%
+%% Evaluates to the tiles that compose the move.
+get_move_tiles({move, MoveList}) -> MoveList.
 
 
 %% duplicate_moves :: Move * Move -> Bool
