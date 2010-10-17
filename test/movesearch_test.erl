@@ -28,7 +28,7 @@
 -import(gaddag, [empty_gaddag/0, get_branch_from_string/2]).
 -import(tile, [get_tile_location/1, new_tile/4]).
 -import(dict_parser, [parse/1]).
--import(move, [new_move/0]).
+-import(move, [new_move/0, duplicate_moves/2]).
 -import(followstruct, [make_followstruct/5]).
 -import(movesearch, [generate_move_candidate_locations/1, 
 					get_zoomtiles/3,
@@ -127,15 +127,17 @@ get_move_from_candidate_test() ->
 	
 	Run = get_moves_from_candidate(Followstruct, Zoomtile, Rack, Accum),
 
-	%% Should include SABLE, TABLE, ABLER, TABLES
+	%% Should include SABLE, TABLE, ABLER, TABLES, STABLE
 	Solutions = [{move, [{{character, $S}, none, {7,6}}]}, 
 				{move, [{{character, $R}, none, {7,11}}]},
 				{move, [{{character, $T}, none, {7,6}}]},
-				{move, [{{character, $T}, none, {7,6}},{{character, $S}, none, {7,11}}]}],
+				{move, [{{character, $T}, none, {7,6}},{{character, $S}, none, {7,11}}]},
+				{move, [{{character, $T}, none, {7,6}},{{character, $S}, none, {7,5}}]}],
 
 	io:format("Run contains ~p~n, Solutions are ~p~n", [Run, Solutions]),
 
-	lists:foreach(fun (X) -> lists:any(fun (Y) -> ?assert(X =:= Y) end, Run) end, Solutions).
+	?assert(length(Run) =:= length(Solutions)),
+	lists:foreach(fun (X) -> ?assert(lists:any(fun (Y) -> duplicate_moves(X, Y) end, Run)) end, Solutions).
 
 
 

@@ -58,23 +58,6 @@ duplicate_moves({move, MoveList1}, {move, MoveList2}) ->
 	lists:all(fun (X) -> lists:any(fun (Y) -> X =:= Y end, MoveList2) end, MoveList1).
 
 
-%% check_adjacency :: Int * Int * Move -> Bool
-%%
-%% Make sure the piece being added is along a line to another piece.
-%% TODO:  Add an orientation check to make sure you can't add a horizontal piece
-%% followed by a vertical one.  You can currently have a star-shaped move.
-%% check_adjacency(Row, Col, MoveList) ->
-%% 	case length(MoveList) of
-%% 		0 -> true;
-%% 		_True -> 
-%% 			lists:any(fun ({OtherRow, OtherCol}) -> 
-%% 				RowDiff = OtherRow - Row,
-%% 				ColDiff = OtherCol - Col,
-%% 				((RowDiff =:= 1 orelse RowDiff =:= -1) andalso ColDiff =:= 0) orelse
-%% 				((ColDiff =:= 1 orelse ColDiff =:= -1) andalso RowDiff =:= 0)
-%% 			end, MoveList)
-%% 	end.
-%% 
 %% %% check_integrity :: Int * Int -> Bool
 check_integrity(Row, Col) ->
 	Row =< 15 andalso Row >= 1 andalso Col =< 15 andalso Col >= 1.
