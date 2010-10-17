@@ -22,7 +22,7 @@
 
 -define(SEPARATOR, $&).
 
--import(followstruct, [make_followstruct/4, 
+-import(followstruct, [make_followstruct/5, 
 					next/2, 
 					flip_followstruct/2,
 					get_followstruct_board/1,
@@ -42,7 +42,7 @@
 		
 		 get_zoomtiles/3
 		, traverse_back_to_candidate/2
-		, get_moves_from_candidate/5
+		, get_moves_from_candidate/4
 		
 		]). 
 
@@ -149,9 +149,8 @@ find_all_moves(Candidate, Rack, Board, Gaddag) ->
 	ZoomTiles = get_zoomtiles(Candidate, Board, Gaddag),
 	StartLocations = map(fun (X) -> traverse_back_to_candidate(X, Board) end, ZoomTiles),
 	flatmap(fun ({FollowStruct, ZoomTile}) -> 
-					NewMove = new_move(),
 					Accum = [],
-					get_moves_from_candidate(FollowStruct, ZoomTile, Rack, NewMove, Accum)
+					get_moves_from_candidate(FollowStruct, ZoomTile, Rack, Accum)
 				end, StartLocations).
 
 
@@ -220,7 +219,7 @@ travel({ZoomTile, Direction, Gaddag}, Board) ->
 			{branch, NewGaddag} = get_branch(Key, Gaddag),
 			NextTile = get_adjacent(ZoomTile, Board, Direction),
 			travel({NextTile, Direction, NewGaddag}, Board);
-		false -> make_followstruct(ZoomTile, Direction, Gaddag, Board)
+		false -> make_followstruct(ZoomTile, Direction, Gaddag, Board, new_move())
 	end.
 
 
@@ -229,32 +228,28 @@ travel({ZoomTile, Direction, Gaddag}, Board) ->
 %%
 %% Given all the information, construct every possible move given your
 %% rack and the board by following using your followstruct, containing direction.
-get_moves_from_candidate(Followstruct, ZoomTile, Rack, Move, Accum) ->
-	remove_duplicates(flatten(get_moves_from_candidate_recur(Followstruct,ZoomTile, Rack, Move, Accum)), fun move:duplicate_moves/2).
+get_moves_from_candidate(Followstruct, ZoomTile, Rack, Accum) ->
+	remove_duplicates(flatten(get_moves_from_candidate_recur(Followstruct,ZoomTile, Rack, Accum)), fun move:duplicate_moves/2).
 
-get_moves_from_candidate_recur(Followstruct, ZoomTile, Rack, Move, Accum) ->
+get_moves_from_candidate_recur(Followstruct, ZoomTile, Rack, Accum) ->
 	ChecksOtherSide = [$&|Rack],
-	map(fun (X) -> 
-			case can_advance(Followstruct, X) of
-				true ->
-					{Row, Col} = get_tile_location(get_followstruct_tile(Followstruct)),
-					NewFollowstruct = next(Followstruct, X),
-					NowOccupiedTile = get_tile(Row, Col, get_followstruct_board(NewFollowstruct)),
-					AugmentedMove = add_to_move(NowOccupiedTile, Move),
+	lists:foldl(fun (X, Y) -> 
+			case next(Followstruct, X) of
+				{success, NewFollowstruct, Complete} ->
 					RestOfRack = Rack -- [X],
 					Gaddag = get_followstruct_gaddag(NewFollowstruct),
-					NewAccum = case is_terminator(Gaddag) of true -> [AugmentedMove|Accum]; false -> Accum end,
+					NewAccum = lists:append(Complete, Accum),
 					case has_branch($&, Gaddag) of
 						true ->
 							BranchFollowstruct = flip_followstruct(NewFollowstruct, ZoomTile),
-							append(get_moves_from_candidate_recur(BranchFollowstruct, ZoomTile, RestOfRack, AugmentedMove, NewAccum),
-									get_moves_from_candidate_recur(NewFollowstruct, ZoomTile, RestOfRack, AugmentedMove, NewAccum));
+							append(get_moves_from_candidate_recur(BranchFollowstruct, ZoomTile, RestOfRack, NewAccum),
+									get_moves_from_candidate_recur(NewFollowstruct, ZoomTile, RestOfRack, NewAccum));
 						false ->
-							get_moves_from_candidate_recur(NewFollowstruct, ZoomTile, RestOfRack, AugmentedMove, NewAccum)	
+							get_moves_from_candidate_recur(NewFollowstruct, ZoomTile, RestOfRack, NewAccum)	
 					end;
-				false -> Accum
+				fail -> Accum
 			end
-		end, ChecksOtherSide).
+		end, Accum, ChecksOtherSide).
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
