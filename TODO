@@ -1,7 +1,8 @@
 ------
 SHORT-TERM:
 
-- Acutally generate moves!
+- Heavy refactoring, better testing.
+- Actually generate moves!
 - grep TODO and FIXME in the source to find something to do!
 
 ------
