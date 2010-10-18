@@ -78,8 +78,8 @@
 get_best_move_function(Gaddag) ->
 	fun (Board, Rack) ->
 		Candidates = generate_move_candidate_locations(Board),
-		MoveList = flatmap(fun (X) -> find_all_moves(X, Rack, Board, Gaddag) end, Candidates)
-		%select_best_move(MoveList,Board)
+		_MoveList = flatmap(fun (X) -> find_all_moves(X, Rack, Board, Gaddag) end, Candidates)
+		%select_best_move(MoveList, Board)
 	end.
 
 
@@ -164,7 +164,7 @@ find_all_moves(Candidate, Rack, Board, Gaddag) ->
 %% we create the appropriate Followstructs.
 get_zoomtiles(Candidate, Board, Gaddag) ->
 	Adjacents = map(fun (X) -> {get_adjacent(Candidate, Board, X), X, Gaddag} end, [left,right,up,down]),
-	StartPoints = filter(fun ({X,_,_}) -> tile:is_occupied(X) end, Adjacents),
+	StartPoints = filter(fun ({X,_,_}) -> is_occupied(X) end, Adjacents),
 	WithZooms = map(fun(X) -> zoom(X, Board) end, StartPoints),
 	filter(fun (X) -> X =/= edge_of_board end, WithZooms).
 

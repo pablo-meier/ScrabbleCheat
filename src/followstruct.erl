@@ -24,8 +24,10 @@
 -import(movesearch, [flip/1]).
 -import(gaddag, [get_branch/2, has_branch/2, is_terminator/1]).
 -import(board, [place_letter_on_board/4]).
--import(tile, [get_tile_location/1]).
+-import(tile, [get_tile_location/1, is_occupied/1]).
 -import(move, [add_to_move/2]).
+
+-import(lists, [map/2, any/2]).
 
 -export([make_followstruct/5,
 		get_followstruct_tile/1,
@@ -96,10 +98,14 @@ can_flip_followstruct({_, Direction, Gaddag, Board, _}, ZoomTile) ->
 %% Travels along the FollowStruct + Gaddag, after the 'presumable' placement
 %% of a character in a move.  Returns the new 'moved' followstruct and any completed
 %% moves if successful, and 'fail' if a move isn't present with that char.
-next({Tile, Direction, Gaddag, Board, Move}, Char) ->
-	case get_branch(Char, Gaddag) of
-		none -> fail;
-		{branch, NextPath} ->
+next(Followstruct, Char) ->
+	{Tile, Direction, Gaddag, Board, Move} = Followstruct,
+	HasBranch = get_branch(Char, Gaddag),
+	WorksOrthogonally = check_other_directions(Followstruct, Char),
+	case {HasBranch, WorksOrthogonally} of
+		{none, _}  -> fail;
+		{_, false} -> fail;
+		{{branch, NextPath}, _} ->
 			{Row, Col} = get_tile_location(Tile),
  			NewBoard = place_letter_on_board(Row, Col, Char, Board),
 			NewMove = add_to_move(board:get_tile(Row, Col, NewBoard), Move),
@@ -109,4 +115,30 @@ next({Tile, Direction, Gaddag, Board, Move}, Char) ->
 
  			{success, NewFollow, Complete}
 	end.
+
+
+%% check_other_directions :: Followstuct * Char -> Bool
+%%
+%% Checks all 'other' directions than the primary move-generating one 
+%% and ensures that they form valid words all around.  Does this by
+%% finding perpendicular tiles, zooming as far back as the board allows,
+%% then traveling forward and ensuring the word is a complete one.
+check_other_directions(Followstruct, _Char) ->
+	%% get the orthogonal direction.
+	{Tile, Direction, _, Board, _} = Followstruct,
+	Orthogonals = map(fun (X) -> get_adjacent(Tile, Board, X) end, orthogonals(Direction)),
+	Occupied = any(fun (X) -> is_occupied(X) end, Orthogonals),
+	case Occupied of
+		false -> true;
+		%% if either is occupied, 
+		true -> true
+		%%   Place letter on a board,
+		%%   zoom as far back as you can,
+		%%   then travel as far forward as you can.
+		%%   check that the resulting gaddag is a terminator.
+	end.
+
+
+orthogonals(left) -> [up, down];     orthogonals(right) -> [up,down];
+orthogonals(up)   -> [left, right];  orthogonals(down)  -> [left,right].
 
