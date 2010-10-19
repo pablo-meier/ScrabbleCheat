@@ -200,7 +200,7 @@ orthogonals(up)   -> [left, right];  orthogonals(down)  -> [left,right].
 %% case that no tile is occupied in that direction, returns the original tile.
 zoom(Tile, Direction, Board) ->
 	case get_adjacent(Tile, Board, Direction) of
-		beyond_border -> Tile;
+		none -> Tile;
 		NewTile -> 
 			case is_occupied(NewTile) of
 				true -> zoom(NewTile, Direction, Board);

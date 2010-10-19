@@ -30,7 +30,7 @@
 					get_followstruct_tile/1,
 					can_flip_followstruct/2]).
 
--import(board, [as_list/1, get_adjacents/2, get_adjacent/3, get_tile/3, flip/1]).
+-import(board, [as_list/1, get_adjacents/2, get_adjacent/3, get_tile/3, flip/1, zoom/3]).
 -import(tile, [get_tile_letter/1, get_tile_location/1, is_occupied/1]).
 -import(gaddag, [get_branch/2, has_branch/2, is_terminator/1]).
 -import(move, [new_move/0, add_to_move/2]).
@@ -164,17 +164,17 @@ find_all_moves(Candidate, Rack, Board, Gaddag) ->
 get_zoomtiles(Candidate, Board, Gaddag) ->
 	Adjacents = map(fun (X) -> {get_adjacent(Candidate, Board, X), X, Gaddag} end, [left,right,up,down]),
 	StartPoints = filter(fun ({X,_,_}) -> is_occupied(X) end, Adjacents),
-	WithZooms = map(fun(X) -> zoom(X, Board) end, StartPoints),
+	WithZooms = map(fun({Tile, Direction, _}) -> zoom(Tile, Direction, Board) end, StartPoints),
 	filter(fun (X) -> X =/= edge_of_board end, WithZooms).
 
 
-zoom({Tile, Direction, Gaddag}, Board) ->
-	Adjacent = get_adjacent(Tile, Board, Direction),
-	case {Tile, get_tile_letter(Adjacent)} of
-		{beyond_border, _} -> edge_of_board;
-		{_, none} -> {Tile, flip(Direction), Gaddag};
-		_Else -> zoom({Adjacent, Direction, Gaddag}, Board)
-	end.
+%% zoom({Tile, Direction, Gaddag}, Board) ->
+%% 	Adjacent = get_adjacent(Tile, Board, Direction),
+%% 	case {Tile, get_tile_letter(Adjacent)} of
+%% 		{beyond_border, _} -> edge_of_board;
+%% 		{_, none} -> {Tile, flip(Direction), Gaddag};
+%% 		_Else -> zoom({Adjacent, Direction, Gaddag}, Board)
+%% 	end.
 
 
 %% create_origin_followstructs :: {ZoomTile, Direction, Gaddag} -> {FollowStruct, ZoomTile}
