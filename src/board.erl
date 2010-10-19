@@ -25,6 +25,7 @@
 -import(tile, [get_tile_letter/1, 
 			get_tile_bonus/1,
 			get_tile_location/1, 
+			is_occupied/1,
 			set_tile_letter/2,
 			set_tile_bonus/2]).
 
@@ -35,7 +36,10 @@
 		place_move_on_board/2,
 		get_tile/3,
 		print_board/1,
+		zoom/3,
 		get_adjacent/3,
+		orthogonals/1,
+		flip/1,
 		get_adjacents/2,
 		place_word/4,
 		as_list/1]).
@@ -77,6 +81,7 @@ place_bonus_on_board(Row, Col, Bonus, Board) ->
 			throw({tile_already_with_bonus, ABonus})
 	end.
 
+
 %% place_move_on_board :: Move * Board -> Board
 %%
 %% Returns a board with a full move placed on it.
@@ -88,6 +93,7 @@ place_move_on_board(Move, Board) ->
 					place_letter_on_board(Row, Col, Char, AccBoard)
 				end, Board, Tiles).
 
+
 %% get_tile :: Int * Int * Board -> Tile
 get_tile(Row, Col, Board) ->
 	if 
@@ -98,6 +104,7 @@ get_tile(Row, Col, Board) ->
 			RowArray = array:get(RowIndex, Board),
 			array:get(ColIndex, RowArray)
 	end.
+
 
 %% get_adjacent :: Tile * atom(Direction) -> Tile | none
 %% 
@@ -170,6 +177,38 @@ place_word(Word, Direction, {Row, Col}, Board) ->
 	end.
 
 
+%% flip :: Direction -> Direction
+%%
+%% Provides the inverse of a direction.
+flip(up) -> down;
+flip(down) -> up;
+flip(left) -> right;
+flip(right) -> left.
+
+
+%% orthogonals :: Direction -> [Direction]
+%%
+%% Provides perpendicular directions to the parameter.
+orthogonals(left) -> [up, down];     orthogonals(right) -> [up,down];
+orthogonals(up)   -> [left, right];  orthogonals(down)  -> [left,right].
+
+
+%% zoom :: Tile * Direction * Board -> Tile
+%%
+%% Zooms starting from parametrized tile in the direction provided until the 
+%% end of the board is reached, or the tiles stop becoming occupied.  In the
+%% case that no tile is occupied in that direction, returns the original tile.
+zoom(Tile, Direction, Board) ->
+	case get_adjacent(Tile, Board, Direction) of
+		beyond_border -> Tile;
+		NewTile -> 
+			case is_occupied(NewTile) of
+				true -> zoom(NewTile, Direction, Board);
+				false -> Tile
+			end
+	end.
+
+
 %% print_board :: Board -> ()
 %%
 %% Pretty prints the board.
@@ -183,6 +222,7 @@ print_board(Board) ->
 
 print_key() ->
 	io:format("~nKey (for any character 'p'):~n  *p* -> Triple Word!~n  ^p^ -> Double Word!~n  -p- -> Triple Letter!~n  _p_ -> Double Letter~n~n").
+
 
 %% A little silly, but DRY...
 make_array_indices(Num1, Num2) -> {Num1 - 1, Num2 - 1}.

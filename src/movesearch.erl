@@ -30,7 +30,7 @@
 					get_followstruct_tile/1,
 					can_flip_followstruct/2]).
 
--import(board, [as_list/1, get_adjacents/2, get_adjacent/3, get_tile/3]).
+-import(board, [as_list/1, get_adjacents/2, get_adjacent/3, get_tile/3, flip/1]).
 -import(tile, [get_tile_letter/1, get_tile_location/1, is_occupied/1]).
 -import(gaddag, [get_branch/2, has_branch/2, is_terminator/1]).
 -import(move, [new_move/0, add_to_move/2]).
@@ -39,7 +39,6 @@
 
 -export([get_best_move_function/1,
 		generate_move_candidate_locations/1,
-		flip/1, %% This should be in a utils module ?
 		
 		 get_zoomtiles/3
 		, create_origin_followstructs/2
@@ -172,16 +171,10 @@ get_zoomtiles(Candidate, Board, Gaddag) ->
 zoom({Tile, Direction, Gaddag}, Board) ->
 	Adjacent = get_adjacent(Tile, Board, Direction),
 	case {Tile, get_tile_letter(Adjacent)} of
-		{none, _} -> edge_of_board;
+		{beyond_border, _} -> edge_of_board;
 		{_, none} -> {Tile, flip(Direction), Gaddag};
 		_Else -> zoom({Adjacent, Direction, Gaddag}, Board)
 	end.
-
-
-flip(up) -> down;
-flip(down) -> up;
-flip(left) -> right;
-flip(right) -> left.
 
 
 %% create_origin_followstructs :: {ZoomTile, Direction, Gaddag} -> {FollowStruct, ZoomTile}
@@ -265,5 +258,5 @@ get_moves_from_candidate_recur(Followstruct, ZoomTile, Rack, Accum) ->
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% select_best_move :: [Move] * Board -> Move
-select_best_move(_Moves, _Board) ->
-	ok.
+%% select_best_move(_Moves, _Board) ->
+%%	ok.

@@ -21,13 +21,12 @@
 -module(followstruct).
 
 -import(board, [get_adjacent/3]).
--import(movesearch, [flip/1]).
 -import(gaddag, [get_branch/2, has_branch/2, is_terminator/1]).
--import(board, [place_letter_on_board/4]).
+-import(board, [place_letter_on_board/4, orthogonals/1, flip/1]).
 -import(tile, [get_tile_location/1, is_occupied/1]).
 -import(move, [add_to_move/2]).
 
--import(lists, [map/2, any/2]).
+-import(lists, [map/2, any/2, filter/2]).
 
 -export([make_followstruct/5,
 		get_followstruct_tile/1,
@@ -138,7 +137,4 @@ check_other_directions(Followstruct, _Char) ->
 		%%   check that the resulting gaddag is a terminator.
 	end.
 
-
-orthogonals(left) -> [up, down];     orthogonals(right) -> [up,down];
-orthogonals(up)   -> [left, right];  orthogonals(down)  -> [left,right].
 
