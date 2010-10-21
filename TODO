@@ -1,8 +1,8 @@
 ------
 SHORT-TERM:
 
-- Heavy refactoring, better testing.
-- Actually generate moves!
+- Wildcards.
+- Better, more rigorous testing.  Mostly in movesearches.
 - grep TODO and FIXME in the source to find something to do!
 
 ------
