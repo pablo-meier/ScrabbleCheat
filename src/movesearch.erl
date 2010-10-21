@@ -23,14 +23,14 @@
 -define(SEPARATOR, $&).
 
 -import(followstruct, [make_followstruct/5, 
-					next/2, 
+					next/3, 
 					flip_followstruct/2,
 					get_followstruct_board/1,
 					get_followstruct_gaddag/1,
 					get_followstruct_tile/1,
 					can_flip_followstruct/2]).
 
--import(board, [as_list/1, get_adjacents/2, get_adjacent/3, get_tile/3, flip/1, zoom/3]).
+-import(board, [as_list/1, get_adjacents/2, get_adjacent/3, get_tile/3, flip/1, zoom/3, travel/4]).
 -import(tile, [get_tile_letter/1, get_tile_location/1, is_occupied/1]).
 -import(gaddag, [get_branch/2, has_branch/2, is_terminator/1]).
 -import(move, [new_move/0, add_to_move/2]).
@@ -42,7 +42,7 @@
 		
 		 get_zoomtiles/3
 		, create_origin_followstructs/2
-		, get_moves_from_candidate/4
+		, get_moves_from_candidate/5
 		
 		]). 
 
@@ -150,7 +150,7 @@ find_all_moves(Candidate, Rack, Board, Gaddag) ->
 	StartLocations = map(fun (X) -> create_origin_followstructs(X, Board) end, ZoomTiles),
 	flatmap(fun ({FollowStruct, ZoomTile}) -> 
 					Accum = [],
-					get_moves_from_candidate(FollowStruct, ZoomTile, Rack, Accum)
+					get_moves_from_candidate(FollowStruct, ZoomTile, Rack, Accum, Gaddag)
 				end, StartLocations).
 
 
@@ -187,44 +187,27 @@ create_origin_followstructs(ThisTriple, Board) ->
 	{ZoomTile, Direction, Gaddag} = ThisTriple,
 	if
 		Direction =:= left orelse Direction =:= up ->
-			{travel(ThisTriple, Board), ZoomTile};	
+			{travel(ZoomTile, Direction, Gaddag, Board), ZoomTile};	
 		Direction =:= right orelse Direction =:= down ->
 			{branch, NewGaddag} = get_branch(get_tile_letter(ZoomTile), Gaddag),
 			NextTile = get_adjacent(ZoomTile, Board, Direction),
 			{branch, GoForward} = get_branch(?SEPARATOR, NewGaddag),
-			{travel({NextTile, Direction, GoForward}, Board), ZoomTile}
+			{travel(NextTile, Direction, GoForward, Board), ZoomTile}
 	end.
-
-
-%% travel :: {Tile * Direction * Gaddag} * Board -> FollowStruct
-%%
-%% Travels along a direction, following the GADDAG as applicable (should always
-%% be possible, as only valid words are present on the board).  Returns a 
-%% followstruct. 
-travel({ZoomTile, Direction, Gaddag}, Board) ->
-	case is_occupied(ZoomTile) of
-		true -> 
-			Key = get_tile_letter(ZoomTile),
-			{branch, NewGaddag} = get_branch(Key, Gaddag),
-			NextTile = get_adjacent(ZoomTile, Board, Direction),
-			travel({NextTile, Direction, NewGaddag}, Board);
-		false -> make_followstruct(ZoomTile, Direction, Gaddag, Board, new_move())
-	end.
-
 
 
 %% get_moves_from_candidate :: FollowStruct * Tile * [Char] * Move * [Move] -> [Move]
 %%
 %% Given all the information, construct every possible move given your
 %% rack and the board by following using your followstruct, containing direction.
-get_moves_from_candidate(Followstruct, ZoomTile, Rack, Accum) ->
+get_moves_from_candidate(Followstruct, ZoomTile, Rack, Accum, Master) ->
 	case can_flip_followstruct(Followstruct, ZoomTile) of
-		false -> get_moves_from_candidate_recur(Followstruct, ZoomTile, Rack, Accum);
-		true -> append(get_moves_from_candidate_recur(Followstruct, ZoomTile, Rack, Accum),
-						get_moves_from_candidate_recur(flip_followstruct(Followstruct, ZoomTile), ZoomTile, Rack, Accum))
+		false -> get_moves_from_candidate_recur(Followstruct, ZoomTile, Rack, Accum, Master);
+		true -> append(get_moves_from_candidate_recur(Followstruct, ZoomTile, Rack, Accum, Master),
+						get_moves_from_candidate_recur(flip_followstruct(Followstruct, ZoomTile), ZoomTile, Rack, Accum, Master))
 	end.
 
-get_moves_from_candidate_recur(Followstruct, ZoomTile, Rack, Accum) ->
+get_moves_from_candidate_recur(Followstruct, ZoomTile, Rack, Accum, Master) ->
 %%	io:format("------~nget_moves_from_candidate :: Rack is ~p~n", [Rack]),
 %%	CurrMove = followstruct:get_followstruct_move(Followstruct),
 %%	CurrTile = followstruct:get_followstruct_tile(Followstruct),
@@ -233,7 +216,7 @@ get_moves_from_candidate_recur(Followstruct, ZoomTile, Rack, Accum) ->
 
 	foldl(fun (X, Y) -> 
 %			io:format("  Testing on ~p...~n", [[X]]),
-			case next(Followstruct, X) of
+			case next(Followstruct, X, Master) of
 				{success, NewFollowstruct, Complete} ->
 
 %%					NewMove = followstruct:get_followstruct_move(NewFollowstruct),
@@ -246,10 +229,10 @@ get_moves_from_candidate_recur(Followstruct, ZoomTile, Rack, Accum) ->
 						true ->
 							BranchFollowstruct = flip_followstruct(NewFollowstruct, ZoomTile),
 							foldl(fun (S,T) -> 
-											get_moves_from_candidate_recur(S, ZoomTile, RestOfRack, T)
+											get_moves_from_candidate_recur(S, ZoomTile, RestOfRack, T, Master)
 										end, NewAccum, [NewFollowstruct, BranchFollowstruct]);
 						false ->
-							get_moves_from_candidate_recur(NewFollowstruct, ZoomTile, RestOfRack, NewAccum)	
+							get_moves_from_candidate_recur(NewFollowstruct, ZoomTile, RestOfRack, NewAccum, Master)	
 					end;
 				fail -> Y % io:format("    fail!~n"), Y
 			end

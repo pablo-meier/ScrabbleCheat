@@ -22,7 +22,7 @@
 
 -import(board, [get_adjacent/3]).
 -import(gaddag, [get_branch/2, has_branch/2, is_terminator/1]).
--import(board, [place_letter_on_board/4, orthogonals/1, flip/1]).
+-import(board, [place_letter_on_board/4, orthogonals/1, flip/1, travel/4, zoom/3]).
 -import(tile, [get_tile_location/1, is_occupied/1]).
 -import(move, [add_to_move/2]).
 
@@ -35,7 +35,7 @@
 		get_followstruct_board/1,
 		get_followstruct_move/1,
 		flip_followstruct/2,
-		next/2,
+		next/3,
 		can_flip_followstruct/2]).
 
 %% An intermediate data type for the construction of moves.  A 'followstruct'
@@ -97,10 +97,10 @@ can_flip_followstruct({_, Direction, Gaddag, Board, _}, ZoomTile) ->
 %% Travels along the FollowStruct + Gaddag, after the 'presumable' placement
 %% of a character in a move.  Returns the new 'moved' followstruct and any completed
 %% moves if successful, and 'fail' if a move isn't present with that char.
-next(Followstruct, Char) ->
+next(Followstruct, Char, Master) ->
 	{Tile, Direction, Gaddag, Board, Move} = Followstruct,
 	HasBranch = get_branch(Char, Gaddag),
-	WorksOrthogonally = check_other_directions(Followstruct, Char),
+	WorksOrthogonally = check_other_directions(Followstruct, Char, Master),
 	case {HasBranch, WorksOrthogonally} of
 		{none, _}  -> fail;
 		{_, false} -> fail;
@@ -122,7 +122,7 @@ next(Followstruct, Char) ->
 %% and ensures that they form valid words all around.  Does this by
 %% finding perpendicular tiles, zooming as far back as the board allows,
 %% then traveling forward and ensuring the word is a complete one.
-check_other_directions(Followstruct, _Char) ->
+check_other_directions(Followstruct, Char, Master) ->
 	%% get the orthogonal direction.
 	{Tile, Direction, _, Board, _} = Followstruct,
 	Orthogonals = map(fun (X) -> get_adjacent(Tile, Board, X) end, orthogonals(Direction)),
@@ -130,11 +130,16 @@ check_other_directions(Followstruct, _Char) ->
 	case Occupied of
 		false -> true;
 		%% if either is occupied, 
-		true -> true
-		%%   Place letter on a board,
-		%%   zoom as far back as you can,
-		%%   then travel as far forward as you can.
-		%%   check that the resulting gaddag is a terminator.
+		true -> 
+			%%   Place letter on a board,
+			{Row, Col} = get_tile_location(Tile),
+			NewBoard = place_letter_on_board(Row, Col, Char, Board),
+			%%   zoom as far back as you can,
+			NewFollowstruct = travel(Tile, Direction, NewBoard, Master),
+			CheckGaddag = get_followstruct_gaddag(NewFollowstruct),
+			is_terminator(CheckGaddag)
+			%%   then travel as far forward as you can.
+			%%   check that the resulting gaddag is a terminator.
 	end.
 
 

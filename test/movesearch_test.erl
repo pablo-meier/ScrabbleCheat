@@ -33,7 +33,7 @@
 -import(movesearch, [generate_move_candidate_locations/1, 
 					get_zoomtiles/3,
 					create_origin_followstructs/2,
-					get_moves_from_candidate/4]). 
+					get_moves_from_candidate/5]). 
 
 
 
@@ -103,7 +103,7 @@ get_move_from_candidate_open_horiz_test() ->
 	Rack = "TRS",
 	Accum = [],
 	
-	Run = get_moves_from_candidate(Followstruct, Zoomtile, Rack, Accum),
+	Run = get_moves_from_candidate(Followstruct, Zoomtile, Rack, Accum, Gaddag),
 
 	%% Should include SABLE, TABLE, ABLER, TABLES, STABLE
 	Solutions = [{move, [{{character, $S}, none, {7,6}}]}, 
@@ -127,7 +127,7 @@ get_move_from_candidate_open_vert_test() ->
 	Rack = "TRS",
 	Accum = [],
 	
-	Run = get_moves_from_candidate(Followstruct, Zoomtile, Rack, Accum),
+	Run = get_moves_from_candidate(Followstruct, Zoomtile, Rack, Accum, Gaddag),
 
 	%% Should include SABLE, TABLE, ABLER, TABLES, STABLE
 	Solutions = [{move, [{{character, $S}, none, {6,7}}]}, 
@@ -152,7 +152,7 @@ left_wall_candidate_generate_test() ->
 	Rack = "TRS",
 	Accum = [],
 	
-	Run = get_moves_from_candidate(Followstruct, Zoomtile, Rack, Accum),
+	Run = get_moves_from_candidate(Followstruct, Zoomtile, Rack, Accum, Gaddag),
 
 	%% Should include SABLE, TABLE, ABLER, TABLES, STABLE
 	Solutions = [{move, [{{character, $R}, none, {7,5}}]}],
@@ -172,7 +172,7 @@ right_wall_candidate_generate_test() ->
 	Rack = "TRS",
 	Accum = [],
 	
-	Run = get_moves_from_candidate(Followstruct, Zoomtile, Rack, Accum),
+	Run = get_moves_from_candidate(Followstruct, Zoomtile, Rack, Accum, Gaddag),
 
 	%% Should include SABLE, TABLE, ABLER, TABLES, STABLE
 	Solutions = [{move, [{{character, $S}, none, {7,11}}]}, 
@@ -194,7 +194,7 @@ top_wall_candidate_generate_test() ->
 	Rack = "TRS",
 	Accum = [],
 	
-	Run = get_moves_from_candidate(Followstruct, Zoomtile, Rack, Accum),
+	Run = get_moves_from_candidate(Followstruct, Zoomtile, Rack, Accum, Gaddag),
 
 	%% Should include SABLE, TABLE, ABLER, TABLES, STABLE
 	Solutions = [{move, [{{character, $R}, none, {5,7}}]}],
@@ -214,7 +214,7 @@ bottom_wall_candidate_generate_test() ->
 	Rack = "TRS",
 	Accum = [],
 	
-	Run = get_moves_from_candidate(Followstruct, Zoomtile, Rack, Accum),
+	Run = get_moves_from_candidate(Followstruct, Zoomtile, Rack, Accum, Gaddag),
 
 	%% Should include SABLE, TABLE, ABLER, TABLES, STABLE
 	Solutions = [{move, [{{character, $S}, none, {11,7}}]}, 

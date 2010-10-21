@@ -30,12 +30,16 @@
 			set_tile_bonus/2]).
 
 -import(move, [get_move_tiles/1]).
+-import(gaddag, [get_branch/2]).
+-import(followstruct, [make_followstruct/5]).
+-import(move, [new_move/0]).
 
 -export([place_bonus_on_board/4,
 		place_letter_on_board/4,
 		place_move_on_board/2,
 		get_tile/3,
 		print_board/1,
+		travel/4,
 		zoom/3,
 		get_adjacent/3,
 		orthogonals/1,
@@ -206,6 +210,22 @@ zoom(Tile, Direction, Board) ->
 				true -> zoom(NewTile, Direction, Board);
 				false -> Tile
 			end
+	end.
+
+
+%% travel :: Tile * Direction * Gaddag * Board -> FollowStruct
+%%
+%% Travels along a direction, following the GADDAG as applicable (should always
+%% be possible, as only valid words are present on the board).  Returns a 
+%% followstruct. 
+travel(ZoomTile, Direction, Gaddag, Board) ->
+	case is_occupied(ZoomTile) of
+		true -> 
+			Key = get_tile_letter(ZoomTile),
+			{branch, NewGaddag} = get_branch(Key, Gaddag),
+			NextTile = get_adjacent(ZoomTile, Board, Direction),
+			travel(NextTile, Direction, NewGaddag, Board);
+		false -> make_followstruct(ZoomTile, Direction, Gaddag, Board, new_move())
 	end.
 
 
