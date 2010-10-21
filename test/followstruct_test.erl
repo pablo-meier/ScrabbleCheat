@@ -31,7 +31,7 @@
 
 -import(followstruct, [make_followstruct/5, 
 						flip_followstruct/2, 
-						next/2, 
+						next/3, 
 						get_followstruct_tile/1, 
 						get_followstruct_direction/1, 
 						get_followstruct_gaddag/1,
@@ -81,7 +81,7 @@ next_test() ->
 	Gaddag = get_branch_from_string("ELBA", parse("test/testdict.txt")),
 	Tile = get_tile(7,6, Board),
 	Followstruct = make_followstruct(Tile, left, Gaddag, Board, new_move()),
-	{success, Moved, _} = next(Followstruct, $T),
+	{success, Moved, _} = next(Followstruct, $T, Gaddag),
 
 	FTile = get_followstruct_tile(Moved),
 	FDir = get_followstruct_direction(Moved),
