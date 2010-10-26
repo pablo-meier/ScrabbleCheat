@@ -225,7 +225,102 @@ bottom_wall_candidate_generate_test() ->
 	lists:foreach(fun (X) -> ?assert(lists:any(fun (Y) -> duplicate_moves(X, Y) end, Run)) end, Solutions).
 
 
-%% Corners?
+%% Corners
+perpendicular_leftwise_test() ->
+
+	Direction = up,
+	Gaddag = parse(?TESTDICT),
+	Board = place_word("ABLE", right, {7,7}, new_board()),
+	Candidate = get_tile(7, 6, Board),
+
+	Followstruct = make_followstruct(Candidate, Direction, Gaddag, Board, new_move()),
+	Zoomtile = get_tile(7, 6, Board),
+	Rack = "LASSO",
+	Accum = [],
+	
+	Run = get_moves_from_candidate(Followstruct, Zoomtile, Rack, Accum, Gaddag),
+
+	%% Test LASSO, where second 'S' hooks onto ABLE for SABLE
+	Solutions = [{move, [{{character, $L}, none, {4,6}},
+						{{character, $A}, none, {5,6}},
+						{{character, $S}, triple_letter_score, {6,6}},
+						{{character, $S}, none, {7,6}},
+						{{character, $O}, none, {8,6}}]}],
+
+	lists:foreach(fun (X) -> ?assert(lists:any(fun (Y) -> duplicate_moves(X, Y) end, Run)) end, Solutions).
+
+
+perpendicular_underside_test() ->
+	Direction = left,
+	Gaddag = parse(?TESTDICT),
+	Board = place_word("ABLE", right, {7,7}, new_board()),
+	Candidate = get_tile(8, 7, Board),
+
+	Followstruct = make_followstruct(Candidate, Direction, Gaddag, Board, new_move()),
+	Zoomtile = get_tile(8, 7, Board),
+	Rack = "ZYGOTE",
+	Accum = [],
+	
+	Run = get_moves_from_candidate(Followstruct, Zoomtile, Rack, Accum, Gaddag),
+
+	%% Test ZYGOTE, where 'TE' hooks onto bottom of AB in ABLE
+	Solutions = [{move, [{{character, $Z}, none, {8,3}},
+						{{character, $Y}, double_letter_score, {8,4}},
+						{{character, $G}, none, {8,5}},
+						{{character, $O}, none, {8,6}},
+						{{character, $T}, none, {8,7}},
+						{{character, $E}, double_word_score, {8,8}}]}],
+
+	lists:foreach(fun (X) -> ?assert(lists:any(fun (Y) -> duplicate_moves(X, Y) end, Run)) end, Solutions).
+
+
+perpendicular_upperside_test() ->
+	Direction = left,
+	Gaddag = parse(?TESTDICT),
+	Board = place_word("ABLE", right, {7,7}, new_board()),
+	Candidate = get_tile(6, 9, Board),
+
+	Followstruct = make_followstruct(Candidate, Direction, Gaddag, Board, new_move()),
+	Zoomtile = get_tile(6, 9, Board),
+	Rack = "ABHOR",
+	Accum = [],
+	
+	Run = get_moves_from_candidate(Followstruct, Zoomtile, Rack, Accum, Gaddag),
+
+	%% Test ABHOR, where 'AB' hooks onto top of LE in ABLE
+	%% I made up the word AL, it's in the test dictionary
+	Solutions = [{move, [{{character, $A}, none, {6,9}},
+						{{character, $B}, triple_letter_score, {6,10}},
+						{{character, $H}, none, {6,11}},
+						{{character, $O}, none, {6,12}},
+						{{character, $R}, none, {6,13}}]}],
+
+	lists:foreach(fun (X) -> ?assert(lists:any(fun (Y) -> duplicate_moves(X, Y) end, Run)) end, Solutions).
+
+
+perpendicular_rightside_test() ->
+	Direction = up,
+	Gaddag = parse(?TESTDICT),
+	Board = place_word("ABLE", right, {7,7}, new_board()),
+	Candidate = get_tile(7, 11, Board),
+
+	Followstruct = make_followstruct(Candidate, Direction, Gaddag, Board, new_move()),
+	Zoomtile = get_tile(7, 11, Board),
+	Rack = "CHRONO",
+	Accum = [],
+	
+	Run = get_moves_from_candidate(Followstruct, Zoomtile, Rack, Accum, Gaddag),
+
+	%% Test CHRONO, where 'R' hooks onto ABLE to form ABLER
+	Solutions = [{move, [{{character, $C}, double_word_score, {5,11}},
+						{{character, $H}, none, {6,11}},
+						{{character, $R}, none, {7,11}},
+						{{character, $O}, none, {8,11}},
+						{{character, $N}, none, {9,11}},
+						{{character, $O}, none, {10,11}}]}],
+
+	lists:foreach(fun (X) -> ?assert(lists:any(fun (Y) -> duplicate_moves(X, Y) end, Run)) end, Solutions).
+
 %% No Moves?
 %% Crosses
 

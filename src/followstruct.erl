@@ -22,8 +22,14 @@
 
 -import(board, [get_adjacent/3]).
 -import(gaddag, [get_branch/2, has_branch/2, is_terminator/1]).
--import(board, [place_letter_on_board/4, orthogonals/1, flip/1, travel/4, zoom/3]).
--import(tile, [get_tile_location/1, is_occupied/1]).
+-import(board, [place_letter_on_board/4, 
+				orthogonals/1, 
+				to_beginning/1,
+				flip/1, 
+				travel/4, 
+				get_tile/3,
+				zoom/3]).
+-import(tile, [get_tile_location/1, get_tile_letter/1, is_occupied/1]).
 -import(move, [add_to_move/2]).
 
 -import(lists, [map/2, any/2, filter/2]).
@@ -125,7 +131,8 @@ next(Followstruct, Char, Master) ->
 check_other_directions(Followstruct, Char, Master) ->
 	%% get the orthogonal direction.
 	{Tile, Direction, _, Board, _} = Followstruct,
-	Orthogonals = map(fun (X) -> get_adjacent(Tile, Board, X) end, orthogonals(Direction)),
+	CheckDirections = orthogonals(Direction),
+	Orthogonals = map(fun (X) -> get_adjacent(Tile, Board, X) end, CheckDirections),
 	Occupied = any(fun (X) -> is_occupied(X) end, Orthogonals),
 	case Occupied of
 		false -> true;
@@ -134,12 +141,33 @@ check_other_directions(Followstruct, Char, Master) ->
 			%%   Place letter on a board,
 			{Row, Col} = get_tile_location(Tile),
 			NewBoard = place_letter_on_board(Row, Col, Char, Board),
+
 			%%   zoom as far back as you can,
-			NewFollowstruct = travel(Tile, Direction, NewBoard, Master),
-			CheckGaddag = get_followstruct_gaddag(NewFollowstruct),
-			is_terminator(CheckGaddag)
+			BackDirection = to_beginning(hd(CheckDirections)),
+			BeginTile = zoom(get_tile(Row, Col, NewBoard), BackDirection, NewBoard),
+			Forwards = flip(BackDirection),
+
+			%%io:format("  Directions ~p -> ~p -> ~p, Tile is ~p~n", [Direction, BackDirection, Forwards, BeginTile]),
+
 			%%   then travel as far forward as you can.
-			%%   check that the resulting gaddag is a terminator.
+			case travel_past_separator(BeginTile, Forwards, Master, NewBoard) of
+				fail -> false;
+				AFollowstruct ->
+					CheckGaddag = get_followstruct_gaddag(AFollowstruct),
+					is_terminator(CheckGaddag)
+			end
 	end.
 
 
+%% An awful, awful hack.  We hit a bug with board:travel/4,
+%% where it doesn't travel past the separator character.  Rather
+%% than do a silly index or risk breaking the program, this is a 
+%% workaround that goes past the separator character, and continues
+%% as normal.
+travel_past_separator(Zoomtile, Direction, Gaddag, Board) ->
+	Key = get_tile_letter(Zoomtile),
+	{branch, WithSeparator} = get_branch(Key, Gaddag),
+	{branch, NewGaddag} = get_branch($&, WithSeparator),
+	NextTile = get_adjacent(Zoomtile, Board, Direction),
+	travel(NextTile, Direction, NewGaddag, Board).
+		

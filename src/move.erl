@@ -61,7 +61,8 @@ get_move_tiles({move, MoveList}) -> MoveList.
 %% Note that while it is prefereable to not generate duplicates in the 
 %% first place, this might be a TODO for later.
 duplicate_moves({move, MoveList1}, {move, MoveList2}) ->
-	lists:all(fun (X) -> lists:any(fun (Y) -> X =:= Y end, MoveList2) end, MoveList1).
+	lists:all(fun (X) -> lists:any(fun (Y) -> X =:= Y end, MoveList2) end, MoveList1) andalso
+	lists:all(fun (X) -> lists:any(fun (Y) -> X =:= Y end, MoveList1) end, MoveList2).
 
 
 %% %% check_integrity :: Int * Int -> Bool

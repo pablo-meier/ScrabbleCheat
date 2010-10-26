@@ -43,6 +43,7 @@
 		zoom/3,
 		get_adjacent/3,
 		orthogonals/1,
+		to_beginning/1,
 		flip/1,
 		get_adjacents/2,
 		place_word/4,
@@ -197,6 +198,13 @@ orthogonals(left) -> [up, down];     orthogonals(right) -> [up,down];
 orthogonals(up)   -> [left, right];  orthogonals(down)  -> [left,right].
 
 
+%% to_beginning :: Direction -> Direction
+%%
+%% Given a direction, returns the value that points to the beginning of a word.
+to_beginning(left) -> left;   to_beginning(right) -> left;
+to_beginning(up)   ->   up;   to_beginning(down)  -> up.
+
+
 %% zoom :: Tile * Direction * Board -> Tile
 %%
 %% Zooms starting from parametrized tile in the direction provided until the 
@@ -222,9 +230,14 @@ travel(ZoomTile, Direction, Gaddag, Board) ->
 	case is_occupied(ZoomTile) of
 		true -> 
 			Key = get_tile_letter(ZoomTile),
-			{branch, NewGaddag} = get_branch(Key, Gaddag),
-			NextTile = get_adjacent(ZoomTile, Board, Direction),
-			travel(NextTile, Direction, NewGaddag, Board);
+			HasBranch = get_branch(Key, Gaddag),
+			HasNext = get_adjacent(ZoomTile, Board, Direction),
+			case {HasBranch, HasNext} of
+				{none, _} -> fail;
+				{_, none} -> fail;
+				{{branch, NewGaddag}, NextTile} ->
+					travel(NextTile, Direction, NewGaddag, Board)
+			end;
 		false -> make_followstruct(ZoomTile, Direction, Gaddag, Board, new_move())
 	end.
 

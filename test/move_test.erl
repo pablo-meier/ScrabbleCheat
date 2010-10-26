@@ -27,8 +27,8 @@ duplicate_move_1_test() ->
 	Move1 = {move, [{{character, 67}, none, {6,7}},
 					{{character, 82}, none, {6,10}},
 					{{character, 91}, none, {6,11}}]},
-	Move2 = {move, [{{character, 67}, none, {6,7}},
-					{{character, 82}, none, {6,10}},
+	Move2 = {move, [{{character, 82}, none, {6,10}},
+					{{character, 67}, none, {6,7}},
 					{{character, 91}, none, {6,11}}]},
 	?assert(duplicate_moves(Move1, Move2)),
 
@@ -42,9 +42,9 @@ duplicate_move_1_test() ->
 					{{character, 88}, none, {6,6}}]},
 
 	AlsoMove4 = {move, [{{character, 67}, none, {6,7}},
-					{{character, 82}, none, {6,10}},
-					{{character, 91}, none, {6,11}},
 					{{character, 90}, none, {6,12}},
+					{{character, 91}, none, {6,11}},
+					{{character, 82}, none, {6,10}},
 					{{character, 88}, none, {6,6}}]},
 
 	?assert(duplicate_moves(Move1, Move3) =:= false),

@@ -168,15 +168,6 @@ get_zoomtiles(Candidate, Board, Gaddag) ->
 	filter(fun (X) -> X =/= edge_of_board end, WithZooms).
 
 
-%% zoom({Tile, Direction, Gaddag}, Board) ->
-%% 	Adjacent = get_adjacent(Tile, Board, Direction),
-%% 	case {Tile, get_tile_letter(Adjacent)} of
-%% 		{beyond_border, _} -> edge_of_board;
-%% 		{_, none} -> {Tile, flip(Direction), Gaddag};
-%% 		_Else -> zoom({Adjacent, Direction, Gaddag}, Board)
-%% 	end.
-
-
 %% create_origin_followstructs :: {ZoomTile, Direction, Gaddag} -> {FollowStruct, ZoomTile}
 %%
 %% From the Zoomtile, we traverse the GADDAG back to the origin candidate 
@@ -201,27 +192,29 @@ create_origin_followstructs(ThisTriple, Board) ->
 %% Given all the information, construct every possible move given your
 %% rack and the board by following using your followstruct, containing direction.
 get_moves_from_candidate(Followstruct, ZoomTile, Rack, Accum, Master) ->
-	case can_flip_followstruct(Followstruct, ZoomTile) of
+	ListOfMoves = case can_flip_followstruct(Followstruct, ZoomTile) of
 		false -> get_moves_from_candidate_recur(Followstruct, ZoomTile, Rack, Accum, Master);
 		true -> append(get_moves_from_candidate_recur(Followstruct, ZoomTile, Rack, Accum, Master),
 						get_moves_from_candidate_recur(flip_followstruct(Followstruct, ZoomTile), ZoomTile, Rack, Accum, Master))
-	end.
+	end,
+	remove_duplicates(ListOfMoves, fun move:duplicate_moves/2).
 
 get_moves_from_candidate_recur(Followstruct, ZoomTile, Rack, Accum, Master) ->
-%%	io:format("------~nget_moves_from_candidate :: Rack is ~p~n", [Rack]),
+%%	io:format(user, "------~nget_moves_from_candidate :: Rack is ~p~n", [Rack]),
 %%	CurrMove = followstruct:get_followstruct_move(Followstruct),
 %%	CurrTile = followstruct:get_followstruct_tile(Followstruct),
-%%	io:format("Move is ~p~n", [CurrMove]),
-%%	io:format("Tile is ~p~n", [tile:get_tile_location(CurrTile)]),
+%%	io:format(user, "Move is ~p~n", [CurrMove]),
+%%	io:format(user, "Tile is ~p~n", [tile:get_tile_location(CurrTile)]),
 
 	foldl(fun (X, Y) -> 
-%			io:format("  Testing on ~p...~n", [[X]]),
+%%			io:format(user, "  Testing on ~p...~n", [[X]]),
 			case next(Followstruct, X, Master) of
 				{success, NewFollowstruct, Complete} ->
 
+%%					io:format(user, "Yes!~n", []),
 %%					NewMove = followstruct:get_followstruct_move(NewFollowstruct),
-%%					io:format("    Success!  Complete is ~p~n", [Complete]),
-%% 					io:format("    NewMove is ~p~n", [NewMove]),
+%%					io:format(user, "    Success!  Complete is ~p~n", [Complete]),
+%% 					io:format(user, "    NewMove is ~p~n", [NewMove]),
 
 					RestOfRack = Rack -- [X],
 					NewAccum = append(Complete, Y),
@@ -234,7 +227,7 @@ get_moves_from_candidate_recur(Followstruct, ZoomTile, Rack, Accum, Master) ->
 						false ->
 							get_moves_from_candidate_recur(NewFollowstruct, ZoomTile, RestOfRack, NewAccum, Master)	
 					end;
-				fail -> Y % io:format("    fail!~n"), Y
+				fail -> Y % io:format(user, "    fail!~n", []), Y
 			end
 		end, Accum, Rack).
 
