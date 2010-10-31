@@ -1,16 +1,29 @@
 ------
 SHORT-TERM:
 
-- Wildcards.
-- Better, more rigorous testing.  Mostly in movesearches.  Use abstractions!
+Features:
+	- Move selection (after generation).
+	- Wildcards.
+	- Scoring.
+	- Connections between 'islands:' when you build a bridge between two words to
+	  build a longer, more impressive word.
+	- UI.  Curses/Nitrogen?
+
+Code Quality:
+	- Better use of branching, git.  So far mostly just check-in/check-out.
+	- Types with Dialyzer.
+	- Better, more rigorous testing.  Mostly in movesearches.  Use abstractions!
+
 - grep TODO and FIXME in the source to find something to do!
 
 ------
 BROADER:
 
-- Generalize the board and board parser to take different default 
-  configurations, such as a Lexulous board, or a custom board.  The hard-coding
-  is more a result of the fact that I'm in a place with no internet and can't 
-  consult the Regex library, and also because this is slightly easier.  This will
-  mostly involve changing the new_board to parse the board in lib/, and changing
-  the BOARD_HEIGHT and BOARD_LENGTH constants to read from that file as well.
+- Generalize the board and board parser to take different default
+  configurations, such as a Lexulous board, Words With Friends, or a custom
+  board.  The hard-coding is more a result of the fact that I'm in a place with
+  no internet and can't consult the Regex library, and also because this is
+  slightly easier.  This will mostly involve changing the new_board to parse the
+  board in lib/, and changing the BOARD_HEIGHT and BOARD_LENGTH constants to
+  read from that file as well. Ideally, one could start a game parametrized by
+  game type (words_with_friends) and dictionary (twl, international) etc.

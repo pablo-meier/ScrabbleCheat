@@ -4,8 +4,9 @@ ScrabbleCheat
 Revenge of the Verbally Challenged
 ----------------------------------
 
-ScrabbleCheat is a tool I'm developing to finally beat my girlfriend in Scrabble.
-Developing it in Erlang, mostly for fun.  Use it yourself, or explore the code!
+ScrabbleCheat is a tool I'm developing to finally beat my girlfriend in 
+Scrabble.  Developing it in Erlang, mostly for fun.  Use it yourself, or explore
+the code!
 
 Originally development was considered in phases: generate words from your rack,
 then place the words on the board.  This was using a DAWG algorithm most popular
@@ -18,30 +19,63 @@ Quackle (http://people.csail.mit.edu/jasonkb/quackle/).  A GADDAG, for those who
 don't know, is a perverted trie that is fat and fast, designed specifically for
 Scrabble and games with similar rules (http://en.wikipedia.org/wiki/GADDAG).
 
+##################
 ### Contents
 
 ScrabbleCheat has the following contents:
 
 * Makefile -> Builds the project, targets below.
 * src/ -> Contains the .erl source files.
-* lib/ -> Contains any extraneous support, such as testing macros or dictionary files.
+* lib/ -> Contains any extraneous support, such as testing macros or dictionary 
+          files.
 * test/ -> Contains unit tests for each of the modules, some rigorous, some not.
+* TODO -> Small lists of tasks for the project.  This is my PM.
 
+##################
 ### Makefile
 
 The Makefile has the following targets:
 
 * test (default) -> Compiles the project and runs the unit tests.
 * shell -> Compiles the project and loads the definitions into an Erlang shell.
+* run -> Let's me run a most basic client.  Will eventually become the game/AI 
+         inteface itself.
 * clean -> Removes all compilation bits.
 * compile -> Builds the project and stores the .beam files into build/
 * compile-test -> Builds the Unit tests.
 
-For now this is just loose code that will hopefully piece together into actual usable software; 
-in the meantime, I'm putting it here as well as my local machine.  Enjoy, and email
-about any questions, concerns!
+##################
+### Milestones
+
+Check out these git tags for particular milestones in the project.
+
+* WORDSEARCH -> This is your basic anagram solver.  Plug in letters and it 
+  returns a list of words you can generate with those letters.  Use '*' is 
+  for a wildcard.
+
+##################
+### Branches
+
+git checkout <branchname> for your favorite.  Note that for a while (until
+Halloween 2010) virtually everything was done in master, like a n00b.
+
+* master -> contains the most recent 'stable' code.  In master, 'make run'
+            works, and the code doesn't have lame printlines or debugging
+            stuff in it.
+
+* develop -> Mostly for feature integration, here we have a fair bit of that
+             debugging nonsense.  Where we merge to from feature branches.
+
+* anything else -> Usually a feature branch for something I'm working on.
+
+
+
+########################################################################
+For now this is just loose code that will hopefully piece together into actual 
+usable software; in the meantime, I'm putting it here as well as my local 
+machine.  Enjoy, and email about any questions, concerns!
 
 - Paul Meier
-09/20/2010
+10/31/2010
 pablo.a.meier@gmail.com  
 www.morepaul.com
