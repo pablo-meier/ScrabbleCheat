@@ -238,7 +238,8 @@ travel(ZoomTile, Direction, Gaddag, Board) ->
 				{{branch, NewGaddag}, NextTile} ->
 					travel(NextTile, Direction, NewGaddag, Board)
 			end;
-		false -> make_followstruct(ZoomTile, Direction, Gaddag, Board, new_move())
+		false -> 
+			make_followstruct(ZoomTile, Direction, Gaddag, Board, new_move())
 	end.
 
 

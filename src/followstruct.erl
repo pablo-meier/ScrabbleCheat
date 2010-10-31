@@ -147,8 +147,6 @@ check_other_directions(Followstruct, Char, Master) ->
 			BeginTile = zoom(get_tile(Row, Col, NewBoard), BackDirection, NewBoard),
 			Forwards = flip(BackDirection),
 
-			%%io:format("  Directions ~p -> ~p -> ~p, Tile is ~p~n", [Direction, BackDirection, Forwards, BeginTile]),
-
 			%%   then travel as far forward as you can.
 			case travel_past_separator(BeginTile, Forwards, Master, NewBoard) of
 				fail -> false;

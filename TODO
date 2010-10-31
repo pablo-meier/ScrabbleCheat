@@ -2,7 +2,7 @@
 SHORT-TERM:
 
 - Wildcards.
-- Better, more rigorous testing.  Mostly in movesearches.
+- Better, more rigorous testing.  Mostly in movesearches.  Use abstractions!
 - grep TODO and FIXME in the source to find something to do!
 
 ------

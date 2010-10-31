@@ -69,7 +69,7 @@ zoomtile_first_test() ->
 					{new_tile(none,none,11,7), [get_tile(7, 7, Board)]},
 					{new_tile(none,none,9,8), [get_tile(9, 7, Board)]}],
 	lists:foreach(fun ({Candidate, Solution}) ->
-					Result = get_zoomtiles(Candidate, Board, Gaddag),
+					Result = lists:map(fun ({X, _, _}) -> X end, get_zoomtiles(Candidate, Board, Gaddag)),
 					io:format("Candidate is ~p, Solution is ~p, Result is ~p~n", [Candidate, Solution, Result]),
 					?assert(Result == Solution)
 				end, SolutionPairs).
@@ -84,7 +84,7 @@ zoomtile_second_test() ->
 					{new_tile(none,none,9,8), [get_tile(9, 7, Board), get_tile(8, 8, Board)]},
 					{new_tile(none,none,7,8), [get_tile(7, 7, Board), get_tile(8, 8, Board)]}],
 	lists:foreach(fun ({Candidate, Solution}) ->
-					Result = get_zoomtiles(Candidate, Board, Gaddag),
+					Result = lists:map(fun ({X, _, _}) -> X end, get_zoomtiles(Candidate, Board, Gaddag)),
 					io:format("Candidate is ~p, Solution is ~p, Result is ~p~n", [Candidate, Solution, Result]),
 					?assert(Result == Solution)
 				end, SolutionPairs).
