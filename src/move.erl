@@ -21,7 +21,7 @@
 -module(move).
 
 -import(tile, [get_tile_location/1, is_occupied/1, get_tile_bonus/1]).
--import(board, [to_beginning/1, orthogonals/1, get_adjacent/3, zoom/3, flip/1]).
+-import(board, [place_move_on_board/2, to_beginning/1, orthogonals/1, get_adjacent/3, zoom/3, flip/1]).
 -import(lists, [foldl/3, filter/2]).
 -import(tile, [get_tile_letter/1, is_wildcard/1]).
 -export([new_move/0, add_to_move/2, duplicate_moves/2, get_move_tiles/1, score/2]).
@@ -76,13 +76,15 @@ check_integrity(Row, Col) ->
 %% score :: Move -> Int
 %%
 %% Calculates the score of a move.
-score({move, Lst}, Board) ->
+score(Move, Board) ->
+	Lst = get_move_tiles(Move),
+	ZoomBackDir = to_beginning(get_move_orientation(Lst)),
 	[ATile|_] = Lst,
-	Direction = get_move_orientation(Lst),
-	ZoomBackDir = to_beginning(Direction),
-	StartTile = zoom(ATile, ZoomBackDir, Board),
-	Totaled = traverse(StartTile, flip(ZoomBackDir), Board),
-	BonusPoints = get_bonus_points(StartTile, flip(ZoomBackDir), Lst, Board),
+	MockBoard = place_move_on_board(Move, Board),
+
+	StartTile = zoom(ATile, ZoomBackDir, MockBoard),
+	Totaled = traverse(StartTile, flip(ZoomBackDir), MockBoard),
+	BonusPoints = get_bonus_points(StartTile, flip(ZoomBackDir), Lst, MockBoard),
 	Totaled + BonusPoints.
 
 
@@ -129,7 +131,7 @@ traverse_and_add(Tile, Direction, Board) ->
 
 get_bonus_points(StartTile, Direction, List, Board) ->
 	foldl(fun (X, Y) ->
-			handle_bonus(get_tile_bonus(X), X, StartTile, Direction, Board)	
+			handle_bonus(get_tile_bonus(X), X, StartTile, Direction, Board)	+ Y
 		end, 0, List).
 
 
