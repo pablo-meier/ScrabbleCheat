@@ -2,15 +2,16 @@
 SHORT-TERM:
 
 Features:
-	- Move selection (after generation).
+	- Scoring. TOTEST
 	- Wildcards.
-	- Scoring.
 	- Connections between 'islands:' when you build a bridge between two words to
 	  build a longer, more impressive word.
-	- UI.  Curses/Nitrogen?
+	- Move selection (after generation, likely start out with naive high score).
+	- UI. Curses/Nitrogen?
 
 Code Quality:
-	- Better use of branching, git.  So far mostly just check-in/check-out.
+	- Better use of branching, git.  So far mostly just check-in/check-out to 
+	  master, pretty lame.
 	- Types with Dialyzer.
 	- Better, more rigorous testing.  Mostly in movesearches.  Use abstractions!
 

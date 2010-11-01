@@ -21,7 +21,9 @@
 -module(move_test).
 -include_lib("eunit/include/eunit.hrl").
 
--import(move, [duplicate_moves/2]).
+-import(move, [duplicate_moves/2, score/2, new_move/0, add_to_move/2]).
+-import(lists, [foldl/3]).
+-import(board_parser, [new_board/0]).
 
 duplicate_move_1_test() ->
 	Move1 = {move, [{{character, 67}, none, {6,7}},
@@ -52,3 +54,22 @@ duplicate_move_1_test() ->
 	?assert(duplicate_moves(Move4, Move1) =:= false),
 	?assert(duplicate_moves(Move4, AlsoMove4)).
 
+score_1_test() ->
+	Tiles = [{{character, $A}, double_letter_score, {7,7}}, 
+			{{character, $B}, none, {7,8}},
+			{{character, $L}, double_letter_score, {7,9}},
+			{{character, $E}, none, {7,10}}],
+	Move = foldl(fun move:add_to_move/2, new_move(), Tiles), 
+	Score = score(Move, new_board()),
+	io:format("Score is ~p~n", [Score]),
+	?assert(Score =:= 8).
+
+score_2_test() ->
+	Tiles = [{{character, $A}, double_word_score, {8,7}}, 
+			{{character, $B}, none, {8,8}},
+			{{character, $L}, none, {8,9}},
+			{{character, $E}, none, {8,10}}],
+	Move = foldl(fun move:add_to_move/2, new_move(), Tiles), 
+	Score = score(Move, new_board()),
+	io:format("Score is ~p~n", [Score]),
+	?assert(Score =:= 12).

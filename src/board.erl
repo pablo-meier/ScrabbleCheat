@@ -194,15 +194,20 @@ flip(right) -> left.
 %% orthogonals :: Direction -> [Direction]
 %%
 %% Provides perpendicular directions to the parameter.
-orthogonals(left) -> [up, down];     orthogonals(right) -> [up,down];
-orthogonals(up)   -> [left, right];  orthogonals(down)  -> [left,right].
+orthogonals(left) -> [up, down];        orthogonals(right) -> [up,down];
+orthogonals(up)   -> [left, right];     orthogonals(down)  -> [left,right];
+
+orthogonals(horizontal) -> [up, down];  orthogonals(vertical) -> [left, right].
+
 
 
 %% to_beginning :: Direction -> Direction
 %%
 %% Given a direction, returns the value that points to the beginning of a word.
-to_beginning(left) -> left;   to_beginning(right) -> left;
-to_beginning(up)   ->   up;   to_beginning(down)  -> up.
+to_beginning(left) -> left;         to_beginning(right) -> left;
+to_beginning(up)   ->   up;         to_beginning(down)  -> up;
+
+to_beginning(horizontal) -> left;   to_beginning(vertical) -> up.
 
 
 %% zoom :: Tile * Direction * Board -> Tile
