@@ -24,6 +24,7 @@
 -define(SPACE, 32).
 -export([new_tile/4, 
 		print_tile/1,
+		duplicate_tile/2,
 		get_tile_letter/1,
 		get_tile_bonus/1,
 		get_tile_location/1,
@@ -58,6 +59,7 @@ get_tile_location({_, _, Location}) -> Location.
 is_wildcard({{wildcard,_}, _, _}) -> true;
 is_wildcard(_Else) -> false.
 
+duplicate_tile(X, Y) -> X =:= Y.
 
 set_tile_letter(NewLetter, {{character, _}, Bonus, Location}) -> {{character, NewLetter}, Bonus, Location};
 set_tile_letter(NewLetter, {{wildcard, _}, Bonus, Location}) -> {{wildcard, NewLetter}, Bonus, Location};

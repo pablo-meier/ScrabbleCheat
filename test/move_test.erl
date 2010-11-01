@@ -23,6 +23,7 @@
 
 -import(move, [duplicate_moves/2, score/2, new_move/0, add_to_move/2]).
 -import(lists, [foldl/3]).
+-import(board, [place_word/4]).
 -import(board_parser, [new_board/0]).
 
 duplicate_move_1_test() ->
@@ -54,7 +55,7 @@ duplicate_move_1_test() ->
 	?assert(duplicate_moves(Move4, Move1) =:= false),
 	?assert(duplicate_moves(Move4, AlsoMove4)).
 
-score_1_test() ->
+score_simple_test() ->
 	Tiles = [{{character, $A}, double_letter_score, {7,7}}, 
 			{{character, $B}, none, {7,8}},
 			{{character, $L}, double_letter_score, {7,9}},
@@ -64,7 +65,7 @@ score_1_test() ->
 	io:format("Score is ~p~n", [Score]),
 	?assert(Score =:= 8).
 
-score_2_test() ->
+score_isolated_bonus_test() ->
 	Tiles = [{{character, $A}, double_word_score, {8,7}}, 
 			{{character, $B}, none, {8,8}},
 			{{character, $L}, none, {8,9}},
@@ -73,3 +74,25 @@ score_2_test() ->
 	Score = score(Move, new_board()),
 	io:format("Score is ~p~n", [Score]),
 	?assert(Score =:= 12).
+
+score_parallel_test() ->
+	Tiles = [{{character, $A}, none, {6,6}}, 
+			{{character, $A}, double_letter_score, {6,7}}],
+	Move = foldl(fun move:add_to_move/2, new_move(), Tiles),
+	Score = score(Move, place_word("ABLE", right, {5,6}, new_board())),
+	io:format("Score is ~p~n", [Score]),
+	?assert(Score =:= 8).
+	
+
+score_parallel_many_bonuses_test() ->
+	Tiles = [{{character, $Z}, none, {8,3}}, 
+			{{character, $Y}, double_letter_score, {8,4}},
+			{{character, $G}, none, {8,7}},
+			{{character, $O}, none, {8,6}},
+			{{character, $T}, double_word_score, {8,7}},
+			{{character, $E}, none, {8,8}}],
+	Move = foldl(fun move:add_to_move/2, new_move(), Tiles), 
+	Score = score(Move, place_word("ABLE", right, {7,7}, new_board())),
+	io:format("Score is ~p~n", [Score]),
+	?assert(Score =:= 46).
+	
