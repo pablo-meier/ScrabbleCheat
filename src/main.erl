@@ -35,53 +35,53 @@
 %% main :: () -> IO ()
 %% Test
 main() ->
-	greet(),
-	Trie = dict_parser:parse(?DICT_FILE),
-	Word_Function = get_best_move_function(Trie),
-	Board = sample_board(),
-	loop(Word_Function, Board).
+    greet(),
+    Trie = dict_parser:parse(?DICT_FILE),
+    Word_Function = get_best_move_function(Trie),
+    Board = sample_board(),
+    loop(Word_Function, Board).
 
 
 loop(Search, Board) ->
-	print_board(Board),
-	Chars = prompt(),
-	Results = Search(Board, Chars),
-	Sorted = sort_results_by_score(Results, Board),
-	print_results(Sorted, Board),
-	io:format("~n~n FINITO!~n"),
-	case use_again() of
-		true -> loop(Search, Board);
-		false -> 
-			io:format("Thanks!~n"),
-			erlang:halt()
-	end.
+    print_board(Board),
+    Chars = prompt(),
+    Results = Search(Board, Chars),
+    Sorted = sort_results_by_score(Results, Board),
+    print_results(Sorted, Board),
+    io:format("~n~n FINITO!~n"),
+    case use_again() of
+        true -> loop(Search, Board);
+        false -> 
+            io:format("Thanks!~n"),
+            erlang:halt()
+    end.
 
 
 sample_board() ->
-	board:place_word("ABLE", right, {7, 7}, board_parser:new_board()).
+    board:place_word("ABLE", right, {7, 7}, board_parser:new_board()).
 
 print_results(ResultList, Board) ->
-	foreach(fun ({Score, Move}) -> io:format("---~n"), 
-						print_board(place_move_on_board(Move, Board)),
-						io:format("~n Score for this move: ~p~n", [Score])
-			end, ResultList).
+    foreach(fun ({Score, Move}) -> io:format("---~n"), 
+                print_board(place_move_on_board(Move, Board)),
+                io:format("~n Score for this move: ~p~n", [Score])
+            end, ResultList).
 
 
 sort_results_by_score(Moves, Board) ->
-	keysort(1, map(fun (X) -> {score(X, Board), X} end, Moves)).
+    keysort(1, map(fun (X) -> {score(X, Board), X} end, Moves)).
 
 
 
 greet() ->
-	io:format("--------~nWelcome to ScrabbleCheat!~n~n").
+    io:format("--------~nWelcome to ScrabbleCheat!~n~n").
 
 prompt() ->
-	io:format("Welcome!~n"),
-	format_string_for_gaddag(io:get_line("Here is a board.  Enter some letters (your rack), see what's possible!  ")).
+    io:format("Welcome!~n"),
+    format_string_for_gaddag(io:get_line("Here is a board.  Enter some letters (your rack), see what's possible!  ")).
 
 use_again() ->
-	Answer = io:get_line("Would you like to submit again? [y/n]:  "),
-	case re:run(Answer, "[yY]([Ee][sS])?") of
-		{match, _Captured} -> true;
-		nomatch -> false
-	end.
+    Answer = io:get_line("Would you like to submit again? [y/n]:  "),
+    case re:run(Answer, "[yY]([Ee][sS])?") of
+        {match, _Captured} -> true;
+        nomatch -> false
+    end.

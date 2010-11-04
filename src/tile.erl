@@ -23,16 +23,16 @@
 
 -define(SPACE, 32).
 -export([new_tile/4, 
-		print_tile/1,
-		duplicate_tile/2,
-		get_tile_letter/1,
-		get_tile_bonus/1,
-		get_tile_location/1,
-		set_tile_letter/2,
-		set_tile_bonus/2,
-		set_tile_location/2,
-		is_wildcard/1,
-		is_occupied/1]).
+         print_tile/1,
+         duplicate_tile/2,
+         get_tile_letter/1,
+         get_tile_bonus/1,
+         get_tile_location/1,
+         set_tile_letter/2,
+         set_tile_bonus/2,
+         set_tile_location/2,
+         is_wildcard/1,
+         is_occupied/1]).
 
 %% Datatype for a tile, which is what the board is composed of. Keeps track of 
 %% bonuses, and which letter is where.  
@@ -42,11 +42,11 @@
 %% Tiles store their own locations.  This is 1-indexed, following convention with the rest of the program.
 
 new_tile(Occupied, Bonus, Row, Col) ->
-	{Occupied, Bonus, {Row, Col}}.
+    {Occupied, Bonus, {Row, Col}}.
 
 
 is_occupied(Tile) ->
-	get_tile_letter(Tile) =/= none.
+    get_tile_letter(Tile) =/= none.
 
 
 get_tile_letter({{_, Letter}, _, _}) -> Letter;
@@ -70,17 +70,17 @@ set_tile_location(NewLocation, {Letter, Bonus, _}) -> {Letter, Bonus, NewLocatio
 
 
 print_tile({none, Bonus, _}) ->
-	print_tile_skeleton(?SPACE, Bonus);
+    print_tile_skeleton(?SPACE, Bonus);
 print_tile({{_, Letter}, Bonus, _}) ->
-	print_tile_skeleton(Letter, Bonus).
+    print_tile_skeleton(Letter, Bonus).
 
 print_tile_skeleton(Letter, Bonus) ->
-	case Bonus of
-		none -> io:format(" ~s ", [[Letter]]);
-		triple_word_score -> io:format("*~s*", [[Letter]]);
-		double_word_score -> io:format("^~s^", [[Letter]]);
-		triple_letter_score -> io:format("-~s-", [[Letter]]);
-		double_letter_score -> io:format("_~s_", [[Letter]]);
-		_false -> uh_oh
-	end.
+    case Bonus of
+        none -> io:format(" ~s ", [[Letter]]);
+        triple_word_score -> io:format("*~s*", [[Letter]]);
+        double_word_score -> io:format("^~s^", [[Letter]]);
+        triple_letter_score -> io:format("-~s-", [[Letter]]);
+        double_letter_score -> io:format("_~s_", [[Letter]]);
+        _false -> uh_oh
+    end.
 

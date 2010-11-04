@@ -40,15 +40,15 @@ new_move() -> {move, []}.
 %%
 %% Adds to the move, or throws an error.
 add_to_move(Tile, Move) ->
-	{move, MoveList} = Move,
-	{Row, Col} = get_tile_location(Tile),
-	WithinBounds = check_integrity(Row, Col),
-	case WithinBounds of
-		true -> 
-				{move, [Tile|MoveList]};
-		_False -> 
-			throw({out_of_bounds, {Row, Col}})
-	end.
+    {move, MoveList} = Move,
+    {Row, Col} = get_tile_location(Tile),
+    WithinBounds = check_integrity(Row, Col),
+    case WithinBounds of
+        true -> 
+                {move, [Tile|MoveList]};
+        _False -> 
+            throw({out_of_bounds, {Row, Col}})
+    end.
 
 
 %% get_move_tiles :: Move -> [Tile]
@@ -63,74 +63,74 @@ get_move_tiles({move, MoveList}) -> MoveList.
 %% Note that while it is prefereable to not generate duplicates in the 
 %% first place, this might be a TODO for later.
 duplicate_moves({move, MoveList1}, {move, MoveList2}) ->
-	lists:all(fun (X) -> lists:any(fun (Y) -> X =:= Y end, MoveList2) end, MoveList1) andalso
-	lists:all(fun (X) -> lists:any(fun (Y) -> X =:= Y end, MoveList1) end, MoveList2).
+    lists:all(fun (X) -> lists:any(fun (Y) -> X =:= Y end, MoveList2) end, MoveList1) andalso
+    lists:all(fun (X) -> lists:any(fun (Y) -> X =:= Y end, MoveList1) end, MoveList2).
 
 
 %% %% check_integrity :: Int * Int -> Bool
 check_integrity(Row, Col) ->
-	Row =< 15 andalso Row >= 1 andalso Col =< 15 andalso Col >= 1.
+    Row =< 15 andalso Row >= 1 andalso Col =< 15 andalso Col >= 1.
 
 
 %% score :: Move -> Int
 %%
 %% Calculates the score of a move.
 score(Move, Board) ->
-	%% Get the orientation, start point of a move.
-	Lst = get_move_tiles(Move),
+    %% Get the orientation, start point of a move.
+    Lst = get_move_tiles(Move),
 
-	ZoomBackDir = to_beginning(get_move_orientation(Lst)),
-	MockBoard = place_move_on_board(Move, Board),
-	[ATile|_] = Lst,
-	StartTile = zoom(ATile, ZoomBackDir, MockBoard),
-	Forward = flip(ZoomBackDir),
+    ZoomBackDir = to_beginning(get_move_orientation(Lst)),
+    MockBoard = place_move_on_board(Move, Board),
+    [ATile|_] = Lst,
+    StartTile = zoom(ATile, ZoomBackDir, MockBoard),
+    Forward = flip(ZoomBackDir),
 
-	%% Calculate the score of the original move
-	Original = score_word_path(StartTile, Forward, MockBoard, Lst, 0, []),
+    %% Calculate the score of the original move
+    Original = score_word_path(StartTile, Forward, MockBoard, Lst, 0, []),
 
-	%% Calculate the score of any Perpendicular moves 
-	Perpendiculars = score_perpendiculars(StartTile, Forward, MockBoard, Lst, 0),
+    %% Calculate the score of any Perpendicular moves 
+    Perpendiculars = score_perpendiculars(StartTile, Forward, MockBoard, Lst, 0),
 
-	Original + Perpendiculars.
+    Original + Perpendiculars.
 
 
 %% get_move_orientation :: [Tile] -> horizontal | vertical
 get_move_orientation([H|T]) ->
-	{Row1, _} = get_tile_location(H),
-	Horizontal = lists:all(fun (X) -> {Row2,_} = get_tile_location(X), Row2 =:= Row1 end, T),
-	case Horizontal of
-		true -> horizontal;
-		_Else -> vertical
-	end.
+    {Row1, _} = get_tile_location(H),
+    Horizontal = lists:all(fun (X) -> {Row2,_} = get_tile_location(X), Row2 =:= Row1 end, T),
+    case Horizontal of
+        true -> horizontal;
+        _Else -> vertical
+    end.
 
 
 %% score_perpendiculars :: Tile * Direction * Board * [Tile] * Int -> Points 
 %% 
 %% Follows a path, and if it sees moves in perpendicular directions, scores them.
 score_perpendiculars(Tile, Direction, Board, MoveComponents, Accum) ->
-	%% See if you have a perpendicular path.
-	Surrounding = filter(fun (X) -> is_occupied(get_adjacent(Tile, Board, X)) end, orthogonals(Direction)),
-	%% Ensure it's perpendicular to a tile that's fresh in this move.
-	IsNew = is_part_of_new_move(Tile, MoveComponents),
-	%% Score it as a word if there exists a perpendicular path to a new tile component.
-	Points = case {Surrounding, IsNew} of
-				{[], _}    -> 0; 
-				{_, false} -> 0; 
-				_Else -> 
-					ZoomBackDir = to_beginning(hd(orthogonals(Direction))),
-					StartTile = zoom(Tile, ZoomBackDir, Board),
-					Forward = flip(ZoomBackDir),
-					score_word_path(StartTile, Forward, Board, MoveComponents, 0, [])
-			end,
-	%% Continue if possible.
-	case get_adjacent(Tile, Board, Direction) of
-		none -> Points + Accum;
-		NextTile -> 
-			case is_occupied(NextTile) of
-				false -> Points + Accum;
-				true -> score_perpendiculars(NextTile, Direction, Board, MoveComponents, Points + Accum)
-			end
-	end.
+    %% See if you have a perpendicular path.
+    Surrounding = filter(fun (X) -> is_occupied(get_adjacent(Tile, Board, X)) end, orthogonals(Direction)),
+    %% Ensure it's perpendicular to a tile that's fresh in this move.
+    IsNew = is_part_of_new_move(Tile, MoveComponents),
+    %% Score it as a word if there exists a perpendicular path to a new tile component.
+    Points = case {Surrounding, IsNew} of
+                {[], _}    -> 0; 
+                {_, false} -> 0; 
+                _Else -> 
+                    ZoomBackDir = to_beginning(hd(orthogonals(Direction))),
+                    StartTile = zoom(Tile, ZoomBackDir, Board),
+                    Forward = flip(ZoomBackDir),
+                    score_word_path(StartTile, Forward, Board, MoveComponents, 0, [])
+            end,
+    %% Continue if possible.
+    case get_adjacent(Tile, Board, Direction) of
+        none -> Points + Accum;
+        NextTile -> 
+            case is_occupied(NextTile) of
+                false -> Points + Accum;
+                true -> score_perpendiculars(NextTile, Direction, Board, MoveComponents, Points + Accum)
+            end
+    end.
 
 
 %% score_word_path :: Tile * Direction * Board * [Tile] * Int * [Bonus] -> Points
@@ -138,48 +138,48 @@ score_perpendiculars(Tile, Direction, Board, MoveComponents, Accum) ->
 %% Actually counts the points of every component in a path.  Handles bonuses
 %% by checking if they were part of the original moves.
 score_word_path(Tile, Direction, Board, MoveComponents, Accum, Bonuses) ->
-	%% Score the tile you are on.
-	TilePoints = case is_wildcard(Tile) of 
-					true -> 0; 
-					false -> letter_score(get_tile_letter(Tile)) 
-				end,
+    %% Score the tile you are on.
+    TilePoints = case is_wildcard(Tile) of 
+                    true -> 0; 
+                    false -> letter_score(get_tile_letter(Tile)) 
+                end,
 
-	%% Adjust points for letter bonuses
-	IsNew = is_part_of_new_move(Tile, MoveComponents),
-	LetterBonus = get_tile_bonus(Tile),
-	WithBonuses = case {LetterBonus, IsNew} of 
-					{double_letter_score, true} -> 2 * TilePoints;
-					{triple_letter_score, true} -> 3 * TilePoints;
-					_Else -> TilePoints
-				end,
+    %% Adjust points for letter bonuses
+    IsNew = is_part_of_new_move(Tile, MoveComponents),
+    LetterBonus = get_tile_bonus(Tile),
+    WithBonuses = case {LetterBonus, IsNew} of 
+                      {double_letter_score, true} -> 2 * TilePoints;
+                      {triple_letter_score, true} -> 3 * TilePoints;
+                      _Else -> TilePoints
+                end,
 
-	%% Check word bonuses and whether or not they belong in the original move.
-	BonusAcc = check_and_add_bonuses(Tile, MoveComponents, Bonuses),
+    %% Check word bonuses and whether or not they belong in the original move.
+    BonusAcc = check_and_add_bonuses(Tile, MoveComponents, Bonuses),
 
-	%% See if you can continue
-	case get_adjacent(Tile, Board, Direction) of
-		none -> 
-			foldl(fun (X, Y) -> X(Y) end, Accum + WithBonuses, BonusAcc);
-		NewTile ->
-			case is_occupied(NewTile) of
-				true  -> score_word_path(NewTile, Direction, Board, MoveComponents, Accum + WithBonuses, BonusAcc);
-				false -> 
-					foldl(fun (X, Y) -> X(Y) end, Accum + WithBonuses, BonusAcc)
-			end
-	end.
+    %% See if you can continue
+    case get_adjacent(Tile, Board, Direction) of
+        none -> 
+            foldl(fun (X, Y) -> X(Y) end, Accum + WithBonuses, BonusAcc);
+        NewTile ->
+            case is_occupied(NewTile) of
+                true  -> score_word_path(NewTile, Direction, Board, MoveComponents, Accum + WithBonuses, BonusAcc);
+                false -> 
+                    foldl(fun (X, Y) -> X(Y) end, Accum + WithBonuses, BonusAcc)
+            end
+    end.
 
 
 check_and_add_bonuses(Tile, MoveComponents, Bonuses) ->
-	IsNew = is_part_of_new_move(Tile, MoveComponents),
-	case {get_tile_bonus(Tile), IsNew} of
-		{triple_word_score, true} -> [fun(X) -> 3 * X end|Bonuses];
-		{double_word_score, true} -> [fun(X) -> 2 * X end|Bonuses];
-		_Else -> Bonuses
-	end.
+    IsNew = is_part_of_new_move(Tile, MoveComponents),
+    case {get_tile_bonus(Tile), IsNew} of
+        {triple_word_score, true} -> [fun(X) -> 3 * X end|Bonuses];
+        {double_word_score, true} -> [fun(X) -> 2 * X end|Bonuses];
+        _Else -> Bonuses
+    end.
 
 
 is_part_of_new_move(Tile, MoveComponents) ->
-	any(fun (X) -> duplicate_tile(Tile, X) end, MoveComponents).
+    any(fun (X) -> duplicate_tile(Tile, X) end, MoveComponents).
 
 
 

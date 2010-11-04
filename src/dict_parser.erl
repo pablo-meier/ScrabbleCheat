@@ -23,24 +23,24 @@
 -import(gaddag, [empty_gaddag/0, add_word/2]).
 
 parse(Filename) ->
-	case file:open(Filename, read) of
-		{ok, FileHandle} ->
-			Empty = empty_gaddag(),
-			io:format("Parsing...~n"),
-			parse_each_line(FileHandle, Empty);
-		{error, enoent} ->
-			throw({file_not_found, Filename})
-	end.
+    case file:open(Filename, read) of
+        {ok, FileHandle} ->
+            Empty = empty_gaddag(),
+            io:format("Parsing...~n"),
+            parse_each_line(FileHandle, Empty);
+        {error, enoent} ->
+            throw({file_not_found, Filename})
+    end.
 
 %% parse_each_line
 parse_each_line(IoHandle, Curr) ->
-	Line = io:get_line(IoHandle, ''),
-	case Line of
-		eof ->
-			io:format("Done Parsing.~n"),
-			Curr;
-		A_Line ->
-			Stripped = string_utils:format_string_for_gaddag(A_Line),
-			NewGaddag = add_word(Stripped, Curr),
-			parse_each_line(IoHandle, NewGaddag)
-	end.
+    Line = io:get_line(IoHandle, ''),
+    case Line of
+        eof ->
+            io:format("Done Parsing.~n"),
+            Curr;
+        A_Line ->
+            Stripped = string_utils:format_string_for_gaddag(A_Line),
+            NewGaddag = add_word(Stripped, Curr),
+            parse_each_line(IoHandle, NewGaddag)
+    end.
