@@ -22,8 +22,9 @@
 -import(movesearch, [get_best_move_function/1]).
 -import(dict_parser, [parse/1]).
 -import(board, [print_board/1, place_move_on_board/2]).
--import(lists, [reverse/1,foreach/2, keysort/2, sort/2, map/2]).
 -import(string_utils, [format_string_for_gaddag/1]).
+-import(move, [score/2]).
+-import(lists, [reverse/1,foreach/2, keysort/2, sort/2, map/2]).
 -define(DICT_FILE, "test/testdict.txt"). % "lib/twl06.txt").
 -export([main/0]).
 
@@ -45,7 +46,8 @@ loop(Search, Board) ->
 	print_board(Board),
 	Chars = prompt(),
 	Results = Search(Board, Chars),
-	print_results(Results, Board),
+	Sorted = sort_results_by_score(Results, Board),
+	print_results(Sorted, Board),
 	io:format("~n~n FINITO!~n"),
 	case use_again() of
 		true -> loop(Search, Board);
@@ -59,8 +61,14 @@ sample_board() ->
 	board:place_word("ABLE", right, {7, 7}, board_parser:new_board()).
 
 print_results(ResultList, Board) ->
-	foreach(fun (X) -> io:format("---~n"), print_board(place_move_on_board(X, Board)) end, ResultList).
+	foreach(fun ({Score, Move}) -> io:format("---~n"), 
+						print_board(place_move_on_board(Move, Board)),
+						io:format("~n Score for this move: ~p~n", [Score])
+			end, ResultList).
 
+
+sort_results_by_score(Moves, Board) ->
+	keysort(1, map(fun (X) -> {score(X, Board), X} end, Moves)).
 
 
 
@@ -68,7 +76,8 @@ greet() ->
 	io:format("--------~nWelcome to ScrabbleCheat!~n~n").
 
 prompt() ->
-	format_string_for_gaddag(io:get_line("Here is a board.  Enter some letters (your rack), see what's possible:  ")).
+	io:format("Welcome!~n"),
+	format_string_for_gaddag(io:get_line("Here is a board.  Enter some letters (your rack), see what's possible!  ")).
 
 use_again() ->
 	Answer = io:get_line("Would you like to submit again? [y/n]:  "),
