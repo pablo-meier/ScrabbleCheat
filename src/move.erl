@@ -114,21 +114,21 @@ score_perpendiculars(Tile, Direction, Board, MoveComponents, Accum) ->
 	IsNew = is_part_of_new_move(Tile, MoveComponents),
 	%% Score it as a word if there exists a perpendicular path to a new tile component.
 	Points = case {Surrounding, IsNew} of
-				{[], _}    -> Accum; 
-				{_, false} -> Accum; 
+				{[], _}    -> 0; 
+				{_, false} -> 0; 
 				_Else -> 
-					ZoomBackDir = to_beginning(orthogonals(hd(Direction))),
+					ZoomBackDir = to_beginning(hd(orthogonals(Direction))),
 					StartTile = zoom(Tile, ZoomBackDir, Board),
 					Forward = flip(ZoomBackDir),
-					score_word_path(StartTile, Forward, Board, MoveComponents, Accum, [])
+					score_word_path(StartTile, Forward, Board, MoveComponents, 0, [])
 			end,
 	%% Continue if possible.
 	case get_adjacent(Tile, Board, Direction) of
-		none -> Points;
+		none -> Points + Accum;
 		NextTile -> 
 			case is_occupied(NextTile) of
-				false -> Points;
-				true -> score_perpendiculars(NextTile, Direction, Board, MoveComponents, Points)
+				false -> Points + Accum;
+				true -> score_perpendiculars(NextTile, Direction, Board, MoveComponents, Points + Accum)
 			end
 	end.
 
@@ -158,11 +158,13 @@ score_word_path(Tile, Direction, Board, MoveComponents, Accum, Bonuses) ->
 
 	%% See if you can continue
 	case get_adjacent(Tile, Board, Direction) of
-		none -> foldl(fun (X, Y) -> X(Y) end, Accum + WithBonuses, BonusAcc);
+		none -> 
+			foldl(fun (X, Y) -> X(Y) end, Accum + WithBonuses, BonusAcc);
 		NewTile ->
 			case is_occupied(NewTile) of
 				true  -> score_word_path(NewTile, Direction, Board, MoveComponents, Accum + WithBonuses, BonusAcc);
-				false -> foldl(fun (X, Y) -> X(Y) end, Accum + WithBonuses, BonusAcc)
+				false -> 
+					foldl(fun (X, Y) -> X(Y) end, Accum + WithBonuses, BonusAcc)
 			end
 	end.
 

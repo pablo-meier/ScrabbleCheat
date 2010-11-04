@@ -66,8 +66,8 @@ score_simple_test() ->
 	?assert(Score =:= 8).
 
 score_isolated_bonus_test() ->
-	Tiles = [{{character, $A}, double_word_score, {8,7}}, 
-			{{character, $B}, none, {8,8}},
+	Tiles = [{{character, $A}, none, {8,7}}, 
+			{{character, $B}, double_word_score, {8,8}},
 			{{character, $L}, none, {8,9}},
 			{{character, $E}, none, {8,10}}],
 	Move = foldl(fun move:add_to_move/2, new_move(), Tiles), 
@@ -76,23 +76,24 @@ score_isolated_bonus_test() ->
 	?assert(Score =:= 12).
 
 score_parallel_test() ->
-	Tiles = [{{character, $A}, none, {6,6}}, 
-			{{character, $A}, double_letter_score, {6,7}}],
+	Tiles = [{{character, $A}, triple_letter_score, {6,6}}, 
+			{{character, $A}, none, {6,7}}],
 	Move = foldl(fun move:add_to_move/2, new_move(), Tiles),
 	Score = score(Move, place_word("ABLE", right, {5,6}, new_board())),
 	io:format("Score is ~p~n", [Score]),
-	?assert(Score =:= 8).
+	?assert(Score =:= 12).
 	
 
 score_parallel_many_bonuses_test() ->
+	io:format(user, "-------------------~n", []),
 	Tiles = [{{character, $Z}, none, {8,3}}, 
 			{{character, $Y}, double_letter_score, {8,4}},
-			{{character, $G}, none, {8,7}},
+			{{character, $G}, none, {8,5}},
 			{{character, $O}, none, {8,6}},
-			{{character, $T}, double_word_score, {8,7}},
-			{{character, $E}, none, {8,8}}],
+			{{character, $T}, none, {8,7}},
+			{{character, $E}, double_word_score, {8,8}}],
 	Move = foldl(fun move:add_to_move/2, new_move(), Tiles), 
 	Score = score(Move, place_word("ABLE", right, {7,7}, new_board())),
 	io:format("Score is ~p~n", [Score]),
-	?assert(Score =:= 46).
+	?assert(Score =:= 56).
 	
