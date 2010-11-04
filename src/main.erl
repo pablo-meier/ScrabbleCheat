@@ -20,13 +20,18 @@
 
 -module(main).
 -import(movesearch, [get_best_move_function/1]).
--import(dict_parser, [parse/1]).
+-import(dict_parser, [parse/1, output_to_file/2]).
 -import(board, [print_board/1, place_move_on_board/2]).
 -import(string_utils, [format_string_for_gaddag/1]).
 -import(move, [score/2]).
 -import(lists, [reverse/1,foreach/2, keysort/2, sort/2, map/2]).
+
 -define(DICT_FILE, "test/testdict.txt"). % "lib/twl06.txt").
--export([main/0]).
+-define(LARGE_DICT_FILE, "lib/twl06.txt").
+-define(DICT_BIN_PATH, "build/gaddag.dict").
+
+-export([main/0,
+         make_binary_gaddag/0]).
 
 
 %% Eventually the main program, right now just a testing runtime while I get
@@ -36,11 +41,15 @@
 %% Test
 main() ->
     greet(),
-    Trie = dict_parser:parse(?DICT_FILE),
-    Word_Function = get_best_move_function(Trie),
+    %Gaddag = dict_parser:parse(?DICT_FILE),
+    Gaddag = dict_parser:read_from_binary(?DICT_BIN_PATH),
+    Word_Function = get_best_move_function(Gaddag),
     Board = sample_board(),
     loop(Word_Function, Board).
 
+
+make_binary_gaddag() ->
+    output_to_file(?LARGE_DICT_FILE, ?DICT_BIN_PATH).
 
 loop(Search, Board) ->
     print_board(Board),

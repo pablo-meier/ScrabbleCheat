@@ -19,7 +19,7 @@
 %% THE SOFTWARE.
 
 -module(dict_parser).
--export([parse/1]).
+-export([parse/1, output_to_file/2, read_from_binary/1]).
 -import(gaddag, [empty_gaddag/0, add_word/2]).
 
 parse(Filename) ->
@@ -44,3 +44,12 @@ parse_each_line(IoHandle, Curr) ->
             NewGaddag = add_word(Stripped, Curr),
             parse_each_line(IoHandle, NewGaddag)
     end.
+
+
+output_to_file(InFile, OutFile) ->
+    Gaddag = parse(InFile),
+    file:write_file(OutFile, [term_to_binary(Gaddag)]).
+
+read_from_binary(BinaryFile) ->
+    {ok, Gaddag} = file:read_file(BinaryFile),
+    binary_to_term(Gaddag).

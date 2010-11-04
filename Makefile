@@ -42,6 +42,9 @@ run: compile
 shell: compile
 	$(ERL) $(ERL_TEST_FLAGS) $(ERL_INCLUDE_FLAGS)
 
+binary-gaddag: compile
+	$(ERL_RUN) -run main make_binary_gaddag $(ERL_END)
+
 compile: prepare
 	$(ERLC) $(ERLC_SRC_FLAGS) $(SRCDIR)/*.erl
 
