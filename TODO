@@ -7,6 +7,9 @@ Features:
 	  build a longer, more impressive word.
 	- Dumping the real GADDAG to disk in a format so we don't have to re-parse all 
 	  the time.
+	     -> Add file checks:  use generated gaddag if it exists, parse a new 
+	        one otherwise
+	     -> Tests?
 	- Move selection (after generation, likely start out with naive high score).
 	- UI. Curses/Nitrogen?
 

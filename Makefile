@@ -36,6 +36,8 @@ test: compile compile-tests
 	$(ERL) $(ERL_TEST_FLAGS) $(ERL_FLAGS) -run followstruct_test test $(ERL_END)
 	$(ERL) $(ERL_TEST_FLAGS) $(ERL_FLAGS) -run move_test test $(ERL_END)
 
+all: binary-gaddag test run
+
 run: compile
 	$(ERL_RUN) -run main main 
   

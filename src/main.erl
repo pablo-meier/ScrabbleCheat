@@ -26,7 +26,7 @@
 -import(move, [score/2]).
 -import(lists, [reverse/1,foreach/2, keysort/2, sort/2, map/2]).
 
--define(DICT_FILE, "test/testdict.txt"). % "lib/twl06.txt").
+-define(DICT_FILE, "test/testdict.txt").
 -define(LARGE_DICT_FILE, "lib/twl06.txt").
 -define(DICT_BIN_PATH, "build/gaddag.dict").
 
@@ -41,8 +41,12 @@
 %% Test
 main() ->
     greet(),
-    %Gaddag = dict_parser:parse(?DICT_FILE),
-    Gaddag = dict_parser:read_from_binary(?DICT_BIN_PATH),
+    %% Create the gaddag from the real dictionary if it exists, smaller if
+    %% we built the program without it.
+    Gaddag = case file:read_file_info(?DICT_BIN_PATH) of
+                 {ok, _} -> dict_parser:read_from_binary(?DICT_BIN_PATH);
+                 {error, _} -> parse(?DICT_FILE)
+             end,
     Word_Function = get_best_move_function(Gaddag),
     Board = sample_board(),
     loop(Word_Function, Board).

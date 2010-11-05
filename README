@@ -36,13 +36,23 @@ ScrabbleCheat has the following contents:
 
 The Makefile has the following targets:
 
-* test (default) -> Compiles the project and runs the unit tests.
-* shell -> Compiles the project and loads the definitions into an Erlang shell.
-* run -> Let's me run a most basic client.  Will eventually become the game/AI 
-         inteface itself.
-* clean -> Removes all compilation bits.
-* compile -> Builds the project and stores the .beam files into build/
-* compile-test -> Builds the Unit tests.
+* test -> 
+        Compiles the project and runs the unit tests.
+* shell -> 
+        Compiles the project and loads the definitions into an Erlang shell.
+* run -> 
+        Let's me run a most basic client.  Will eventually become the game/AI 
+        inteface itself.
+* binary-gaddag -> 
+        The wordsearch uses a GADDAG from a pretty huge dictionary file, and
+        this creates a binary representation ahead of time that the program can
+        use rather than dynamically generate. 
+* clean -> 
+        Removes all compilation bits.
+* compile -> 
+        Builds the project and stores the .beam files into build/
+* compile-test -> 
+        Builds the Unit tests.
 
 ##################
 ### Milestones
