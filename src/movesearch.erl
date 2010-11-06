@@ -229,25 +229,34 @@ get_moves_from_candidate_recur(Followstruct, ZoomTile, Rack, Accum, Master) ->
                       RestOfRack = Rack -- [X],
                       %% Take any moves resulting from that tile, and add it to the list.
                       NewAccum = append(Complete, Y),
-                      %% If you can swap to the other side,
-                      case can_flip_followstruct(NewFollowstruct, ZoomTile) of
-                          true ->
-                              %% Do so, and append the results of both the backwards and forwards direction.
-                              BranchFollowstruct = flip_followstruct(NewFollowstruct, ZoomTile),
-                              foldl(fun (S,T) -> 
-                                        get_moves_from_candidate_recur(S, ZoomTile, RestOfRack, T, Master)
-                                    end, NewAccum, [NewFollowstruct, BranchFollowstruct]);
-                          false ->
-                              %% Otherwise, just continue forward.
-                              get_moves_from_candidate_recur(NewFollowstruct, ZoomTile, RestOfRack, NewAccum, Master) 
-                      end;
-                  %% In the case of a wildcard
+                      get_move_helper(NewFollowstruct, ZoomTile, RestOfRack, NewAccum, Master);
+    
+                  %% In the case of a wildcard ...
                   {wildcard, FollowList, Complete} ->
-                      ok;
+                      RestOfRack = Rack -- [X],
+                      NewAccum = append(Complete, Y),
+                      ListsOfMoves = map(fun (S) -> get_move_helper(S, ZoomTile, RestOfRack, NewAccum, Master) end, FollowList),
+                      flatten(ListsOfMoves);
                   %% Else, return the moves you already have.
                   fail -> Y
               end
         end, Accum, Rack).
+
+
+get_move_helper(NewFollowstruct, ZoomTile, RestOfRack, NewAccum, Master) ->
+    %% If you can swap to the other side,
+    case can_flip_followstruct(NewFollowstruct, ZoomTile) of
+        true ->
+            %% Do so, and append the results of both the backwards and forwards direction.
+            BranchFollowstruct = flip_followstruct(NewFollowstruct, ZoomTile),
+            foldl(fun (S,T) -> 
+                      get_moves_from_candidate_recur(S, ZoomTile, RestOfRack, T, Master)
+                  end, NewAccum, [NewFollowstruct, BranchFollowstruct]);
+        false ->
+            %% Otherwise, just continue forward.
+            get_moves_from_candidate_recur(NewFollowstruct, ZoomTile, RestOfRack, NewAccum, Master) 
+    end.
+     
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
