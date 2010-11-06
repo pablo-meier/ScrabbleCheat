@@ -21,7 +21,7 @@
 -module(followstruct).
 
 -import(board, [get_adjacent/3]).
--import(gaddag, [get_branch/2, has_branch/2, is_terminator/1]).
+-import(gaddag, [get_branch/2, has_branch/2, is_terminator/1, keys/1]).
 -import(board, [place_letter_on_board/4, 
                 orthogonals/1, 
                 to_beginning/1,
@@ -43,6 +43,8 @@
          flip_followstruct/2,
          next/3,
          can_flip_followstruct/2]).
+
+-define(WILDCARD, $*).
 
 %% An intermediate data type for the construction of moves.  A 'followstruct'
 %% contains all the information you need to 'follow along' the GADDAG and board.
@@ -100,10 +102,27 @@ can_flip_followstruct({_, Direction, Gaddag, Board, _}, ZoomTile) ->
 
 %% next :: FollowStruct * Char -> {success, FollowStruct, Moves} | fail
 %%
+%% See check_followstruct_on_char for the more detailed analysis on this function:
+%% this function is but an entry point that determines whether we're working with
+%% individual characters or a wildcard.
+next(Followstruct, Char, Master) ->
+    CompareChar = get_tile_letter(get_followstruct_tile(Followstruct)),
+    if
+        CompareChar =:= ?WILDCARD ->
+            Gaddag = get_followstruct_gaddag(Followstruct),
+            Keys = keys(Gaddag),
+            {wildcard, [], []};
+        true ->
+            check_followstruct_on_char(Followstruct, Char, Master)
+    end.
+
+
+%% check_followstruct_on_char :: Followstruct * Char * Gaddag -> {success, Followstruct, [Move]} | {wildcard, [Followstruct], [Move]} |fail 
+%%
 %% Travels along the FollowStruct + Gaddag, after the 'presumable' placement
 %% of a character in a move.  Returns the new 'moved' followstruct and any completed
 %% moves if successful, and 'fail' if a move isn't present with that char.
-next(Followstruct, Char, Master) ->
+check_followstruct_on_char(Followstruct, Char, Master) ->
     {Tile, Direction, Gaddag, Board, Move} = Followstruct,
     HasBranch = get_branch(Char, Gaddag),
     WorksOrthogonally = check_other_directions(Followstruct, Char, Master),
@@ -120,7 +139,7 @@ next(Followstruct, Char, Master) ->
 
             {success, NewFollow, Complete}
     end.
-
+    
 
 %% check_other_directions :: Followstuct * Char -> Bool
 %%

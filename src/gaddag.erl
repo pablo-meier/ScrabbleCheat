@@ -27,6 +27,7 @@
          has_word/2,
          is_terminator/1,
          naive_path_search/2,
+         keys/1,
          get_branch_from_string/2]).
 
 -define(WILDCARD, $*).
@@ -52,17 +53,18 @@ has_branch(Char, Trie) ->
 %%
 %% Gets the specified branch, or 'none' if it doesn't exist.
 get_branch(Char, Trie) ->
-    if
-        Char =:= ?WILDCARD ->
-            {wildcard, filter(fun ({Key,_}) -> Key /= terminator end, to_list(Trie))};
-        true ->
-            Result = lookup(Char, Trie),
-            case Result of
-                {value, Return} -> {branch, Return};
-                _Fail -> none
-            end
+    Result = lookup(Char, Trie),
+    case Result of
+        {value, Return} -> {branch, Return};
+        _Fail -> none
     end.
 
+
+%% keys :: Gaddag -> [Char]
+%%
+%% Returns all the keys this Gaddag has.
+keys(Gaddag) ->
+    lists:filter(fun (X) -> X =/= terminator end, gb_trees:keys(Gaddag)).
 
 %% has_word :: String * Trie -> Bool
 %%
