@@ -241,6 +241,9 @@ get_moves_from_candidate_recur(Followstruct, ZoomTile, Rack, Accum, Master) ->
                               %% Otherwise, just continue forward.
                               get_moves_from_candidate_recur(NewFollowstruct, ZoomTile, RestOfRack, NewAccum, Master) 
                       end;
+                  %% In the case of a wildcard
+                  {wildcard, FollowList, Complete} ->
+                      ok;
                   %% Else, return the moves you already have.
                   fail -> Y
               end

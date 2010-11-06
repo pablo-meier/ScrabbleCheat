@@ -27,6 +27,7 @@
                get_tile_location/1, 
                is_occupied/1,
                set_tile_letter/2,
+               set_tile_letter_type/2,
                set_tile_bonus/2]).
 
 -import(move, [get_move_tiles/1]).
@@ -35,7 +36,7 @@
 -import(move, [new_move/0]).
 
 -export([place_bonus_on_board/4,
-         place_letter_on_board/4,
+         place_letter_on_board/5,
          place_move_on_board/2,
          get_tile/3,
          print_board/1,
@@ -55,13 +56,20 @@
 %%
 %% The primary place where moves are employed, adds a letter to the board.
 %% Returns 'fail' if the board location has been occupied by another letter tile.
-place_letter_on_board(Row, Col, Char, Board) ->
+place_letter_on_board(Row, Col, Char, Board, IsWildcard) ->
+    TileType = if IsWildcard -> wildcard; true -> character end,
+    place_letter_on_board_with_tiletype(Row, Col, Char, Board, TileType).
+
+
+place_letter_on_board_with_tiletype(Row, Col, Char, Board, TileType) ->
     {RowIndex, ColIndex} = make_array_indices(Row, Col),
     ThisRow = array:get(RowIndex, Board),
     Tile = array:get(ColIndex, ThisRow),
     case get_tile_letter(Tile) of
         none ->
-            NewRow = array:set(ColIndex, set_tile_letter(Char, Tile), ThisRow),
+            WithLetter = set_tile_letter(Char, Tile), 
+            Finished = set_tile_letter_type(TileType, WithLetter),
+            NewRow = array:set(ColIndex, Finished, ThisRow),
             array:set(RowIndex, NewRow, Board);
         Else ->
             throw({tile_already_occupied, Else})
@@ -95,7 +103,7 @@ place_move_on_board(Move, Board) ->
     lists:foldl(fun (Tile, AccBoard) ->
                     {Row, Col} = get_tile_location(Tile),
                     Char = get_tile_letter(Tile),
-                    place_letter_on_board(Row, Col, Char, AccBoard)
+                    place_letter_on_board(Row, Col, Char, AccBoard, false)
                 end, Board, Tiles).
 
 
@@ -174,10 +182,10 @@ place_word(Word, Direction, {Row, Col}, Board) ->
     [H|T] = Word,
     case Direction of 
         down ->
-            NewBoard = place_letter_on_board(Row, Col, H, Board),
+            NewBoard = place_letter_on_board(Row, Col, H, Board, false),
             place_word(T, down, {Row + 1, Col}, NewBoard);
         right ->
-            NewBoard = place_letter_on_board(Row, Col, H, Board),
+            NewBoard = place_letter_on_board(Row, Col, H, Board, false),
             place_word(T, right, {Row, Col + 1}, NewBoard)
     end.
 

@@ -22,7 +22,7 @@
 
 -import(board, [get_adjacent/3]).
 -import(gaddag, [get_branch/2, has_branch/2, is_terminator/1, keys/1]).
--import(board, [place_letter_on_board/4, 
+-import(board, [place_letter_on_board/5, 
                 orthogonals/1, 
                 to_beginning/1,
                 flip/1, 
@@ -32,7 +32,7 @@
 -import(tile, [get_tile_location/1, get_tile_letter/1, is_occupied/1]).
 -import(move, [add_to_move/2]).
 
--import(lists, [map/2, any/2, filter/2]).
+-import(lists, [map/2, any/2, filter/2, append/2, foldl/3]).
 
 -export([make_followstruct/5,
          get_followstruct_tile/1,
@@ -111,9 +111,19 @@ next(Followstruct, Char, Master) ->
         CompareChar =:= ?WILDCARD ->
             Gaddag = get_followstruct_gaddag(Followstruct),
             Keys = keys(Gaddag),
-            {wildcard, [], []};
+            Results = map(fun (X) -> check_followstruct_on_char(Followstruct, X, Master, true) end, Keys),
+            Accumed = foldl(fun (X, Y) -> 
+                          case X of
+                              fail -> Y;
+                              {_, NewFollow, Completed} ->
+                                  {_, TotalFollow, TotalComplete} = Y,
+                                  {success, [NewFollow|TotalFollow], append(Completed, TotalComplete)}
+                          end
+                      end, {success, [], []}, Results),
+            {_, Followlist, Complete} = Accumed,
+            {wildcard, Followlist, Complete};
         true ->
-            check_followstruct_on_char(Followstruct, Char, Master)
+            check_followstruct_on_char(Followstruct, Char, Master, false)
     end.
 
 
@@ -122,7 +132,7 @@ next(Followstruct, Char, Master) ->
 %% Travels along the FollowStruct + Gaddag, after the 'presumable' placement
 %% of a character in a move.  Returns the new 'moved' followstruct and any completed
 %% moves if successful, and 'fail' if a move isn't present with that char.
-check_followstruct_on_char(Followstruct, Char, Master) ->
+check_followstruct_on_char(Followstruct, Char, Master, IsWildcard) ->
     {Tile, Direction, Gaddag, Board, Move} = Followstruct,
     HasBranch = get_branch(Char, Gaddag),
     WorksOrthogonally = check_other_directions(Followstruct, Char, Master),
@@ -131,7 +141,7 @@ check_followstruct_on_char(Followstruct, Char, Master) ->
         {_, false} -> fail;
         {{branch, NextPath}, _} ->
             {Row, Col} = get_tile_location(Tile),
-            NewBoard = place_letter_on_board(Row, Col, Char, Board),
+            NewBoard = place_letter_on_board(Row, Col, Char, Board, IsWildcard),
             NewMove = add_to_move(board:get_tile(Row, Col, NewBoard), Move),
             Complete = case is_terminator(NextPath) of true -> [NewMove]; false -> [] end,
             NewTile = get_adjacent(Tile, Board, Direction),
@@ -159,7 +169,7 @@ check_other_directions(Followstruct, Char, Master) ->
         true -> 
             %%   Place letter on a board,
             {Row, Col} = get_tile_location(Tile),
-            NewBoard = place_letter_on_board(Row, Col, Char, Board),
+            NewBoard = place_letter_on_board(Row, Col, Char, Board, false),
 
             %%   zoom as far back as you can,
             BackDirection = to_beginning(hd(CheckDirections)),

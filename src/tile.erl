@@ -29,6 +29,7 @@
          get_tile_bonus/1,
          get_tile_location/1,
          set_tile_letter/2,
+         set_tile_letter_type/2,
          set_tile_bonus/2,
          set_tile_location/2,
          is_wildcard/1,
@@ -61,9 +62,10 @@ is_wildcard(_Else) -> false.
 
 duplicate_tile(X, Y) -> X =:= Y.
 
-set_tile_letter(NewLetter, {{character, _}, Bonus, Location}) -> {{character, NewLetter}, Bonus, Location};
-set_tile_letter(NewLetter, {{wildcard, _}, Bonus, Location}) -> {{wildcard, NewLetter}, Bonus, Location};
+set_tile_letter(NewLetter, {{Type, _}, Bonus, Location}) -> {{Type, NewLetter}, Bonus, Location};
 set_tile_letter(NewLetter, {none, Bonus, Location}) -> {{character, NewLetter}, Bonus, Location}.
+
+set_tile_letter_type(Type, {{_, Letter}, Bonus, Location}) -> {{Type, Letter}, Bonus, Location}.
 
 set_tile_bonus(NewBonus, {Letter, _, Location}) -> {Letter, NewBonus, Location}.
 set_tile_location(NewLocation, {Letter, Bonus, _}) -> {Letter, Bonus, NewLocation}.

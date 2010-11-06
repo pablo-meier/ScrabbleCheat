@@ -64,7 +64,7 @@ get_branch(Char, Trie) ->
 %%
 %% Returns all the keys this Gaddag has.
 keys(Gaddag) ->
-    lists:filter(fun (X) -> X =/= terminator end, gb_trees:keys(Gaddag)).
+    lists:filter(fun (X) -> X =/= terminator andalso X =/= ?SEPARATOR end, gb_trees:keys(Gaddag)).
 
 %% has_word :: String * Trie -> Bool
 %%
