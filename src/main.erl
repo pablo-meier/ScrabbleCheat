@@ -33,7 +33,6 @@
 -export([main/0,
          make_binary_gaddag/0]).
 
-
 %% Eventually the main program, right now just a testing runtime while I get
 %% move generation/selection up.
 
