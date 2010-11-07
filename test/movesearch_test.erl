@@ -324,6 +324,28 @@ perpendicular_rightside_test() ->
 %% No Moves?
 %% Crosses
 
+%% Wildcards
+wildcard_1_test() ->
+   	Direction = left,
+	Gaddag = get_branch_from_string("ELBA", parse(?TESTDICT)),
+	Board = place_word("ABLE", right, {7,7}, new_board()),
+	Candidate = get_tile(7, 6, Board),
+
+	Followstruct = make_followstruct(Candidate, Direction, Gaddag, Board, new_move()),
+	Zoomtile = get_tile(7, 10, Board),
+	Rack = "*",
+	Accum = [],
+	
+	Run = get_moves_from_candidate(Followstruct, Zoomtile, Rack, Accum, Gaddag),
+
+	%% Test CHRONO, where 'R' hooks onto ABLE to form ABLER
+	Solutions = [{move, [{{wildcard, $T}, none, {7,6}}]}, 
+				 {move, [{{wildcard, $S}, none, {7,6}}]},
+				 {move, [{{wildcard, $R}, none, {7,11}}]}],
+	
+	lists:foreach(fun (X) -> ?assert(lists:any(fun (Y) -> duplicate_moves(X, Y) end, Run)) end, Solutions).
+ 
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% HELPERS

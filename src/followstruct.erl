@@ -106,9 +106,8 @@ can_flip_followstruct({_, Direction, Gaddag, Board, _}, ZoomTile) ->
 %% this function is but an entry point that determines whether we're working with
 %% individual characters or a wildcard.
 next(Followstruct, Char, Master) ->
-    CompareChar = get_tile_letter(get_followstruct_tile(Followstruct)),
     if
-        CompareChar =:= ?WILDCARD ->
+        Char =:= ?WILDCARD ->
             Gaddag = get_followstruct_gaddag(Followstruct),
             Keys = keys(Gaddag),
             Results = map(fun (X) -> check_followstruct_on_char(Followstruct, X, Master, true) end, Keys),

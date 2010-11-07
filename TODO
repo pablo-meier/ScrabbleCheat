@@ -2,25 +2,6 @@
 SHORT-TERM:
 
 Features:
-	- Wildcards.
-
-        get_moves_from_candidate has a structure under the case statement that can be
-        factored out into an external function.  Non-wildcards can simply call that
-        function as before
-        
-        1 - REFACTOR get_moves_from_candidate TO USE EXTERNAL FUNCTION
-        2 - REFACTOR next() TO USE EXTERNAL FUNCTION
-        
-        After all tests pass as before, have next() return a new case that returns
-        identically to the previous case, but instead of 
-        
-        {success, NewFollowstruct, Completed} 
-        returns 
-        {wildcard, [Followstructs], Completed}
-        
-        The rest is just running a fold on those new functions rather than simply
-        calling after case checking for a wildcard.
-
 	- Connections between 'islands:' when you build a bridge between two words to
 	  build a longer, more impressive word.
 	- Dumping the real GADDAG to disk in a format so we don't have to re-parse all 
@@ -30,6 +11,10 @@ Features:
 	     -> Tests?
 	- Move selection (after generation, likely start out with naive high score).
 	- UI. Curses/Nitrogen?
+
+	- Optimize Wildcards/Movesearch.
+	    - nlogn duplication removal (currently n^2).
+	    - Only check half as many candidates by looking for border cases.
 
 Code Quality:
 	- Better use of branching, git.  So far mostly just check-in/check-out to 
