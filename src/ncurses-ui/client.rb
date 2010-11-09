@@ -1,23 +1,16 @@
+require 'socket'
+include Socket::Constants
 
-require 'welcome_screen.rb'
-require 'connector.rb'
+PORT = 6655   # Hard coding for now, will generalize later.
 
-DEFAULT_SOCKET_CONNECTION = "lololol"
+# On activation, send "new_game" to erlang server.
 
+socket = TCPSocket.new("localhost", 6655)
+puts "CLIENT: created socket..."
+socket.write("new_game")
+puts "CLIENT: new_game sent..."
 
-address = DEFAULT_SOCKET_CONNECTION
+output = socket.recv(1024)
 
-unless ARGV[0].nil?
-    address = ARGV[0]
-end
-
-# Open a new socket and connect to the ScrabbleCheat server.
-unless connect_to_server
-    # If it fails, gracefully exit
-    $stderr.puts "Unable to connect to host #{address}, please try again."
-    Process.exit
-end
-
-
-# If it succeeds, present a welcome screen.
-present_welcome_screen
+puts "We got #{output}"
+Process.exit

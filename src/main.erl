@@ -25,10 +25,14 @@
 -import(string_utils, [format_string_for_gaddag/1]).
 -import(move, [score/2]).
 -import(lists, [reverse/1,foreach/2, keysort/2, sort/2, map/2]).
+-import(board_parser, [new_board/0]).
 
 -define(DICT_FILE, "test/testdict.txt").
 -define(LARGE_DICT_FILE, "lib/twl06.txt").
 -define(DICT_BIN_PATH, "build/gaddag.dict").
+
+-define(TCP_OPTIONS, [binary, {packet, 0}, {active, false}, {reuseaddr, true}]).
+-define(PORT, 6655). %% Hard coded for testing, can make this command-line option.
 
 -export([main/0,
          make_binary_gaddag/0]).
@@ -37,64 +41,49 @@
 %% Eventually the main program, right now just a testing runtime while I get
 %% move generation/selection up.
 
+
+
+
 %% main :: () -> IO ()
-%% Test
+%% 
+%% Creates a server and listens for requests for move searches.
 main() ->
-    greet(),
-    %% Create the gaddag from the real dictionary if it exists, smaller if
-    %% we built the program without it.
     Gaddag = case file:read_file_info(?DICT_BIN_PATH) of
                  {ok, _} -> dict_parser:read_from_binary(?DICT_BIN_PATH);
                  {error, _} -> parse(?DICT_FILE)
              end,
     Word_Function = get_best_move_function(Gaddag),
-    Board = sample_board(),
-    loop(Word_Function, Board).
+    start_service(Word_Function, ?PORT).
 
 
+start_service(Search, Port) ->
+    {ok, LSocket} = gen_tcp:listen(Port, ?TCP_OPTIONS),
+    io:format("Starting server...~n"),
+    accept(LSocket, Search).
+
+
+accept(LSocket, Search) ->
+    {ok, Socket} = gen_tcp:accept(LSocket),
+    io:format("Started!~n"),
+    spawn(fun () -> loop(Socket, Search) end),
+    accept(LSocket, Search).
+
+
+loop(Socket, Search) ->
+    case gen_tcp:recv(Socket, 0) of
+        {ok, Data} -> 
+            io:format("Received ~p from a connection!~n", [Data]),
+            gen_tcp:send(Socket, io_lib:format("~p#~p", [new_board(), 0])),
+            loop(Socket, Search);
+        {error, closed} ->
+            ok
+    end.
+
+%% make_binary_gaddag :: () -> File ()
+%%
+%% The program can be invoked to build the data structures and save them disk
+%% ahead of time.
 make_binary_gaddag() ->
     output_to_file(?LARGE_DICT_FILE, ?DICT_BIN_PATH).
 
-loop(Search, Board) ->
-    print_board(Board),
-    Chars = prompt(),
-    Results = Search(Board, Chars),
-    Sorted = sort_results_by_score(Results, Board),
-    print_results(Sorted, Board),
-    io:format("~n~n FINITO!~n"),
-    case use_again() of
-        true -> loop(Search, Board);
-        false -> 
-            io:format("Thanks!~n"),
-            erlang:halt()
-    end.
 
-
-sample_board() ->
-    board:place_word("ABLE", right, {7, 7}, board_parser:new_board()).
-
-print_results(ResultList, Board) ->
-    foreach(fun ({Score, Move}) -> io:format("---~n"), 
-                print_board(place_move_on_board(Move, Board)),
-                io:format("~n Score for this move: ~p~n", [Score])
-            end, ResultList).
-
-
-sort_results_by_score(Moves, Board) ->
-    keysort(1, map(fun (X) -> {score(X, Board), X} end, Moves)).
-
-
-
-greet() ->
-    io:format("--------~nWelcome to ScrabbleCheat!~n~n").
-
-prompt() ->
-    io:format("Welcome!~n"),
-    format_string_for_gaddag(io:get_line("Here is a board.  Enter some letters (your rack), see what's possible!  ")).
-
-use_again() ->
-    Answer = io:get_line("Would you like to submit again? [y/n]:  "),
-    case re:run(Answer, "[yY]([Ee][sS])?") of
-        {match, _Captured} -> true;
-        nomatch -> false
-    end.
