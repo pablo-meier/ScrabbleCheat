@@ -39,7 +39,8 @@ test: compile compile-tests
 all: binary-gaddag test run
 
 run: compile
-	$(ERL_RUN) -run main main 
+	./start_server.sh
+	#$(ERL_RUN) -run main main 
   
 shell: compile
 	$(ERL) $(ERL_TEST_FLAGS) $(ERL_INCLUDE_FLAGS)
