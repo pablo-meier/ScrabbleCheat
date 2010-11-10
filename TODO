@@ -2,35 +2,48 @@
 SHORT-TERM:
 
 Features:
-	- Wildcards.
-	- Connections between 'islands:' when you build a bridge between two words to
-	  build a longer, more impressive word.
-	- Move selection (after generation, likely start out with naive high score).
-	- UI. Curses/Nitrogen?
-	    - Write Hello World in Ruby Curses, client.rb
-	    - Set up main.erl to act as a server, respond to requests with a string.
-	    - Set up client.rb to ping our new server, and receive response.
-        - Draw a Scrabble board on client.rb
-        - Send a Scrabble board on main.erl
-        - Pass them around!
+    - Connections between 'islands:' when you build a bridge between two words to
+      build a longer, more impressive word.
+    - Move selection (after generation, likely start out with naive high score).
+    - UI. Curses/Nitrogen?
+        - Set up main.erl to act as a server, respond to requests with a string. DONE
+        - Set up client.rb to ping our new server, and receive response. DONE
+        - Heavily define/specify what you will be sending to and fro, and create serializable
+          datatypes on both ends.
+            - This mostly means prototyping a few transactions/use cases for the client, 
+              and seeing what it 'needs.'  Also need to answer the question:  do you
+              want to simulate a whole game, or just prod the AI?  Should the server
+              store/retrieve games, or is that the client?
+
+        - Test the serialization.
+        - Write Hello World in Ruby Curses, client.rb
+        - Draw a board, interface with Ruby Curses
+        - TEST
 
 
 Code Quality:
-	- Better use of branching, git.  So far mostly just check-in/check-out to 
-	  master, pretty lame.
-	- Types with Dialyzer.
-	- Better, more rigorous testing.  Mostly in movesearches.  Use abstractions!
+    - Better, more rigorous testing.  Mostly in movesearches, and the most recent features (wildcards, 
+      serialization, dumping previous computation to disk).  Use abstractions!
+    - Optimize, optimize, optimize.  Especially with wildcards.
+        Immediate, obvious optimizations:
+            -> Don't check candidate tiles on the right/bottom of an occupied tile
+               unless there isn't another way of reaching it, i.e. from above or from the right.
+            -> Remove duplicate candidates and duplicate moves with a sort-and-filter (nlog(n)),
+               rather than the current one-sweep naive traversal (n^2-ish).
+            -> Make better use of spawn(), especially on all the maps and foldls.  Paralellize 
+               candidates, for example.
+    - Types with Dialyzer.
+    - Refactor/restructure the src/ directory for a clear separation of modules:  game (for things 
+      like boards, tiles, etc), server (for things like serialization and/or database handling), 
+      and ai (for movesearches, finding the best move, etc.).
 
-- grep TODO and FIXME in the source to find something to do!
+    - Generalize the board and board parser to take different default
+      configurations, such as a Lexulous board, Words With Friends, or a custom
+      board.  The hard-coding is more a result of the fact that I'm in a place with
+      no internet and can't consult the Regex library, and also because this is
+      slightly easier.  This will mostly involve changing the new_board to parse the
+      board in lib/, and changing the BOARD_HEIGHT and BOARD_LENGTH constants to
+      read from that file as well. Ideally, one could start a game parametrized by
+      game type (words_with_friends) and dictionary (twl, international) etc.
 
-------
-BROADER:
-
-- Generalize the board and board parser to take different default
-  configurations, such as a Lexulous board, Words With Friends, or a custom
-  board.  The hard-coding is more a result of the fact that I'm in a place with
-  no internet and can't consult the Regex library, and also because this is
-  slightly easier.  This will mostly involve changing the new_board to parse the
-  board in lib/, and changing the BOARD_HEIGHT and BOARD_LENGTH constants to
-  read from that file as well. Ideally, one could start a game parametrized by
-  game type (words_with_friends) and dictionary (twl, international) etc.
+    - I might be missing something. grep TODO and FIXME in the source to find something to do!
