@@ -105,7 +105,8 @@ letter_serialize({wildcard, X})  -> [$W,X];
 letter_serialize(none) -> "--".
 
 bonus_serialize(double_letter_score) -> "d";   bonus_serialize(triple_letter_score) -> "t";
-bonus_serialize(double_word_score)   -> "D";   bonus_serialize(triple_word_score)   -> "T".
+bonus_serialize(double_word_score)   -> "D";   bonus_serialize(triple_word_score)   -> "T";
+bonus_serialize(none) -> "n".
 
 location_serialize({Row, Col}) -> lists:concat([two_digits(Row), two_digits(Col)]).
 two_digits(N) when N > 9 -> integer_to_list(N);

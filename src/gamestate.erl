@@ -25,6 +25,7 @@
 
 -export([make_gamestate/4, 
          serialize/1, 
+         serialize_list/2,
          deserialize/1, 
          get_gamestate_board/1,
          get_gamestate_scores/1,
