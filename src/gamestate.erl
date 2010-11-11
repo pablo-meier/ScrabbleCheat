@@ -56,10 +56,14 @@ get_gamestate_scores ({gamestate, _, Scores, _, _}) -> Scores.
 get_gamestate_turn   ({gamestate, _, _, Turn, _}) -> Turn.
 get_gamestate_history({gamestate, _, _, _, History}) -> History.
 
+
+%% serialize :: Gamestate -> String
+%%
+%% Turns the gamestate into a string we can pass through network connections.
 serialize({gamestate, Board, Scores, Turn, History}) ->
     concat([board:serialize(Board), "#", serialize_list(Scores, fun serialize_score/1), 
             "#", Turn, "#", serialize_list(History, fun serialize_history/1)]).
- 
+
 
 %% serialize_list :: [a] * (a -> String) -> String
 %%
@@ -69,12 +73,25 @@ serialize_list(Lst, Fun) ->
     concat(map(fun (X) -> concat([Fun(X), "|"]) end, Lst)).
 
 
+%% deserialize_list :: String -> [String]
+%%
+%% Takes a list of items created by serialize_list and forms it into a list of strings.
+deserialize_list(ListString) ->
+    list_deserialize_helper(ListString, []).
+
+list_deserialize_helper([], Accum) -> lists:reverse(Accum);
+list_deserialize_helper(String, Accum) -> 
+    {Elem, Rst} = split_with_delimeter(String, $|),
+    list_deserialize_helper(Rst, [Elem|Accum]).
+
+
 %% serialize_score :: {String, Int} -> String
 %%
 %% Store the player name and their score.  Will follow the convention of all tuples that
 %% dollar sign '$' separates members.
 serialize_score({String, Int}) ->
     concat([String, "$", integer_to_list(Int)]).
+
 
 %% serialize_history :: {String, Move, Int} -> String
 %%
@@ -86,8 +103,33 @@ serialize_history({Player, Move, Score}) ->
 %% deserialize :: String -> Gamestate
 %%
 %% Turn the string back into a Gamestate.
-deserialize(_GamestateString) ->
-    ok.
+deserialize(GamestateString) ->
+    {BoardString, Rst1} = split_with_delimeter(GamestateString, $#),
+    {ScoreString, Rst2} = split_with_delimeter(Rst1, $#),
+    {TurnString, HistoryString} = split_with_delimeter(Rst2, $#),
+    make_gamestate(board:deserialize(BoardString), deserialize_score(ScoreString), TurnString, deserialize_history(HistoryString)).
 
-%% empty_gamestate() ->
-%%    {gamestate, empty_board(), [{"Paul", 0}, {"Sam", 0}], "Paul", []}.
+
+deserialize_score(ScoreString) ->
+    Scores = deserialize_list(ScoreString),
+    map(fun (X) -> 
+            {Player, Score} = split_with_delimeter(X, $$),
+            {Player, list_to_integer(Score)}
+        end, Scores).
+
+
+deserialize_history(HistoryString) ->
+    Movestrings = deserialize_list(HistoryString),
+    map(fun (X) -> 
+            {PlayerName, Rst} = split_with_delimeter(X, $$),
+            {MoveString, Score} = split_with_delimeter(Rst, $$),
+            {PlayerName, move:deserialize(MoveString), list_to_integer(Score)}
+        end, Movestrings).
+    
+
+%% split_with_delimeter :: String * Char -> {String, String}
+%%
+%% Splits a string into its left and right components by the parametrized delimeter.
+split_with_delimeter(String, Char) ->
+    {Left, [_|Right]} = lists:splitwith(fun (X) -> X =/= Char end, String),
+    {Left, Right}.
