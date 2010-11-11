@@ -21,6 +21,7 @@
 -module(board).
 
 -define(BOARD_HEIGHT, 15).
+-define(BOARD_WIDTH, 15).
 
 -import(tile, [get_tile_letter/1, 
                get_tile_bonus/1,
@@ -48,6 +49,7 @@
          flip/1,
          get_adjacents/2,
          serialize/1,
+         deserialize/1,
          place_word/4,
          as_list/1]).
 
@@ -255,6 +257,21 @@ travel(ZoomTile, Direction, Gaddag, Board) ->
 %% Serializes the board to a machine-parsable format.
 serialize(Board) ->
     serialization:serialize_list(flatten(as_list(Board)), fun tile:serialize/1).
+
+
+%% deserialize :: String -> Board
+%%
+%% Turns a serialized string back into the board datatype.
+deserialize(BoardString) ->
+    BigList = serialization:deserialize_list(BoardString, fun tile:deserialize/1),
+    ListOfLists = recursive_split_lists(0, BigList, []),
+    ListOfArrays = lists:map(fun (X) -> array:fix(array:from_list(X)) end, ListOfLists),
+    array:fix(array:from_list(ListOfArrays)).
+
+recursive_split_lists(?BOARD_HEIGHT, [], Accum) -> lists:reverse(Accum);
+recursive_split_lists(Num, Lst, Accum) -> 
+    {Fifteen, Rest} = lists:split(?BOARD_WIDTH, Lst),
+    recursive_split_lists(1 + Num, Rest, [Fifteen|Accum]).
 
 
 %% print_board :: Board -> ()

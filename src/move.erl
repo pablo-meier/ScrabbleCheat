@@ -23,7 +23,7 @@
 -import(tile, [get_tile_letter/1, is_wildcard/1, get_tile_location/1, is_occupied/1, get_tile_bonus/1, duplicate_tile/2]).
 -import(board, [place_move_on_board/2, to_beginning/1, orthogonals/1, get_adjacent/3, zoom/3, flip/1]).
 -import(lists, [foldl/3, filter/2, any/2]).
--export([new_move/0, add_to_move/2, duplicate_moves/2, get_move_tiles/1, score/2, serialize/1]).
+-export([new_move/0, add_to_move/2, duplicate_moves/2, get_move_tiles/1, score/2, serialize/1, deserialize/1]).
 
 %% The move datatype.  Checks structural integrity of moves, not
 %% responsible for legal placement relative to a board, or dictionary
@@ -200,3 +200,7 @@ letter_score($Y) -> 4;  letter_score($Z) -> 10.
 %% just a list of tiles, we'll serialize the list into tiles, which are themselves tuples.
 serialize({move, MoveList}) ->
     serialization:serialize_list(MoveList, fun tile:serialize/1).
+
+deserialize(MoveString) ->
+    Lst = serialization:deserialize_list(MoveString, fun tile:deserialize/1),
+    {move, Lst}.
