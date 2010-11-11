@@ -199,4 +199,4 @@ letter_score($Y) -> 4;  letter_score($Z) -> 10.
 %% Converts this move into a machine-parsable representation.  Since a move is 
 %% just a list of tiles, we'll serialize the list into tiles, which are themselves tuples.
 serialize({move, MoveList}) ->
-    gamestate:serialize_list(MoveList, fun tile:serialize/1).
+    serialization:serialize_list(MoveList, fun tile:serialize/1).

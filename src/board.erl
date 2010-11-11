@@ -254,7 +254,7 @@ travel(ZoomTile, Direction, Gaddag, Board) ->
 %%
 %% Serializes the board to a machine-parsable format.
 serialize(Board) ->
-    gamestate:serialize_list(flatten(as_list(Board)), fun tile:serialize/1).
+    serialization:serialize_list(flatten(as_list(Board)), fun tile:serialize/1).
 
 
 %% print_board :: Board -> ()
