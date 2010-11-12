@@ -9,7 +9,7 @@ Features:
         - Set up main.erl to act as a server, respond to requests with a string. DONE
         - Set up client.rb to ping our new server, and receive response. DONE
         - Heavily define/specify what you will be sending to and fro, and create serializable
-          datatypes on both ends.
+          datatypes on both ends.  ERLANG DONE.
             - This mostly means prototyping a few transactions/use cases for the client, 
               and seeing what it 'needs.'  Also need to answer the question:  do you
               want to simulate a whole game, or just prod the AI?  Should the server
