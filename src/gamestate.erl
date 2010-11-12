@@ -84,13 +84,11 @@ serialize_history({Player, Move, Score}) ->
 %%
 %% Turn the string back into a Gamestate.
 deserialize(GamestateString) ->
-    io:format(user, "GamestateString is ~n~p~n", [GamestateString]),
     {BoardString, Rst1} = split_with_delimeter(GamestateString, $#),
     {ScoreString, Rst2} = split_with_delimeter(Rst1, $#),
     {TurnString, HistoryString} = split_with_delimeter(Rst2, $#),
-    io:format(user, "Board String is~n~p~n,ScoreString~n~p~n,TurnString~n~p~nHistoryString~n~p~n", [BoardString, ScoreString,TurnString,HistoryString]),
     make_gamestate(board:deserialize(BoardString), deserialize_list(ScoreString, fun deserialize_score/1), 
-                   TurnString, deserialize_list(HistoryString, fun deserialize_history/1)).
+                   TurnString, deserialize_history(HistoryString, [])).
 
 
 deserialize_score(ScoreString) ->
@@ -98,9 +96,11 @@ deserialize_score(ScoreString) ->
     {Player, list_to_integer(Score)}.
 
 
-deserialize_history(HistoryString) ->
-    io:format(user, "HistoryString is ~n~p~n", [HistoryString]),
+deserialize_history([], Accum) -> lists:reverse(Accum);
+deserialize_history(HistoryString, Accum) ->
     {PlayerName, Rst} = split_with_delimeter(HistoryString, $$),
-    {MoveString, Score} = split_with_delimeter(Rst, $$),
-    {PlayerName, move:deserialize(MoveString), list_to_integer(Score)}.
+    {MoveString, ScoreWithHistory} = split_with_delimeter(Rst, $$),
+    {Score, RestOfHistory} = split_with_delimeter(ScoreWithHistory, $|),
+    HistoryEntry = {PlayerName, move:deserialize(MoveString), list_to_integer(Score)},
+    deserialize_history(RestOfHistory, [HistoryEntry|Accum]).
     
