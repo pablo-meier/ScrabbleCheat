@@ -30,7 +30,8 @@
          get_gamestate_board/1,
          get_gamestate_scores/1,
          get_gamestate_turn/1,
-         get_gamestate_history/1]).
+         get_gamestate_history/1,
+         fresh_gamestate/1]).
 
 %% A gamestate is the current state of the game between some players.  It's 
 %% one of the things the server and clients pass around to each other when 
@@ -55,6 +56,14 @@ get_gamestate_board  ({gamestate, Board, _, _, _}) -> Board.
 get_gamestate_scores ({gamestate, _, Scores, _, _}) -> Scores.
 get_gamestate_turn   ({gamestate, _, _, Turn, _}) -> Turn.
 get_gamestate_history({gamestate, _, _, _, History}) -> History.
+
+
+%% fresh_gamestate :: [String] -> Gamestate
+%%
+%% Creates a gamestate for a new game, where the players are indicated by the parameter.
+fresh_gamestate(Players) ->
+    [First|Rst] = Players,
+    make_gamestate(board_parser:new_board(), map(fun (X) -> {X, 0} end, Players), First, []).
 
 
 %% serialize :: Gamestate -> String

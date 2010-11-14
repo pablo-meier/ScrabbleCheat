@@ -22,4 +22,12 @@ class Board
         @tiles[val] = asgn
     end
 
+    def eql?(other)
+        if other.instance_of? Board
+            other.tiles == self.tiles
+        else
+            false
+        end
+    end
+
 end

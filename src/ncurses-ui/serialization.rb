@@ -20,12 +20,12 @@ class Serialization
 
     def Serialization.deserialize_gamestate(str)
         components = str.split("#", 4).map
-        gamestate = []
-        gamestate << deserialize_board(components[0])     # Board
-        gamestate << deserialize_scores(components[1])     # Scores
-        gamestate << components[2]                        # Whose turn
-        gamestate << deserialize_history(components[3])   # History
-
+        gamestate = Hash.new
+        gamestate[:board] = deserialize_board(components[0])
+        gamestate[:scores] =  deserialize_scores(components[1])
+        gamestate[:turn] = components[2]
+        gamestate[:history] = deserialize_history(components[3])
+        gamestate
     end
 
 
