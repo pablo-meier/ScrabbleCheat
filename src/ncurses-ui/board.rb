@@ -11,8 +11,15 @@ class Board
     # As with the Erlang version, we're row-major, 1-index
     def initialize
         @tiles = []
-        1.upto(15) { |i| @rows[i] = Array.new }
+        1.upto(15) { |i| @tiles[i] = Array.new }
     end
 
+    def [](val)
+        @tiles[val]
+    end
+
+    def[]=(val, asgn)
+        @tiles[val] = asgn
+    end
 
 end

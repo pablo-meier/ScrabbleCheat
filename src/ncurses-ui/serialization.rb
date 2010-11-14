@@ -22,7 +22,7 @@ class Serialization
         components = str.split("#", 4).map
         gamestate = []
         gamestate << deserialize_board(components[0])     # Board
-        gamestate << deserialize_board(components[1])     # Scores
+        gamestate << deserialize_scores(components[1])     # Scores
         gamestate << components[2]                        # Whose turn
         gamestate << deserialize_history(components[3])   # History
 
@@ -45,11 +45,12 @@ class Serialization
         board = Board.new
         1.upto 15 do |row|
             1.upto 15 do |col|
-                tile = string[0, 8]
-                board.tiles[row][col] = Serialization.deserialize_tile(tile)
+                tile = string[0, 7]
+                board[row][col] = Serialization.deserialize(:tile, tile)
                 string = string.slice(8, string.length - 8)
             end
         end
+        board
     end
     
 
