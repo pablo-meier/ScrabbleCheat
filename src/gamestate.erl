@@ -25,6 +25,7 @@
 -import(serialization, [serialize_list/2, deserialize_list/2, split_with_delimeter/2]).
 
 -export([make_gamestate/4, 
+         play_move/2,
          serialize/1, 
          deserialize/1, 
          get_gamestate_board/1,
@@ -62,8 +63,28 @@ get_gamestate_history({gamestate, _, _, _, History}) -> History.
 %%
 %% Creates a gamestate for a new game, where the players are indicated by the parameter.
 fresh_gamestate(Players) ->
-    [First|Rst] = Players,
+    [First|_] = Players,
     make_gamestate(board_parser:new_board(), map(fun (X) -> {X, 0} end, Players), First, []).
+
+
+%% play_move :: Gamestate * Move -> Gamestate
+%%
+%% Returns the gamestate after a move has been played on it.
+play_move(Gamestate, Move) ->
+    {gamestate, Board, Scores, Turn, History} =  Gamestate,
+    {PlayerScore, NewTurn} = get_score_and_next(Scores, Turn),
+    AugmentedScore = move:score(Move, Board) + PlayerScore,
+    NewScores = update_score(AugmentedScore, Scores, Turn),
+    NewHistory = [Move|History],
+    NewBoard = board:place_move_on_board(Move, Board),
+    make_gamestate(NewBoard, NewScores, NewTurn, NewHistory).
+
+
+get_score_and_next(_ScoreList, _Turn) ->
+    ok.
+
+update_score(_NewScore, _OldList, _Turn) ->
+    ok.
 
 
 %% serialize :: Gamestate -> String

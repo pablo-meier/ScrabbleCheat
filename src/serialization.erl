@@ -49,5 +49,7 @@ list_deserialize_helper(String, Accum) ->
 %%
 %% Splits a string into its left and right components by the parametrized delimeter.
 split_with_delimeter(String, Char) ->
-    {Left, [_|Right]} = lists:splitwith(fun (X) -> X =/= Char end, String),
-    {Left, Right}.
+    case lists:splitwith(fun (X) -> X =/= Char end, String) of
+        {Left, []} -> {Left, []};
+        {Left, [_|Right]} -> {Left, Right}
+    end.

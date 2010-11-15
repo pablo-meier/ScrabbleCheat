@@ -57,26 +57,94 @@ main() ->
 
 
 start_service(Search, Port) ->
-    {ok, LSocket} = gen_tcp:listen(Port, ?TCP_OPTIONS),
     io:format("Starting server...~n"),
-    accept(LSocket, Search).
+    {ok, LSocket} = gen_tcp:listen(Port, ?TCP_OPTIONS),
+    loop(LSocket, Search).
 
 
-accept(LSocket, Search) ->
+loop(LSocket, Search) ->
     {ok, Socket} = gen_tcp:accept(LSocket),
-    io:format("Started!~n"),
-    spawn(fun () -> loop(Socket, Search) end),
-    accept(LSocket, Search).
+    Handler = spawn(fun () -> handle_connection(Socket, Search) end),
+    gen_tcp:controlling_process(Socket, Handler),
+    loop(LSocket, Search).
 
 
-loop(Socket, Search) ->
+%% handle_connection :: Socket * (String -> [Move]) -> ()
+%%
+%% The main socket handler loop, takes incoming directions from
+%% the client and dispatches information appropriately.  The server
+%% can take the following commands:
+%%
+%% - {new_game, String} -> Send back a fresh gamestate with those players.
+%%
+%% - {move, Gamestate, Move} -> play the move on the gamestate, return the 
+%%                              updated gamestate.
+%% 
+%% - {ai, Gamestate, Rack} ->  Calls the movesearch algorithm on the gamestate
+%%                             and rack.  Returns a list of moves.
+%%
+%% - badmessage -> the client sent a bad, unrelated message.  We let them know 
+%%                 this, and push forward.
+%%
+%% - closed -> terminate this process without closing the socket (it's been 
+%%             closed elsewhere).
+%%
+%% - quit -> Close the connection, we're done.
+%%
+handle_connection(Socket, Search) ->
+    case get_message(Socket) of
+        {new_game, Players} -> 
+            gen_tcp:send(Socket, gamestate:serialize(gamestate:fresh_gamestate(Players))),
+            handle_connection(Socket, Search);
+        {move, Gamestate, Move} ->
+            WithMove = gamestate:play_move(Gamestate, Move),
+            gen_tcp:send(Socket, gamestate:serialize(WithMove)),
+            handle_connection(Socket, Search);
+        {ai, Gamestate, Rack} ->
+            Board = gamestate:get_gamestate_board(Gamestate),
+            Moves = Search(Board, Rack),
+            gen_tcp:send(Socket, serialization:deserialize_movelist(Moves)),
+            handle_connection(Socket, Search);
+        {badmessage, Msg} ->
+            gen_tcp:send(io_lib:format("Bad message, I don't understand ~p", [Msg]));
+        closed ->
+            terminate;
+        quit ->
+            gen_tcp:close(Socket)
+    end.
+
+get_message(Socket) ->
     case gen_tcp:recv(Socket, 0) of
-        {ok, Data} -> 
-            io:format("Received ~p from a connection!~n", [Data]),
-            gen_tcp:send(Socket, io_lib:format("~p#~p", [new_board(), 0])),
-            loop(Socket, Search);
+        {ok, Data} ->
+            parse_message(Data);
         {error, closed} ->
-            ok
+            closed
+    end.
+
+
+%% parse_message :: String -> Message
+%%
+%% Where Message types are described in handle_connection.
+%%
+%% parses strings sent from the clients into the message formats listed in
+%% handle_connection.
+parse_message(Data) ->
+    {Core, Body} = serialization:split_with_delimeter(Data, $&),
+    case Core of
+        "new_game" ->
+            Players = serializaton:deserialize_list(Body, fun (X) -> X end),
+            {new_game, Players};
+        "ai" ->
+            {GamestateString, Rack} = serialization:split_with_delimeter(Data, $&),
+            Gamestate = gamestate:deserialize(GamestateString),
+            {ai, Gamestate, Rack}; 
+        "move" ->
+            {GamestateString, Movestring} = serialization:split_with_delimeter(Data, $&),
+            Gamestate = gamestate:deserialize(GamestateString),
+            Move = move:deserialize(Movestring),
+            {move, Gamestate, Move}; 
+        "quit" -> quit;
+        _Else  -> {badmessage, Data}
     end.
 
 %% make_binary_gaddag :: () -> File ()
