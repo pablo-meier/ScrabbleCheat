@@ -80,11 +80,42 @@ play_move(Gamestate, Move) ->
     make_gamestate(NewBoard, NewScores, NewTurn, NewHistory).
 
 
-get_score_and_next(_ScoreList, _Turn) ->
-    ok.
+%% get_score_and_next :: [{String, Int}] * String -> {Int, String}
+%%
+%% Given a player whose turn it is and the list of players and scores,
+%% get the current player's score, and the next player in line.
+get_score_and_next([{FirstPlayer, FirstScore}|Rst], Turn) ->
+    case Turn of
+        FirstPlayer -> 
+            {NextPlayer,_} = hd(Rst),
+            {FirstScore, NextPlayer};
+        _True ->
+            get_score_and_next_helper(Rst, Turn, FirstPlayer)
+        end.
 
-update_score(_NewScore, _OldList, _Turn) ->
-    ok.
+get_score_and_next_helper([{CurrPlayer, CurrScore}|Rst], Turn, FirstPlayer) ->
+    case Turn of
+        CurrPlayer ->
+            case Rst of
+                [] -> {CurrScore, FirstPlayer};
+                [{Next, _}|_] -> {CurrScore, Next}
+            end;
+        _Other ->
+            get_score_and_next_helper(Rst, Turn, FirstPlayer)
+    end.
+
+
+%% update_score :: Int * [{String, Int}] * String -> [{String, Int}]
+%%
+%% Substitutes the list with one where the player whose turn it is
+%% has the new score on it.
+update_score(NewScore, OldList, Turn) ->
+    lists:map(fun ({Name, Score}) -> 
+                  case Turn of
+                      Name -> {Name, NewScore};
+                      _Else -> {Name, Score}
+                  end
+              end, OldList).
 
 
 %% serialize :: Gamestate -> String

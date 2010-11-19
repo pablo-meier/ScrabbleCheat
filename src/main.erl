@@ -71,6 +71,13 @@ loop(LSocket, Search) ->
 
 %% handle_connection :: Socket * (String -> [Move]) -> ()
 %%
+%% NOTE:  After a terrible, stupid blip in my memory, I completely forgot
+%%      that Thrift exists for this very problem.  I'm so far down it that
+%%      I've resolved to finish this way, but note that in the future, I'm
+%%      going to turn it back at some point.  That being said, Thrift doesn't
+%%      have AS bindings, which may make it hard to build an AIR wrapper...
+%%      maybe I should add?
+%%
 %% The main socket handler loop, takes incoming directions from
 %% the client and dispatches information appropriately.  The server
 %% can take the following commands:
@@ -94,19 +101,19 @@ loop(LSocket, Search) ->
 handle_connection(Socket, Search) ->
     case get_message(Socket) of
         {new_game, Players} -> 
-            gen_tcp:send(Socket, gamestate:serialize(gamestate:fresh_gamestate(Players))),
+            polite_response(Socket, gamestate:serialize(gamestate:fresh_gamestate(Players))),
             handle_connection(Socket, Search);
         {move, Gamestate, Move} ->
             WithMove = gamestate:play_move(Gamestate, Move),
-            gen_tcp:send(Socket, gamestate:serialize(WithMove)),
+            polite_response(Socket, gamestate:serialize(WithMove)),
             handle_connection(Socket, Search);
         {ai, Gamestate, Rack} ->
             Board = gamestate:get_gamestate_board(Gamestate),
             Moves = Search(Board, Rack),
-            gen_tcp:send(Socket, serialization:deserialize_movelist(Moves)),
+            polite_response(Socket, serialization:serialize_movelist(Moves)),
             handle_connection(Socket, Search);
         {badmessage, Msg} ->
-            gen_tcp:send(io_lib:format("Bad message, I don't understand ~p", [Msg]));
+            polite_response(Socket, io_lib:format("Bad message, I don't understand ~p", [Msg]));
         closed ->
             terminate;
         quit ->
@@ -116,7 +123,8 @@ handle_connection(Socket, Search) ->
 get_message(Socket) ->
     case gen_tcp:recv(Socket, 0) of
         {ok, Data} ->
-            parse_message(Data);
+            io:format("Before binary call, we have ~p~n", [Data]),
+            parse_message(binary_to_list(Data));
         {error, closed} ->
             closed
     end.
@@ -129,10 +137,11 @@ get_message(Socket) ->
 %% parses strings sent from the clients into the message formats listed in
 %% handle_connection.
 parse_message(Data) ->
+    io:format("After binary call, we have ~p~n", [Data]),
     {Core, Body} = serialization:split_with_delimeter(Data, $&),
     case Core of
         "new_game" ->
-            Players = serializaton:deserialize_list(Body, fun (X) -> X end),
+            Players = serialization:deserialize_list(Body, fun (X) -> X end),
             {new_game, Players};
         "ai" ->
             {GamestateString, Rack} = serialization:split_with_delimeter(Data, $&),
@@ -145,6 +154,20 @@ parse_message(Data) ->
             {move, Gamestate, Move}; 
         "quit" -> quit;
         _Else  -> {badmessage, Data}
+    end.
+
+
+%% polite_response :: Socket * String -> ()
+%%
+%% Accomodates the 'polite_request' protocol of the Ruby client, where
+%% we ask how many bytes to read, then read it.
+polite_response(Socket, Message) ->
+    Length = length(Message),
+    gen_tcp:send(Socket, integer_to_list(Length)),
+    case gen_tcp:recv(Socket, 0) of
+        {ok, <<"thanks">>} -> gen_tcp:send(Socket, Message);
+        {ok, Something} -> io:format("Whoa!  Got ~p instead!~n", [Something]);
+        {error, closed} -> io:format("Error!  Halting.  Goodbye ^_^~n"), terminate
     end.
 
 %% make_binary_gaddag :: () -> File ()

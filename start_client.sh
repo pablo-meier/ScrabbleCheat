@@ -1,3 +1,3 @@
 #!/bin/bash
 
-ruby src/ncurses-ui/client.rb
+ruby -I src/ncurses-ui/ src/ncurses-ui/client.rb

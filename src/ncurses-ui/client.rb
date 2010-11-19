@@ -19,23 +19,33 @@
 # THE SOFTWARE.
 
 require 'socket'
+require 'serialization.rb'
 include Socket::Constants
 
 PORT = 6655                     # Hard coding for now, will generalize later.
 
 
-# create_new_game :: Socket -> Gamestate
+def polite_request(msg, socket)
+    socket.write(msg)
+    puts "Sent Message"
+    length = socket.recv(1024).strip.to_i
+    puts "Told to receive #{length} bytes"
+    socket.write("thanks")
+    socket.recv(length)
+end
+
+
+# create_new_game :: Socket * [String] -> Gamestate
 #
 # Communicates to the server using the parametrized socket, and returns
 # the new board.
-def create_new_game(sock)
-    sock.write("new_game")
-    puts "CLIENT: new_game sent..."
+def create_new_game(sock, players)
+    playerline = players.map { |x| x + "|" }.inject("") { |x,y| x + y }
+    msg = "new_game" + "&" + playerline
+    response = polite_request(msg, sock)
+    puts "got back:\n  #{response}"
 
-    gamestate_len = sock.recv(1024).strip.to_i
-    sock.write("thanks, ready")
-    gamestate_string = sock.recv(gamestate_len)
-    Serialization.deserialize(:gamestate, gamestate_string)
+    Serialization.deserialize(:gamestate, response)
 end
 
 
@@ -43,9 +53,9 @@ end
 
 socket = TCPSocket.new("localhost", 6655)
 puts "CLIENT: created socket..."
-gamestate = create_new_game(socket)
+gamestate = create_new_game(socket, ["Paul", "Sam"])
 
 
 
-puts "We got #{board.to_s}"
+puts "We got:\n  #{gamestate.to_s}"
 Process.exit
