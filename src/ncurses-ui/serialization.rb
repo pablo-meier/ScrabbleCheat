@@ -33,7 +33,7 @@ class Serialization
             when :board then deserialize_board(str)
             when :tile then deserialize_tile(str)
             when :scores then deserialize_scores(str)
-            when :history then deserialize_history(str)
+            when :history,:movelist then deserialize_history(str)
         end
     end
 

@@ -25,36 +25,81 @@ include Socket::Constants
 PORT = 6655                     # Hard coding for now, will generalize later.
 
 
-def polite_request(msg, socket)
-    socket.write(msg)
-    puts "Sent Message"
-    length = socket.recv(1024).strip.to_i
-    puts "Told to receive #{length} bytes"
-    socket.write("thanks")
-    socket.recv(length)
+
+# Main class for communicating with the server.  Handles game flow, and basic 
+# communication protocols
+class Client
+
+    def initialize(socket)
+        @socket = socket
+    end
+
+
+    # polite_request :: String -> String
+    #
+    # Follows the main:polite_response protocol of the server, where we communicate
+    # how many bytes we're sending and receiving so we know how many to read.
+    def polite_request(msg)
+        @socket.write(msg)
+        puts "Sent Message:\n  #{msg}"
+        length = @socket.recv(1024).strip.to_i
+        puts "Told to receive #{length} bytes"
+        @socket.write("thanks")
+        response = @socket.recv(length)
+        puts "response was:\n  #{response}"
+        response
+    end
+
+
+    # create_new_game :: Socket * [String] -> Gamestate
+    #
+    # Communicates to the server using the parametrized socket, and returns
+    # the new board.
+    def create_new_game(players)
+        playerline = players.map { |x| x + "|" }.inject("") { |x,y| x + y }
+        msg = "new_game&" + playerline
+        response = polite_request(msg)
+
+        Serialization.deserialize(:gamestate, response)
+    end
+
+
+    # get_scrabblecheat_moves :: Gamestate * String -> [Move]
+    #
+    # Queries the server for advice for how to best proceed.
+    def get_scrabblecheat_moves(gamestate, rack)
+        msg = "ai&" + Serialization.serialize(:gamestate, gamestate) + "&#{rack}"
+        response = polite_request(msg)
+
+        Serialization.deserialize(:movelist, response)
+    end
+
+
+    # play_move :: Gamestate * Move -> Gamestate
+    #
+    # Have the server play the move.  This keeps the game logic with the server.
+    def play_move(gamestate, move)
+        msg = "move&" + Serialization.serialize(:gamestate, gamestate) + "&" 
+                      + Serialization.serialize(:move, move)
+        response = polite_request(msg)
+
+        Serialization.deserialize(:gamestate, response)
+   end
+
+
+   # quit :: () -> ()
+   #
+   # Quits your interaction with the server.
+   def quit()
+        @socket.write("quit")        
+   end
 end
-
-
-# create_new_game :: Socket * [String] -> Gamestate
-#
-# Communicates to the server using the parametrized socket, and returns
-# the new board.
-def create_new_game(sock, players)
-    playerline = players.map { |x| x + "|" }.inject("") { |x,y| x + y }
-    msg = "new_game" + "&" + playerline
-    response = polite_request(msg, sock)
-    puts "got back:\n  #{response}"
-
-    Serialization.deserialize(:gamestate, response)
-end
-
-
 
 
 socket = TCPSocket.new("localhost", 6655)
-puts "CLIENT: created socket..."
-gamestate = create_new_game(socket, ["Paul", "Sam"])
-
+client = Client.new(socket)
+puts "CLIENT: created client with socket..."
+gamestate = client.create_new_game(["Paul", "Sam"])
 
 
 puts "We got:\n  #{gamestate.to_s}"

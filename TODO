@@ -9,13 +9,14 @@ Features:
         - Set up main.erl to act as a server, respond to requests with a string. DONE
         - Set up client.rb to ping our new server, and receive response. DONE
         - Heavily define/specify what you will be sending to and fro, and create serializable
-          datatypes on both ends.  ERLANG DONE.
+          datatypes on both ends.  
             - This mostly means prototyping a few transactions/use cases for the client, 
               and seeing what it 'needs.'  Also need to answer the question:  do you
               want to simulate a whole game, or just prod the AI?  Should the server
-              store/retrieve games, or is that the client?
+              store/retrieve games, or is that the client? DONE (see main:parse_message)
 
-        - Test the serialization.
+        - Test the serialization. DONE
+        - Write game playing/flow logic.
         - Write Hello World in Ruby Curses, client.rb
         - Draw a board, interface with Ruby Curses
         - TEST
@@ -36,6 +37,9 @@ Code Quality:
     - Refactor/restructure the src/ directory for a clear separation of modules:  game (for things 
       like boards, tiles, etc), server (for things like serialization and/or database handling), 
       and ai (for movesearches, finding the best move, etc.).
+
+    - Us Thrift, instead of your crappy-ass homebrew serialization/deserializtion scheme.
+      It's a hack where you gave much more than it deserved.
 
     - Generalize the board and board parser to take different default
       configurations, such as a Lexulous board, Words With Friends, or a custom
