@@ -75,7 +75,7 @@ class Client
    #
    # Quits your interaction with the server.
    def quit()
-        @socket.write("quit")        
+        polite_request("quit")        
    end
 
 private
@@ -123,7 +123,13 @@ puts "Type a character to continue..."
 char = gets.chomp
 
 movelist = client.get_scrabblecheat_moves(new_gamestate, "ZYGOTE")
-puts "CLIENT: asked for help, got:\n  #{movelist}"
+puts "CLIENT: asked for help, got:\n  "
+movelist.each do |move|
+    move.each do |tile|
+        print "(#{tile[:row]}, #{tile[:col]}) -> #{tile[:letter]}, "
+    end
+    print "\n  "
+end
 puts "press a character to quit."
 char = gets.chomp
 

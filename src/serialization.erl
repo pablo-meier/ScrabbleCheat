@@ -21,7 +21,7 @@
 -module(serialization).
 -import(lists, [map/2, concat/1]).
 
--export([serialize_list/2, deserialize_list/2, split_with_delimeter/2]).
+-export([serialize_list/2, deserialize_list/2, split_with_delimeter/2, serialize_movelist/1]).
 
 
 %% serialize_list :: [a] * (a -> String) -> String
@@ -29,8 +29,18 @@
 %% Serializes a list of items according to the function passed in.  We use pipes to
 %% separate list items "|".
 serialize_list(Lst, Fun) ->
-    concat(map(fun (X) -> concat([Fun(X), "|"]) end, Lst)).
+    list_serialization_backbone(Lst, Fun, "|").
 
+
+%% serialize_movelist :: [Move] -> String
+%%
+%% Serializes a list of moves into a string we can hand back.  HACK HACK HACK.
+serialize_movelist(Movelist) ->
+    list_serialization_backbone(Movelist, fun move:serialize/1, "#").
+
+list_serialization_backbone(Lst, Fun, Char) ->
+    concat(map(fun (X) -> concat([Fun(X), Char]) end, Lst)).
+    
 
 %% deserialize_list :: String * (String -> a) -> [a]
 %%

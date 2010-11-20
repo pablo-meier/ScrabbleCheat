@@ -36,6 +36,7 @@ class Serialization
             when :tile then deserialize_tile(str)
             when :scores then deserialize_scores(str)
             when :history then deserialize_history(str)
+            when :movelist then deserialize_movelist(str)
         end
     end
 
@@ -127,6 +128,12 @@ class Serialization
             history << {:name => name, :move => move_as_list, :score => score}
         end
         history
+    end
+
+    def Serialization.deserialize_movelist(str)
+        str.split("#").reject { |x| x.empty? }.map do |move|
+            move.split("|").reject { |x| x.empty? }.map { |tilestr| deserialize_tile(tilestr) }
+        end
     end
 
 
