@@ -122,9 +122,12 @@ handle_connection(Socket, Search) ->
 
 get_message(Socket) ->
     case gen_tcp:recv(Socket, 0) of
-        {ok, Data} ->
-            io:format("Before binary call, we have ~p~n", [Data]),
-            parse_message(binary_to_list(Data));
+        {ok, MessageLength} ->
+            gen_tcp:send(Socket, "thanks"),
+            case gen_tcp:recv(Socket, list_to_integer(binary_to_list(MessageLength))) of
+                {ok, Data} -> parse_message(binary_to_list(Data));
+                {error, closed} -> closed
+            end;
         {error, closed} ->
             closed
     end.
@@ -137,18 +140,19 @@ get_message(Socket) ->
 %% parses strings sent from the clients into the message formats listed in
 %% handle_connection.
 parse_message(Data) ->
-    io:format("After binary call, we have ~p~n", [Data]),
+    io:format("Data is ~n~p~n", [Data]),
     {Core, Body} = serialization:split_with_delimeter(Data, $&),
     case Core of
         "new_game" ->
             Players = serialization:deserialize_list(Body, fun (X) -> X end),
             {new_game, Players};
         "ai" ->
-            {GamestateString, Rack} = serialization:split_with_delimeter(Data, $&),
+            {GamestateString, Rack} = serialization:split_with_delimeter(Body, $&),
             Gamestate = gamestate:deserialize(GamestateString),
             {ai, Gamestate, Rack}; 
         "move" ->
-            {GamestateString, Movestring} = serialization:split_with_delimeter(Data, $&),
+            {GamestateString, Movestring} = serialization:split_with_delimeter(Body, $&),
+            io:format("GamestateString is ~p, Movestring is ~p~n", [GamestateString, Movestring]),
             Gamestate = gamestate:deserialize(GamestateString),
             Move = move:deserialize(Movestring),
             {move, Gamestate, Move}; 

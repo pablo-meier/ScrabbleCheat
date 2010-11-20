@@ -73,9 +73,10 @@ fresh_gamestate(Players) ->
 play_move(Gamestate, Move) ->
     {gamestate, Board, Scores, Turn, History} =  Gamestate,
     {PlayerScore, NewTurn} = get_score_and_next(Scores, Turn),
-    AugmentedScore = move:score(Move, Board) + PlayerScore,
+    MoveScore = move:score(Move, Board),
+    AugmentedScore = MoveScore + PlayerScore,
     NewScores = update_score(AugmentedScore, Scores, Turn),
-    NewHistory = [Move|History],
+    NewHistory = [{Turn, Move, MoveScore}|History],
     NewBoard = board:place_move_on_board(Move, Board),
     make_gamestate(NewBoard, NewScores, NewTurn, NewHistory).
 

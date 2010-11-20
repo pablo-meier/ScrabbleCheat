@@ -35,22 +35,6 @@ class Client
     end
 
 
-    # polite_request :: String -> String
-    #
-    # Follows the main:polite_response protocol of the server, where we communicate
-    # how many bytes we're sending and receiving so we know how many to read.
-    def polite_request(msg)
-        @socket.write(msg)
-        puts "Sent Message:\n  #{msg}"
-        length = @socket.recv(1024).strip.to_i
-        puts "Told to receive #{length} bytes"
-        @socket.write("thanks")
-        response = @socket.recv(length)
-        puts "response was:\n  #{response}"
-        response
-    end
-
-
     # create_new_game :: Socket * [String] -> Gamestate
     #
     # Communicates to the server using the parametrized socket, and returns
@@ -79,8 +63,8 @@ class Client
     #
     # Have the server play the move.  This keeps the game logic with the server.
     def play_move(gamestate, move)
-        msg = "move&" + Serialization.serialize(:gamestate, gamestate) + "&" 
-                      + Serialization.serialize(:move, move)
+        msg = "move&" + Serialization.serialize(:gamestate, gamestate) + "&" +
+                        Serialization.serialize(:move, move)
         response = polite_request(msg)
 
         Serialization.deserialize(:gamestate, response)
@@ -93,6 +77,28 @@ class Client
    def quit()
         @socket.write("quit")        
    end
+
+private
+
+    # polite_request :: String -> String
+    #
+    # Follows the main:polite_response protocol of the server, where we communicate
+    # how many bytes we're sending and receiving so we know how many to read.
+    def polite_request(msg)
+        @socket.write(msg.length.to_s)
+        if (reply = @socket.recv(1024).strip) != "thanks" 
+            puts "when communicating message of #{msg.length.to_s} length, got back #{reply}"
+            return
+        end
+        @socket.write(msg)
+        puts "Sent Message:\n  #{msg}"
+        length = @socket.recv(1024).strip.to_i
+        puts "Told to receive #{length} bytes"
+        @socket.write("thanks")
+        response = @socket.recv(length)
+        puts "response was:\n  #{response}"
+        response
+    end
 end
 
 
@@ -100,7 +106,27 @@ socket = TCPSocket.new("localhost", 6655)
 client = Client.new(socket)
 puts "CLIENT: created client with socket..."
 gamestate = client.create_new_game(["Paul", "Sam"])
+puts "CLIENT: Got fresh gamestate:\n  #{gamestate}"
 
+puts "\nType a character to continue..."
+char = gets.chomp
 
-puts "We got:\n  #{gamestate.to_s}"
+move = [{:letter_type => :character, :letter => "A", :bonus => :double_letter_score, :row => 7, :col => 7},
+        {:letter_type => :character, :letter => "B", :bonus => :none,                :row => 7, :col => 8},
+        {:letter_type => :character, :letter => "L", :bonus => :double_letter_score, :row => 7, :col => 9},
+        {:letter_type => :character, :letter => "E", :bonus => :none,                :row => 7, :col => 10}]
+
+new_gamestate = client.play_move(gamestate, move)
+
+puts "CLIENT: sent move ABLE, got:\n  #{new_gamestate}"
+puts "Type a character to continue..."
+char = gets.chomp
+
+movelist = client.get_scrabblecheat_moves(new_gamestate, "ZYGOTE")
+puts "CLIENT: asked for help, got:\n  #{movelist}"
+puts "press a character to quit."
+char = gets.chomp
+
+client.quit
+
 Process.exit
