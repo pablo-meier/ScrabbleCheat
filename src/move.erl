@@ -72,7 +72,7 @@ check_integrity(Row, Col) ->
     Row =< 15 andalso Row >= 1 andalso Col =< 15 andalso Col >= 1.
 
 
-%% score :: Move -> Int
+%% score :: Move * Board -> Int
 %%
 %% Calculates the score of a move.
 score(Move, Board) ->

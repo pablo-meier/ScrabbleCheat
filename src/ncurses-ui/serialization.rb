@@ -131,8 +131,12 @@ class Serialization
     end
 
     def Serialization.deserialize_movelist(str)
-        str.split("#").reject { |x| x.empty? }.map do |move|
-            move.split("|").reject { |x| x.empty? }.map { |tilestr| deserialize_tile(tilestr) }
+        str.split("#").reject { |x| x.empty? }.map do |movepair|
+            after_split = movepair.split("^", 2)
+            movestr = after_split[0]
+            score = after_split[1].to_i
+            move = movestr.split("|").reject { |x| x.empty? }.map { |tilestr| deserialize_tile(tilestr) }
+            {:move => move, :score => score}
         end
     end
 

@@ -88,7 +88,7 @@ loop(LSocket, Search) ->
 %%                              updated gamestate.
 %% 
 %% - {ai, Gamestate, Rack} ->  Calls the movesearch algorithm on the gamestate
-%%                             and rack.  Returns a list of moves.
+%%                             and rack.  Returns a list of moves and scores.
 %%
 %% - badmessage -> the client sent a bad, unrelated message.  We let them know 
 %%                 this, and push forward.
@@ -110,7 +110,9 @@ handle_connection(Socket, Search) ->
         {ai, Gamestate, Rack} ->
             Board = gamestate:get_gamestate_board(Gamestate),
             Moves = Search(Board, Rack),
-            polite_response(Socket, serialization:serialize_movelist(Moves)),
+            WithScores = lists:map(fun (X) -> {X, move:score(X, Board)} end, Moves),
+            Sorted = reverse(keysort(2, WithScores)),
+            polite_response(Socket, serialization:serialize_movelist(Sorted)),
             handle_connection(Socket, Search);
         {badmessage, Msg} ->
             polite_response(Socket, io_lib:format("Bad message, I don't understand ~p", [Msg]));

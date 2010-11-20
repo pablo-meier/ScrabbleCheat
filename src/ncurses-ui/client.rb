@@ -124,11 +124,13 @@ char = gets.chomp
 
 movelist = client.get_scrabblecheat_moves(new_gamestate, "ZYGOTE")
 puts "CLIENT: asked for help, got:\n  "
-movelist.each do |move|
+movelist.each do |movepair|
+    move = movepair[:move]
+    score = movepair[:score]
     move.each do |tile|
         print "(#{tile[:row]}, #{tile[:col]}) -> #{tile[:letter]}, "
     end
-    print "\n  "
+    print "$ WORTH #{score.to_s}\n  "
 end
 puts "press a character to quit."
 char = gets.chomp

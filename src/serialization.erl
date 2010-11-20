@@ -36,7 +36,11 @@ serialize_list(Lst, Fun) ->
 %%
 %% Serializes a list of moves into a string we can hand back.  HACK HACK HACK.
 serialize_movelist(Movelist) ->
-    list_serialization_backbone(Movelist, fun move:serialize/1, "#").
+    list_serialization_backbone(Movelist, fun move_pair_serialize/1, "#").
+
+
+move_pair_serialize({Move, Score}) ->
+    concat([move:serialize(Move), "^", integer_to_list(Score)]).
 
 list_serialization_backbone(Lst, Fun, Char) ->
     concat(map(fun (X) -> concat([Fun(X), Char]) end, Lst)).
