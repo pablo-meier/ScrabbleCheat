@@ -22,6 +22,8 @@ require 'board.rb'
 
 # Class with static methods for serialization and deserialization of the 
 # various datatypes that make up a gamestate.
+#
+# I've never felt dirtier than I have writing this atrocious code.
 class Serialization
 
     # deserialize :: Str -> Object
@@ -33,7 +35,7 @@ class Serialization
             when :board then deserialize_board(str)
             when :tile then deserialize_tile(str)
             when :scores then deserialize_scores(str)
-            when :history,:movelist then deserialize_history(str)
+            when :history then deserialize_history(str)
         end
     end
 
@@ -48,14 +50,14 @@ class Serialization
     end
 
     def Serialization.deserialize_scores(str)
-        scorehash = {}
+        scorelst = [] 
         pairs = str.split("|").reject {|x| x.empty? }.map { |pair| pair.split("$", 2) }
         pairs.each do |arr|
             key = arr[0]
             val = arr[1].to_i
-            scorehash[key] = val
+            scorelst << [key, val]
         end
-        scorehash
+        scorelst
     end
 
     def Serialization.deserialize_board(string)
@@ -127,6 +129,87 @@ class Serialization
         history
     end
 
+
+
+
+    def Serialization.serialize(what, obj)
+        case what 
+            when :gamestate then serialize_gamestate(obj)
+            when :move then serialize_move(obj)
+            when :tile then serialize_tile(obj)
+            when :board then serialize_board(obj)
+            when :scores then serialize_scores(obj)
+            when :history then serialize_history(obj)
+        end
+    end
+
+
+    def Serialization.serialize_gamestate(gamestate)
+        board_str = serialize(:board, gamestate[:board])
+        scores_str = serialize(:scores, gamestate[:scores])
+        history_str = serialize(:history, gamestate[:history])
+
+        board_str + "#" + scores_str + "#" + gamestate[:turn] + "#" + history_str
+    end
+
+
+    def Serialization.serialize_scores(lst)
+        lst.map { |x| x[0] + "$" + x[1].to_s + "|" }.inject("") { |x,y| x + y }
+    end
+
+
+    def Serialization.serialize_board(board)
+        lst = []
+        1.upto(15) do |row|
+            1.upto(15) do |col|
+                lst << serialize(:tile, board.tiles[row][col])
+            end
+        end
+        lst.map { |x| x + "|" }.inject("") { |x,y| x + y }
+    end
+
+
+    def Serialization.serialize_move(move)
+        move.map { |m| serialize(:tile, m) + "|" }.inject("") { |x,y| x + y }
+    end
+
+
+    def Serialization.serialize_history(history)
+        history.map do |hsh|
+            player = hsh[:name]
+            move = serialize(:move, hsh[:move])
+            score = hsh[:score].to_s
+            player + "$" + move + "$" + score + "|"
+        end.inject("") { |x,y| x + y }
+    end
+
+
+    def Serialization.number_format(num)
+        if num < 10 then "0" + num.to_s else num.to_s end
+    end
+
+    
+    def Serialization.serialize_tile(tile)
+        letter_type = case tile[:letter_type]
+                          when :wildcard then "W"
+                          when :character then "C"
+                          when :none then "-"
+                      end
+        letter = case tile[:letter]
+                     when :none then "-"
+                     else tile[:letter]
+                 end
+        bonus = case tile[:bonus]
+                    when :triple_letter_score then "t"
+                    when :triple_word_score then "T"
+                    when :double_letter_score then "d"
+                    when :double_word_score then "D"
+                    when :none then "n"
+                end
+        row = Serialization.number_format(tile[:row])
+        col = Serialization.number_format(tile[:col])
+        letter_type + letter + bonus + row + col
+    end
 
 
 end

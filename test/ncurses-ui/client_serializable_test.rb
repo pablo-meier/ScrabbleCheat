@@ -25,7 +25,7 @@ require 'test/unit'
 
 class SerializationTest < Test::Unit::TestCase
 
-    def test_tile_deserialization
+    def test_tile_serialization
         testtile1 = "--t0104"
         result = Serialization.deserialize(:tile, testtile1)
         assert_equal({:letter => :none, :letter_type => :none, :bonus => :triple_letter_score, :row => 1, :col => 4}, result)
@@ -37,27 +37,37 @@ class SerializationTest < Test::Unit::TestCase
         testtile3 = "CRT0606"
         result3 = Serialization.deserialize(:tile, testtile3)
         assert_equal({:letter => "R", :letter_type => :character, :bonus => :triple_word_score, :row => 6, :col => 6}, result3)
+
+
+        assert_equal(testtile1, Serialization.serialize(:tile, Serialization.deserialize(:tile, testtile1)))
+        assert_equal(testtile2, Serialization.serialize(:tile, Serialization.deserialize(:tile, testtile2)))
+        assert_equal(testtile3, Serialization.serialize(:tile, Serialization.deserialize(:tile, testtile3)))
     end
 
 
     def test_gamestate_serialization
         empty_gamestate = empty_board_str + "#Paul$0|Sam$0|#Paul#"
-        expected = {:turn => "Paul", :scores => {"Paul" => 0, "Sam" => 0}, 
+        expected = {:turn => "Paul", :scores => [["Paul",0], ["Sam",0]], 
                     :board => Serialization.deserialize(:board, empty_board_str), :history => []}
         result = Serialization.deserialize(:gamestate, empty_gamestate)
         assert_equal(expected[:turn], result[:turn])
         assert_equal(expected[:scores], result[:scores])
         assert_equal(expected[:history], result[:history])
         assert(expected[:board].eql? result[:board])
+
+        assert_equal(empty_gamestate, Serialization.serialize(:gamestate, Serialization.deserialize(:gamestate, empty_gamestate)))
     end
     
 
     def test_scores_deserialization
         scorestr1 = "Paul$100|Sam$50|"
-        assert_equal({"Paul" => 100, "Sam" => 50}, Serialization.deserialize(:scores, scorestr1))
+        assert_equal([["Paul", 100], ["Sam", 50]], Serialization.deserialize(:scores, scorestr1))
 
         scorestr2 = "Sam$50|Paul$100|Robert$4|Brett$60|"
-        assert_equal({"Sam" => 50, "Paul" => 100, "Robert" => 4, "Brett" => 60}, Serialization.deserialize(:scores, scorestr2))
+        assert_equal([["Sam",50], ["Paul", 100], ["Robert", 4], ["Brett", 60]], Serialization.deserialize(:scores, scorestr2))
+
+        assert_equal(scorestr1, Serialization.serialize(:scores, Serialization.deserialize(:scores, scorestr1)))
+        assert_equal(scorestr2, Serialization.serialize(:scores, Serialization.deserialize(:scores, scorestr2)))
     end
 
 
@@ -94,14 +104,15 @@ class SerializationTest < Test::Unit::TestCase
         assert_equal({:letter => "D", :letter_type => :character, :bonus => :double_word_score, :row => 8, :col => 8}, board[8][8])
         assert_equal({:letter => "G", :letter_type => :character, :bonus => :triple_word_score, :row => 15, :col => 15}, board[15][15])
 
-
+        assert_equal(empty_board_str, Serialization.serialize(:board, Serialization.deserialize(:board, empty_board_str)))
+        assert_equal(with_moves_board, Serialization.serialize(:board, Serialization.deserialize(:board, with_moves_board)))
     end
     
     def test_history_deserialization
         history_str = "Paul$CAn0707|CBn0708|CLn0709|CEn0710|$100|" +
                       "Sam$CPn0607|CAn0608|CUn0609|CLn0610|$20|" +
                       "Paul$CPn0509|CWn0609|CNn0709|CTn0809|$200|" +
-                      "Sam$CHn1001|CEn1101|CLn1201|CPn1301$15|"
+                      "Sam$CHn1001|CEn1101|CLn1201|CPn1301|$15|"
         
         firstmove = {:name => "Paul", :move => [tile("CAn0707"),tile("CBn0708"),tile("CLn0709"),tile("CEn0710")], :score => 100}
         secondmove = {:name => "Sam", :move => [tile("CPn0607"),tile("CAn0608"),tile("CUn0609"),tile("CLn0610")], :score => 20}
@@ -114,7 +125,9 @@ class SerializationTest < Test::Unit::TestCase
         result << thirdmove
         result << fourthmove
 
-        assert_equal(result, Serialization.deserialize(:history, history_str))
+        deserialized = Serialization.deserialize(:history, history_str)
+        assert_equal(result, deserialized)
+        assert_equal(history_str, Serialization.serialize(:history, deserialized))
     end
 
     # lame, but makes the above test case possible...
