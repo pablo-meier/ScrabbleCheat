@@ -18,123 +18,115 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-require 'socket'
-require 'serialization.rb'
-include Socket::Constants
+require 'conversationalist.rb'
+require 'painter.rb'
 
+require 'socket'
+include Socket::Constants
 PORT = 6655                     # Hard coding for now, will generalize later.
 
 
+# Handles state transitions for the client.  Uses Conversationalist for server
+# communications, and painter to draw the results.
+#
+# Use cases are:
+#   - A welcome menu (new_game, quit).
+#   - An action chooser (play_move, get_scrabblecheat_moves)
+#       - Present board, scores, and choice between two options.  Optional
+#         history view.
+#   - First "action sequence!":  play_move needs a move.  Allow navigation/input 
+#     into board until user is satisfied, then "Submit"
+#       - On successful submit, display action chooser with resulting board, 
+#         scores.
+#   - Second "action sequence!": get_scrabblecheat_moves needs a rack.  Allow 
+#     user to input a Rack, followed by Submit.
+#       - On submit, present vertical scroller with word, score.  Board have
+#         move overlayed.  User submits a move, and it is played.  Back to 
+#         action chooser with new gamestate.
+#
 
-# Main class for communicating with the server.  Handles game flow, and basic 
-# communication protocols
 class Client
 
-    def initialize(socket)
-        @socket = socket
+    def initialize
+        socket = TCPSocket.new("localhost", PORT)
+        @connection = Conversationalist.new(socket)
+        @painter = Painter.new
+
+        @gamestates = []
+        @gamestate_index = -1
+        @curr_state = {:state => :welcome, :data => nil}
+
+        self.play_game
     end
 
-
-    # create_new_game :: Socket * [String] -> Gamestate
-    #
-    # Communicates to the server using the parametrized socket, and returns
-    # the new board.
-    def create_new_game(players)
-        playerline = players.map { |x| x + "|" }.inject("") { |x,y| x + y }
-        msg = "new_game&" + playerline
-        response = polite_request(msg)
-
-        Serialization.deserialize(:gamestate, response)
-    end
-
-
-    # get_scrabblecheat_moves :: Gamestate * String -> [Move]
-    #
-    # Queries the server for advice for how to best proceed.
-    def get_scrabblecheat_moves(gamestate, rack)
-        msg = "ai&" + Serialization.serialize(:gamestate, gamestate) + "&#{rack}"
-        response = polite_request(msg)
-
-        Serialization.deserialize(:movelist, response)
-    end
-
-
-    # play_move :: Gamestate * Move -> Gamestate
-    #
-    # Have the server play the move.  This keeps the game logic with the server.
-    def play_move(gamestate, move)
-        msg = "move&" + Serialization.serialize(:gamestate, gamestate) + "&" +
-                        Serialization.serialize(:move, move)
-        response = polite_request(msg)
-
-        Serialization.deserialize(:gamestate, response)
-   end
-
-
-   # quit :: () -> ()
-   #
-   # Quits your interaction with the server.
-   def quit()
-        polite_request("quit")        
-   end
-
-private
-
-    # polite_request :: String -> String
-    #
-    # Follows the main:polite_response protocol of the server, where we communicate
-    # how many bytes we're sending and receiving so we know how many to read.
-    def polite_request(msg)
-        @socket.write(msg.length.to_s)
-        if (reply = @socket.recv(1024).strip) != "thanks" 
-            puts "when communicating message of #{msg.length.to_s} length, got back #{reply}"
-            return
+    def play_game
+        loop do
+            response = self.show(@curr_state)
+            case response[:state]
+                when :new_game
+                    names = response[:data]
+                    gamestate = @connection.create_new_game(names)
+                    self.add_gamestate(gamestate)
+                    @curr_state = {:state => :action_choose, :data => gamestate}
+                when :play_move
+                    move = response[:data]
+                    new_state = @connection.play_move(@gamestates[@gamestate_index], move)
+                    self.add_gamestate(new_state)
+                    @curr_state = {:state => :action_choose, :data => new_state}
+                when :get_moves
+                    rack = response[:data]
+                    this_gamestate = @gamestates[@gamestate_index]
+                    moves = @connection.get_scrabblecheat_moves(this_gamestate, rack)
+                    @curr_state = {:state => :move_choose, :data => {:gamestate => this_gamestate, :moves => moves}}
+                when :quit
+                    @connection.quit
+                    @painter.close_up
+                    Process.exit
+            end
         end
-        @socket.write(msg)
-        puts "Sent Message:\n  #{msg}"
-        length = @socket.recv(1024).strip.to_i
-        puts "Told to receive #{length} bytes"
-        @socket.write("thanks")
-        response = @socket.recv(length)
-        puts "response was:\n  #{response}"
-        response
+    end
+
+
+    def add_gamestate(gamestate)
+        @gamestates << gamestate
+        @gamestate_index += 1
+    end
+
+
+
+    def show(client_state)
+        case client_state[:state]
+            when :welcome
+                handle_welcome
+            when :action_choose
+                handle_action_choose(client_state[:data])
+            when :move_choose
+                handle_move_choose(client_state[:data])
+        end
+    end
+
+    # Draws the welcome screen, prompts user for their names.  Returns either
+    # {:state => :new_game, :data => [String]}, or 
+    # {:state => :quit, :data => nil}
+    def handle_welcome
+        @painter.draw_welcome
+    end
+
+
+    # Draws the current gamestate (board, scores, turn) and prompts the user
+    # to either play a move, or ask for help.  Returns either
+    # {:state => :play_move, :data => Move}, or
+    # {:state => :get_moves, :data => Rack}
+    def handle_action_choose(gamestate)
+
+    end
+
+    # Presents a list of possible moves to the user, allows them to select
+    # one to play.  Returns 
+    # {:state => :play_move, :data => Move}
+    def handle_move_choose(moves)
     end
 end
 
 
-socket = TCPSocket.new("localhost", 6655)
-client = Client.new(socket)
-puts "CLIENT: created client with socket..."
-gamestate = client.create_new_game(["Paul", "Sam"])
-puts "CLIENT: Got fresh gamestate:\n  #{gamestate}"
-
-puts "\nType a character to continue..."
-char = gets.chomp
-
-move = [{:letter_type => :character, :letter => "A", :bonus => :double_letter_score, :row => 7, :col => 7},
-        {:letter_type => :character, :letter => "B", :bonus => :none,                :row => 7, :col => 8},
-        {:letter_type => :character, :letter => "L", :bonus => :double_letter_score, :row => 7, :col => 9},
-        {:letter_type => :character, :letter => "E", :bonus => :none,                :row => 7, :col => 10}]
-
-new_gamestate = client.play_move(gamestate, move)
-
-puts "CLIENT: sent move ABLE, got:\n  #{new_gamestate}"
-puts "Type a character to continue..."
-char = gets.chomp
-
-movelist = client.get_scrabblecheat_moves(new_gamestate, "ZYGOTE")
-puts "CLIENT: asked for help, got:\n  "
-movelist.each do |movepair|
-    move = movepair[:move]
-    score = movepair[:score]
-    move.each do |tile|
-        print "(#{tile[:row]}, #{tile[:col]}) -> #{tile[:letter]}, "
-    end
-    print "$ WORTH #{score.to_s}\n  "
-end
-puts "press a character to quit."
-char = gets.chomp
-
-client.quit
-
-Process.exit
+Client.new
