@@ -27,6 +27,7 @@ class Painter
 
     include Ncurses
     include Ncurses::Menu
+    include Ncurses::Form
 
     TITLE_LINE = "Welcome to ScrabbleCheat!"
     AUTHOR_LINE =  "by Paul Meier - www.morepaul.com"
@@ -77,13 +78,14 @@ class Painter
                 Ncurses.stdscr.addstr("New game")
                 Ncurses.stdscr.refresh()
                 sleep(1)
-                {:state => :quit, :data => "new_game"}
+                Ncurses::Menu.free_menu(menuwin[:menu])
+                Ncurses.delwin(menuwin[:window])
+                self.build_name_entry_form
             when "quit"
                 Ncurses.stdscr.move(4, 4)
                 Ncurses.stdscr.addstr("Quit")
                 Ncurses.stdscr.refresh()
                 sleep(1)
-                 puts "QUIT!"
                 {:state => :quit, :data => "quit"}
         end
     end
@@ -116,6 +118,78 @@ class Painter
         {:window => welcome_menu_window, :menu => welcome_menu}
     end
 
+    ########################################################################
+    #  NAME ENTRY
+    def build_name_entry_form
+        fields = []
+        1.upto 4 do |i|
+            field = FIELD.new(1, 10, i * 1, 1, 0, 0)
+            field.set_field_back(A_UNDERLINE)
+            field.set_field_type(TYPE_ALPHA, 0)
+            fields.push(field)
+        end
+        name_form = FORM.new(fields)
+        name_form.user_object = "Name entry"
+
+        rows = []
+        cols = []
+        name_form.scale_form(rows, cols)
+
+        name_form_win = WINDOW.new(rows[0] + 3, cols[0] + 14, 1, 1)
+        name_form_win.keypad(true)
+
+        name_form.set_form_win(name_form_win)
+        name_form.set_form_sub(name_form_win.derwin(rows[0], cols[0], 2, 12))
+        
+        name_form_win.box(0, 0)
+        print_in_middle(name_form_win, 1, 0, cols[0] + 14, "Please enter up to 4 players", Ncurses.COLOR_PAIR(1))
+
+        name_form.post_form
+        name_form_win.mvaddstr(3, 2, "Player 1:")
+        name_form_win.mvaddstr(4, 2, "Player 2:")
+        name_form_win.mvaddstr(5, 2, "Player 3:")
+        name_form_win.mvaddstr(6, 2, "Player 4:")
+
+        name_form_win.wrefresh
+        Ncurses.stdscr.refresh
+
+        char = nil
+        while (char = name_form_win.getch) 
+            case char
+                when KEY_DOWN
+                    # Go to next field */
+                    name_form.form_driver(REQ_VALIDATION);
+                    name_form.form_driver(REQ_NEXT_FIELD);
+                    # Go to the end of the present buffer
+                    # Leaves nicely at the last character
+                    name_form.form_driver(REQ_END_LINE);
+                
+                when KEY_UP
+                    # Go to previous field
+                    name_form.form_driver(REQ_VALIDATION);
+                    name_form.form_driver(REQ_PREV_FIELD);
+                    name_form.form_driver(REQ_END_LINE);
+                
+                when KEY_LEFT
+                    # Go to previous field
+                    name_form.form_driver(REQ_PREV_CHAR);
+                
+                when KEY_RIGHT
+                    # Go to previous field
+                    name_form.form_driver(REQ_NEXT_CHAR);
+                
+                when KEY_BACKSPACE
+                when KEY_DC
+                    name_form.form_driver(REQ_DEL_PREV);
+                when KEY_SLEFT
+                    break
+                else
+                    # If this is a normal character, it gets Printed    
+                    name_form.form_driver(char);
+            end
+        end
+        {:state => :new_game, :data => ["Paul", "Sam"]}
+    end
 
     ########################################################################
     #  UTILITIES
