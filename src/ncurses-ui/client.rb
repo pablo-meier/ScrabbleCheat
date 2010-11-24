@@ -80,7 +80,6 @@ class Client
                     @curr_state = {:state => :move_choose, :data => {:gamestate => this_gamestate, :moves => moves}}
                 when :quit
                     @connection.quit
-                    @painter.close_up
                     Process.exit
             end
         end

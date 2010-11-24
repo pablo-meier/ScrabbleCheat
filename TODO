@@ -4,8 +4,9 @@ SHORT-TERM:
 Features:
     - Connections between 'islands:' when you build a bridge between two words to
       build a longer, more impressive word.
+    - Critical optimizations
     - Move selection (after generation, likely start out with naive high score).
-    - UI. Curses/Nitrogen?
+    - UI. Curses/Nitrogen? CURSES.
         - Set up main.erl to act as a server, respond to requests with a string. DONE
         - Set up client.rb to ping our new server, and receive response. DONE
         - Heavily define/specify what you will be sending to and fro, and create serializable
@@ -16,13 +17,24 @@ Features:
               store/retrieve games, or is that the client? DONE (see main:parse_message)
 
         - Test the serialization. DONE
-        - Write game playing/flow logic.
-        - Write Hello World in Ruby Curses, client.rb
-        - Draw a board, interface with Ruby Curses
+        - Write game playing/flow logic.  Um, done?
+        - Write Hello World in Ruby Curses, client.rb.  Um, done?
+        - FINNISH HYMN!
+            - Welcome Screen
+                - Center Menu appropriately DONE
+                - Draw title correctly DONE (copypasta)
+                - Colors (DONE)
+                - Get menu value
+            -> Name input
+                - Simple forms from example.  Get values, place in array.
+            -> Action choose!       
+                - Draw Board, Scores, * on who's turn.
         - TEST
 
 
 Code Quality:
+
+SERVER
     - Better, more rigorous testing.  Mostly in movesearches, and the most recent features (wildcards, 
       serialization, dumping previous computation to disk).  Use abstractions!
     - Optimize, optimize, optimize.  Especially with wildcards.
@@ -38,7 +50,7 @@ Code Quality:
       like boards, tiles, etc), server (for things like serialization and/or database handling), 
       and ai (for movesearches, finding the best move, etc.).
 
-    - Us Thrift, instead of your crappy-ass homebrew serialization/deserializtion scheme.
+    - Use Thrift, instead of your crappy-ass homebrew serialization/deserializtion scheme.
       It's a hack where you gave much more than it deserved.
 
     - Generalize the board and board parser to take different default
@@ -51,3 +63,8 @@ Code Quality:
       game type (words_with_friends) and dictionary (twl, international) etc.
 
     - I might be missing something. grep TODO and FIXME in the source to find something to do!
+
+
+CLIENT
+    - Allow save games.
+    - Allow to check move validity on play_move
