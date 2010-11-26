@@ -74,19 +74,12 @@ class Painter
         item = Ncurses::Menu::current_item(menuwin[:menu])
         case Ncurses::Menu::item_description(item)
             when "new_game"
-                Ncurses.stdscr.move(4, 4)
-                Ncurses.stdscr.addstr("New game")
-                Ncurses.stdscr.refresh()
-                sleep(1)
                 Ncurses::Menu.free_menu(menuwin[:menu])
                 Ncurses.delwin(menuwin[:window])
+                Ncurses.stdscr.clear
                 self.build_name_entry_form
             when "quit"
-                Ncurses.stdscr.move(4, 4)
-                Ncurses.stdscr.addstr("Quit")
-                Ncurses.stdscr.refresh()
-                sleep(1)
-                {:state => :quit, :data => "quit"}
+               {:state => :quit, :data => "quit"}
         end
     end
 
@@ -121,6 +114,7 @@ class Painter
     ########################################################################
     #  NAME ENTRY
     def build_name_entry_form
+        self.draw_preamble
         fields = []
         1.upto 4 do |i|
             field = FIELD.new(1, 10, i * 1, 1, 0, 0)
@@ -135,20 +129,29 @@ class Painter
         cols = []
         name_form.scale_form(rows, cols)
 
-        name_form_win = WINDOW.new(rows[0] + 3, cols[0] + 14, 1, 1)
+        width = cols[0] + 50
+        height = rows[0] + 9 
+        starty = Ncurses.LINES / 2 - (height / 2)
+        startx = Ncurses.COLS / 2 - (width / 2)
+
+        name_form_win = WINDOW.new(height, width, starty, startx)
         name_form_win.keypad(true)
 
         name_form.set_form_win(name_form_win)
-        name_form.set_form_sub(name_form_win.derwin(rows[0], cols[0], 2, 12))
+        name_form.set_form_sub(name_form_win.derwin(rows[0], cols[0], 4, 30))
         
         name_form_win.box(0, 0)
-        print_in_middle(name_form_win, 1, 0, cols[0] + 14, "Please enter up to 4 players", Ncurses.COLOR_PAIR(1))
+        str = "Please enter the names of up to 4 players"
+        print_in_middle(name_form_win, 2, 10, str.length, str, Ncurses.COLOR_PAIR(1))
 
         name_form.post_form
-        name_form_win.mvaddstr(3, 2, "Player 1:")
-        name_form_win.mvaddstr(4, 2, "Player 2:")
-        name_form_win.mvaddstr(5, 2, "Player 3:")
-        name_form_win.mvaddstr(6, 2, "Player 4:")
+        name_form_win.mvaddstr(5, 20, "Player 1:")
+        name_form_win.mvaddstr(6, 20, "Player 2:")
+        name_form_win.mvaddstr(7, 20, "Player 3:")
+        name_form_win.mvaddstr(8, 20, "Player 4:")
+
+        str = "Press ENTER when done"
+        print_in_middle(name_form_win, 11, 20, str.length, str, Ncurses.COLOR_PAIR(1))
 
         name_form_win.wrefresh
         Ncurses.stdscr.refresh
@@ -157,7 +160,7 @@ class Painter
         while (char = name_form_win.getch) 
             case char
                 when KEY_DOWN
-                    # Go to next field */
+                    # Go to next field 
                     name_form.form_driver(REQ_VALIDATION);
                     name_form.form_driver(REQ_NEXT_FIELD);
                     # Go to the end of the present buffer
@@ -175,20 +178,33 @@ class Painter
                     name_form.form_driver(REQ_PREV_CHAR);
                 
                 when KEY_RIGHT
-                    # Go to previous field
+                    # Go to next field
                     name_form.form_driver(REQ_NEXT_CHAR);
                 
                 when KEY_BACKSPACE
                 when KEY_DC
                     name_form.form_driver(REQ_DEL_PREV);
-                when KEY_SLEFT
+                when KEY_ENTER
+                when ?q
                     break
                 else
-                    # If this is a normal character, it gets Printed    
+                    # If this is a normal character, it gets printed
                     name_form.form_driver(char);
             end
         end
-        {:state => :new_game, :data => ["Paul", "Sam"]}
+        # Process the form data
+        names = []
+        names = fields.map { |x| x.field_buffer(0) }
+
+        names = names.map { |x| x.strip }.reject { |x| x.empty? }
+        names << "Names has #{names.length} entries"
+        self.debug_println("Exited form with names #{names}")
+
+        name_form.unpost_form
+        name_form.free_form
+        fields.each { |f| f.free_field }
+
+        {:state => :new_game, :data => names}
     end
 
     ########################################################################
@@ -216,6 +232,14 @@ class Painter
          win.mvprintw(y[0], x[0], "%s", string);
          win.attroff(color);
          Ncurses.refresh();
+    end
+
+
+    def debug_println(str)
+        Ncurses.stdscr.move(4, 4)
+        Ncurses.stdscr.addstr(str)
+        Ncurses.stdscr.refresh()
+        sleep(1)
     end
 
 

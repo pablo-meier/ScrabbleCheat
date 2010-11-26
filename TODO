@@ -27,6 +27,10 @@ Features:
                 - Get menu value
             -> Name input
                 - Simple forms from example.  Get values, place in array.
+                    - Title
+                    - Bigger spaced box
+                    - Enter rather than 'q'
+                    - get the names in the forms!
             -> Action choose!       
                 - Draw Board, Scores, * on who's turn.
         - TEST

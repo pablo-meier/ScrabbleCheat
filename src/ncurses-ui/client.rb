@@ -95,22 +95,17 @@ class Client
 
     def show(client_state)
         case client_state[:state]
+            # Draws the welcome screen, prompts user for their names.  Returns either
+            # {:state => :new_game, :data => [String]}, or 
+            # {:state => :quit, :data => nil}
             when :welcome
-                handle_welcome
+                @painter.draw_welcome
             when :action_choose
                 handle_action_choose(client_state[:data])
             when :move_choose
                 handle_move_choose(client_state[:data])
         end
     end
-
-    # Draws the welcome screen, prompts user for their names.  Returns either
-    # {:state => :new_game, :data => [String]}, or 
-    # {:state => :quit, :data => nil}
-    def handle_welcome
-        @painter.draw_welcome
-    end
-
 
     # Draws the current gamestate (board, scores, turn) and prompts the user
     # to either play a move, or ask for help.  Returns either
