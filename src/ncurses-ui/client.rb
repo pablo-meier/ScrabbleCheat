@@ -100,19 +100,16 @@ class Client
             # {:state => :quit, :data => nil}
             when :welcome
                 @painter.draw_welcome
+
+            # Draws the current gamestate (board, scores, turn) and prompts the user
+            # to either play a move, or ask for help.  Returns either
+            # {:state => :play_move, :data => Move}, or
+            # {:state => :get_moves, :data => Rack}
             when :action_choose
-                handle_action_choose(client_state[:data])
+                @painter.draw_action_choose(client_state[:data])
             when :move_choose
                 handle_move_choose(client_state[:data])
         end
-    end
-
-    # Draws the current gamestate (board, scores, turn) and prompts the user
-    # to either play a move, or ask for help.  Returns either
-    # {:state => :play_move, :data => Move}, or
-    # {:state => :get_moves, :data => Rack}
-    def handle_action_choose(gamestate)
-
     end
 
     # Presents a list of possible moves to the user, allows them to select

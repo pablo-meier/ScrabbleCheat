@@ -18,22 +18,32 @@ Features:
 
         - Test the serialization. DONE
         - Write game playing/flow logic.  Um, done?
-        - Write Hello World in Ruby Curses, client.rb.  Um, done?
+        - Write Hello World in Ruby Curses, client.rb. DONE
         - FINNISH HYMN!
             - Welcome Screen
                 - Center Menu appropriately DONE
                 - Draw title correctly DONE (copypasta)
-                - Colors (DONE)
-                - Get menu value
+                - Colors DONE
+                - Get menu value DONE
             -> Name input
                 - Simple forms from example.  Get values, place in array.
-                    - Title
-                    - Bigger spaced box
+                    - Title DONE
+                    - Bigger spaced box DONE
                     - Enter rather than 'q'
-                    - get the names in the forms!
+                    - get the names in the forms! DONE
             -> Action choose!       
-                - Draw Board, Scores, * on who's turn.
-        - TEST
+                - Draw Board (DONE), Scores (DONE), * on who's turn (DONE)
+                - Get user choice (input move or get moves)
+                - Input Move:
+                    - Build navigation of board, with visible cursor.
+                    - Let user build move visually on board.
+                    - Get user's final submitted move, place it to server and update gamestate.
+                - Get Moves:
+                    - Display menu with the moves sorted by score.
+                    - Highlight the board with the currently selected move.
+                    - Retrieve and play move from user's choice.
+                - History?
+        - TEST TEST TEST.  Handle incorrect input/gamestates
 
 
 Code Quality:

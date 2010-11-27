@@ -44,6 +44,10 @@ class Painter
         Ncurses.stdscr.keypad(true)     # turn on keypad mode
 
         Ncurses.init_pair(1, COLOR_RED, COLOR_BLACK);
+        Ncurses.init_pair(2, COLOR_YELLOW, COLOR_BLACK);
+        Ncurses.init_pair(3, COLOR_BLUE, COLOR_BLACK);
+        Ncurses.init_pair(4, COLOR_CYAN, COLOR_BLACK);
+        Ncurses.init_pair(5, COLOR_MAGENTA, COLOR_BLACK);
     end
 
    ########################################################################
@@ -192,12 +196,17 @@ class Painter
                     name_form.form_driver(char);
             end
         end
-        # Process the form data
+        # Process the form data.  Begins with a dirty hack to collect all names,
+        # since field_buffer wasn't counting a field that hasn't been exited from.
+
+        name_form.form_driver(REQ_NEXT_FIELD);
+        name_form.form_driver(REQ_PREV_FIELD);
+
         names = []
         names = fields.map { |x| x.field_buffer(0) }
 
         names = names.map { |x| x.strip }.reject { |x| x.empty? }
-        names << "Names has #{names.length} entries"
+        #names << "Names has #{names.length} entries"
         self.debug_println("Exited form with names #{names}")
 
         name_form.unpost_form
@@ -206,6 +215,154 @@ class Painter
 
         {:state => :new_game, :data => names}
     end
+
+
+    ########################################################################
+    #  ACTION CHOOSE
+    def draw_action_choose(gamestate)
+        board = gamestate[:board]
+        scores = gamestate[:scores]
+        turn = gamestate[:turn]
+        history = gamestate[:history]
+
+        Ncurses.stdscr.clear
+        self.draw_preamble
+        self.paint_scores(scores, turn)
+        self.paint_board(board)
+        Ncurses.refresh
+        sleep(15)
+        self.paint_history(history)
+
+        option = self.present_action_request
+        case option
+            when :move 
+                move = self.get_a_move
+                {:state => :play_move, :data => move}
+            when :ai
+                rack = self.get_a_rack
+                {:state => :get_moves, :data => rack}
+        end
+    end
+
+
+    def paint_board(board)
+        # Set up window
+        width = 35  
+        height = 20
+        board_win = WINDOW.new(height, width, 4, (Ncurses.COLS / 2) - (2 + width))
+        print_in_middle(board_win, 1, 13, 10, "-- Board --", Ncurses.COLOR_PAIR(1))
+        board_win.box(0,0)
+
+        # Print top edge
+        board_win.attron(Ncurses.COLOR_PAIR(2))
+        col = 3
+        while col < 32
+            board_win.mvaddstr(2, col, "_ ")
+            col += 2
+        end
+
+        # Print the left edge
+        row = 3
+        while row < 18
+            board_win.mvaddstr(row, 2, "|")
+            row += 1
+        end
+        board_win.attroff(Ncurses.COLOR_PAIR(2))
+
+
+        # Print each tile
+        tiles = board.tiles
+        1.upto 15 do |row|
+            1.upto 15 do |col|
+                this_tile = tiles[row][col]
+                y = this_tile[:row] + 2
+                x = (2 * this_tile[:col]) + 1
+
+                case this_tile[:letter]
+                    when :none
+                        case this_tile[:bonus]
+                            when :none # Yellow
+                                board_win.attron(Ncurses.COLOR_PAIR(2))
+                                board_win.mvaddstr(y, x, "_")
+                                board_win.attroff(Ncurses.COLOR_PAIR(2))
+                            when :triple_word_score # Red
+                                board_win.attron(Ncurses.COLOR_PAIR(1))
+                                board_win.mvaddstr(y, x, "*")
+                                board_win.attroff(Ncurses.COLOR_PAIR(1))
+                            when :double_word_score # Magenta
+                                board_win.attron(Ncurses.COLOR_PAIR(5))
+                                board_win.mvaddstr(y, x, "*")
+                                board_win.attroff(Ncurses.COLOR_PAIR(5))
+                            when :triple_letter_score # Blue
+                                board_win.attron(Ncurses.COLOR_PAIR(3))
+                                board_win.mvaddstr(y, x, "*")
+                                board_win.attroff(Ncurses.COLOR_PAIR(3))
+                            when :double_letter_score # Cyan
+                                board_win.attron(Ncurses.COLOR_PAIR(4))
+                                board_win.mvaddstr(y, x, "*")
+                                board_win.attroff(Ncurses.COLOR_PAIR(4))
+                        end
+                    else
+                        char = this_tile[:letter]
+                        board_win.mvaddstr(y, x, char)
+                end
+
+                board_win.attron(Ncurses.COLOR_PAIR(2))
+                board_win.mvaddstr(y, x + 1, "|")
+                board_win.attroff(Ncurses.COLOR_PAIR(2))
+            end
+        end
+        board_win.wrefresh
+    end
+
+
+    def paint_scores(scores, turn)
+        width = 20
+        height = scores.length + 3
+        score_win = WINDOW.new(height, width, 4, (Ncurses.COLS / 2) + 2)
+        print_in_middle(score_win, 1, 5, 10, "-- Scores --", Ncurses.COLOR_PAIR(1))
+        score_win.box(0,0)
+
+        y = 2
+        x = 3
+
+        scores.each do |score_listing|
+            name = score_listing[0]
+            score = score_listing[1].to_s
+            my_turn = turn.eql? name
+
+            score_win.mvaddstr(y, x, name)
+            score_win.mvaddstr(y, width - score.length - 2, score)
+
+            if my_turn
+                score_win.attron(Ncurses.COLOR_PAIR(1))
+                score_win.mvaddstr(y, 1, "*")
+                score_win.attroff(Ncurses.COLOR_PAIR(1))
+            end
+            y += 1
+        end
+        score_win.wrefresh
+    end
+
+
+    def paint_history(history)
+        :ok
+    end
+
+
+    def present_option_request
+        :ok
+    end
+
+    def get_a_move
+        :ok
+    end
+
+    def get_a_rack
+        :ok
+    end
+
+
 
     ########################################################################
     #  UTILITIES
