@@ -229,8 +229,6 @@ class Painter
         self.draw_preamble
         self.paint_scores(scores, turn)
         self.paint_board(board)
-        Ncurses.refresh
-        sleep(15)
         self.paint_history(history)
 
         option = self.present_action_request
@@ -350,9 +348,66 @@ class Painter
     end
 
 
-    def present_option_request
-        :ok
+    def present_action_request
+
+        play_move_item = Ncurses::Menu.new_item("Play a move on the Board", "make_move")
+        ai_item = Ncurses::Menu.new_item("Get ScrabbleCheat suggestions", "ai")
+        items = [play_move_item, ai_item]
+        choice_menu = Ncurses::Menu.new_menu(items)
+        Ncurses::Menu::menu_opts_off(choice_menu, Ncurses::Menu::O_SHOWDESC)
+
+        numcols = 40
+        numrows = 10 
+        xoffset = (Ncurses.COLS / 2) - (numcols / 2)
+        yoffset = 25
+        choice_window = Ncurses.newwin(numrows, numcols, yoffset, xoffset)
+
+        Ncurses.keypad(choice_window, true)
+ 
+        Ncurses::Menu::set_menu_win(choice_menu, choice_window)
+        derwin_height = items.length * 3
+        derwin_width = numcols - 4
+        Ncurses::Menu::set_menu_sub(choice_menu, Ncurses.derwin(choice_window, derwin_height, derwin_width, 3,4))
+#                                                 Ncurses.subwin(choice_window, derwin_height, derwin_width, yoffset + 5, xoffset))
+
+        Ncurses::Menu::set_menu_mark(choice_menu, "-> ")
+        Ncurses.box(choice_window, 0, 0)
+        print_in_middle(choice_window, 1, 0, 40, "What would you like to do?", Ncurses.COLOR_PAIR(1))
+        Ncurses.mvwaddch(choice_window, 2, 0, Ncurses::ACS_LTEE)
+        Ncurses.mvwhline(choice_window, 2, 1, Ncurses::ACS_HLINE, 38)
+        Ncurses.mvwaddch(choice_window, 2, 39, Ncurses::ACS_RTEE)
+
+        char = nil
+        choice_window.wrefresh
+        while (char = Ncurses.getch) do
+            case char
+                when Ncurses::KEY_DOWN
+                    Ncurses::Menu.menu_driver(choice_menu, Ncurses::Menu::REQ_DOWN_ITEM)
+                when Ncurses::KEY_UP
+                    Ncurses::Menu.menu_driver(choice_menu, Ncurses::Menu::REQ_UP_ITEM)
+                when Ncurses::KEY_RIGHT
+                    break
+                else  :do_nothing
+            end
+            choice_window.wrefresh
+        end
+        
+        item = Ncurses::Menu::current_item(choice_menu)
+        case Ncurses::Menu::item_description(item)
+            when "make_move"
+                debug_println("Picked Make Move!")
+                Ncurses::Menu.free_menu(choice_menu)
+                Ncurses.delwin(choice_window)
+                Ncurses.stdscr.clear
+                :move
+            when "ai"
+                debug_println("Picked AI!")
+                Ncurses::Menu.free_menu(choice_menu)
+                Ncurses.delwin(choice_window)
+                :ai
+        end
     end
+
 
     def get_a_move
         :ok
