@@ -53,6 +53,7 @@ class Painter
         Ncurses.nonl                    # Turn of line-ending processing
         Ncurses.stdscr.intrflush(false) # turn off flush-on-interrupt
         Ncurses.stdscr.keypad(true)     # turn on keypad mode
+        Ncurses.curs_set(0)             # Remove the actual cursor
 
         Ncurses.init_pair(1, COLOR_RED, COLOR_BLACK);
         Ncurses.init_pair(2, COLOR_YELLOW, COLOR_BLACK);
@@ -243,6 +244,11 @@ class Painter
         print_in_middle(board_win, 1, 13, 10, "-- Board --", @colors[:red])
         board_win.box(0,0)
 
+        paint_board_win(board, board_win)
+    end
+
+
+    def paint_board_win(board, board_win)
         # Print top edge
         board_win.attron(@colors[:yellow])
         col = 3
@@ -382,6 +388,8 @@ class Painter
         cursor = {:x => 1, :y => 1}
         move = []   # A move is just a list of tiles.
 
+        boardwin.wmove(1 + 2, (2 * 1) + 1) #  REPLACE WITH GENERAL get_board_coordinates
+        boardwin.wrefresh
         while (char = Ncurses.getch) do
             case char
                 when Ncurses::KEY_DOWN
@@ -397,21 +405,28 @@ class Painter
                 else
                     char = char.chr.to_s.upcase
                     tile = tiles[cursor[:y]][cursor[:x]]
-                    # Lame Ruby, having state and shit...
-                    newtile = {:letter => char, :letter_type => :character,
-                               :bonus => tile[:bonus], :row => tile[:row], :col => tile[:col]}
+                    if tile[:letter] == :none
+                        # Lame Ruby, having state and shit, making me make my own copies of things...
+                        newtile = {:letter => char, :letter_type => :character,
+                                   :bonus => tile[:bonus], :row => tile[:row], :col => tile[:col]}
 
-                    move << newtile
-                    # repainting code that takes board AND move into consideration.
-                    move.each do |x|
-                        self.draw_tile(x, boardwin)
+                        move = move.reject { |x| x[:row] == newtile[:row] && x[:col] == newtile[:col] }
+                        move << newtile
+                        # repainting code that takes board AND move into consideration.
+                        paint_board_win(board, boardwin)
+                        move.each do |x|
+                            self.draw_tile(x, boardwin)
+                        end
+                        cursor[:x] += 1 if cursor[:x] < 15
                     end
-                    cursor[:x] += 1 if cursor[:x] < 15
-             end
-             boardwin.wrefresh
+            end
+            boardwin.wmove(cursor[:y] + 2, (2 * cursor[:x]) + 1)
+            boardwin.wrefresh
         end
         move
     end
+
+
 
     def get_a_rack
         :ok
@@ -552,6 +567,7 @@ end
 
 
 at_exit {
+    Ncurses.curs_set(1)
     Ncurses.echo
     Ncurses.nocbreak
     Ncurses.nl

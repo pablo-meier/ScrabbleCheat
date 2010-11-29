@@ -35,15 +35,15 @@ Features:
                 - Draw Board (DONE), Scores (DONE), * on who's turn (DONE)
                 - Get user choice (input move or get moves)
                 - Input Move:
-                    - Build navigation of board, with visible cursor. 
-                    - Let user build move visually on board. DONE -- need error handling.
+                    - Build navigation of board, with visible cursor. DONE
+                    - Let user build move visually on board. DONE
                     - Get user's final submitted move, place it to server and update gamestate. DONE
                     - Helpful instructions!
+                    - Reject incorrect moves (server side)
                 - Get Moves:
                     - Display menu with the moves sorted by score.
                     - Highlight the board with the currently selected move.
                     - Retrieve and play move from user's choice.
-                - History?
         - TEST TEST TEST.  Handle incorrect input/gamestates
 
 
@@ -82,4 +82,9 @@ SERVER
 
 CLIENT
     - Allow save games.
-    - Allow to check move validity on play_move
+    - Allow to check move validity on play_move.
+    - Show history.
+
+    - HOLY SHIT REFACTOR
+        - At the very least, generalize board printing code with some kind of board_window coordinates, 
+          rather than duplicating  your hackey logic everywhere (most areas that print to the board).
