@@ -400,6 +400,9 @@ class Painter
                     cursor[:x] += 1 if cursor[:x] < 15
                 when Ncurses::KEY_LEFT
                     cursor[:x] -= 1 if cursor[:x] > 1
+                when Ncurses::KEY_BACKSPACE
+                when 32 # Space bar, don't know how to char literal a space in Ruby.
+                    move = move.reject { |x| x[:row] == cursor[:y] && x[:col] == cursor[:x] } 
                 when ?q
                     break
                 else
@@ -412,13 +415,13 @@ class Painter
 
                         move = move.reject { |x| x[:row] == newtile[:row] && x[:col] == newtile[:col] }
                         move << newtile
-                        # repainting code that takes board AND move into consideration.
-                        paint_board_win(board, boardwin)
-                        move.each do |x|
-                            self.draw_tile(x, boardwin)
-                        end
+
                         cursor[:x] += 1 if cursor[:x] < 15
                     end
+            end
+            paint_board_win(board, boardwin)
+            move.each do |x|
+                self.draw_tile(x, boardwin)
             end
             boardwin.wmove(cursor[:y] + 2, (2 * cursor[:x]) + 1)
             boardwin.wrefresh

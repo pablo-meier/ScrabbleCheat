@@ -38,6 +38,7 @@ Features:
                     - Build navigation of board, with visible cursor. DONE
                     - Let user build move visually on board. DONE
                     - Get user's final submitted move, place it to server and update gamestate. DONE
+                    - Allow deletion (make a square empty again). DONE
                     - Helpful instructions!
                     - Reject incorrect moves (server side)
                 - Get Moves:
