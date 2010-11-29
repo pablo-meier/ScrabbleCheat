@@ -33,6 +33,17 @@ class Painter
     AUTHOR_LINE =  "by Paul Meier - www.morepaul.com"
     COMMEMORATE_LINE = "For Sam"
 
+    WELCOME_MENU_SPEC = {:title => "What would you like to do?",
+                         :items => [{:name => "Start a New Game", :retval => "new_game"},
+                                    {:name => "Quit", :retval => "quit"}],
+                         :draw_at => :center}
+                         
+
+    ACTION_CHOICE_MENU_SPEC = {:title => "What would you like to do?",
+                               :items => [{:name => "Create and play a move", :retval => "make_move"},
+                                          {:name => "Get suggested ScrabbleCheat moves", :retval => "ai"}],
+                               :draw_at => {:x => :center, :y => 25}}
+ 
 
     def initialize
         Ncurses.initscr
@@ -50,6 +61,7 @@ class Painter
         Ncurses.init_pair(5, COLOR_MAGENTA, COLOR_BLACK);
     end
 
+
    ########################################################################
    #  WELCOME SCREEN 
 
@@ -57,9 +69,9 @@ class Painter
         Ncurses.stdscr.clear
         draw_preamble
 
-        menuwin = self.build_welcome_menu
-        menuwin[:menu].post_menu
-        menuwin[:window].wrefresh
+        spec = WELCOME_MENU_SPEC
+        spec[:draw_at] = :center
+        menuwin = self.make_menu(spec)
 
         char = nil
         while (char = Ncurses.getch) do
@@ -87,33 +99,6 @@ class Painter
         end
     end
 
-    def build_welcome_menu
-        numcols = 40
-        numrows = 10 
-
-        new_game_item = Ncurses::Menu.new_item("Start a New Game", "new_game")
-        quit_item = Ncurses::Menu.new_item("Quit", "quit")
-        items = [new_game_item, quit_item]
-        welcome_menu = Ncurses::Menu.new_menu(items)
-        Ncurses::Menu::menu_opts_off(welcome_menu, Ncurses::Menu::O_SHOWDESC)
-
-        xoffset = (Ncurses.COLS / 2) - (numcols / 2)
-        yoffset = (Ncurses.LINES / 2) - (numrows / 2)
-        welcome_menu_window = Ncurses.newwin(numrows, numcols, yoffset, xoffset)
-
-        Ncurses.keypad(welcome_menu_window, true)
- 
-        Ncurses::Menu::set_menu_win(welcome_menu, welcome_menu_window)
-        Ncurses::Menu::set_menu_sub(welcome_menu, Ncurses.derwin(welcome_menu_window, items.length * 3, numcols - 4, 3, 4))
-
-        Ncurses::Menu::set_menu_mark(welcome_menu, " * ")
-        Ncurses.box(welcome_menu_window, 0, 0)
-        print_in_middle(welcome_menu_window, 1, 0, 40, "What would you like to do?", Ncurses.COLOR_PAIR(1))
-        Ncurses.mvwaddch(welcome_menu_window, 2, 0, Ncurses::ACS_LTEE)
-        Ncurses.mvwhline(welcome_menu_window, 2, 1, Ncurses::ACS_HLINE, 38)
-        Ncurses.mvwaddch(welcome_menu_window, 2, 39, Ncurses::ACS_RTEE)
-        {:window => welcome_menu_window, :menu => welcome_menu}
-    end
 
     ########################################################################
     #  NAME ENTRY
@@ -350,49 +335,23 @@ class Painter
 
     def present_action_request
 
-        play_move_item = Ncurses::Menu.new_item("Play a move on the Board", "make_move")
-        ai_item = Ncurses::Menu.new_item("Get ScrabbleCheat suggestions", "ai")
-        items = [play_move_item, ai_item]
-        choice_menu = Ncurses::Menu.new_menu(items)
-        Ncurses::Menu::menu_opts_off(choice_menu, Ncurses::Menu::O_SHOWDESC)
-
-        numcols = 40
-        numrows = 10 
-        xoffset = (Ncurses.COLS / 2) - (numcols / 2)
-        yoffset = 25
-        choice_window = Ncurses.newwin(numrows, numcols, yoffset, xoffset)
-
-        Ncurses.keypad(choice_window, true)
- 
-        Ncurses::Menu::set_menu_win(choice_menu, choice_window)
-        derwin_height = items.length * 3
-        derwin_width = numcols - 4
-        Ncurses::Menu::set_menu_sub(choice_menu, Ncurses.derwin(choice_window, derwin_height, derwin_width, 3,4))
-#                                                 Ncurses.subwin(choice_window, derwin_height, derwin_width, yoffset + 5, xoffset))
-
-        Ncurses::Menu::set_menu_mark(choice_menu, "-> ")
-        Ncurses.box(choice_window, 0, 0)
-        print_in_middle(choice_window, 1, 0, 40, "What would you like to do?", Ncurses.COLOR_PAIR(1))
-        Ncurses.mvwaddch(choice_window, 2, 0, Ncurses::ACS_LTEE)
-        Ncurses.mvwhline(choice_window, 2, 1, Ncurses::ACS_HLINE, 38)
-        Ncurses.mvwaddch(choice_window, 2, 39, Ncurses::ACS_RTEE)
-
+        menuwin = self.make_menu(ACTION_CHOICE_MENU_SPEC)
         char = nil
-        choice_window.wrefresh
+        menuwin[:window].wrefresh
         while (char = Ncurses.getch) do
             case char
                 when Ncurses::KEY_DOWN
-                    Ncurses::Menu.menu_driver(choice_menu, Ncurses::Menu::REQ_DOWN_ITEM)
+                    Ncurses::Menu.menu_driver(menuwin[:menu], Ncurses::Menu::REQ_DOWN_ITEM)
                 when Ncurses::KEY_UP
-                    Ncurses::Menu.menu_driver(choice_menu, Ncurses::Menu::REQ_UP_ITEM)
+                    Ncurses::Menu.menu_driver(menuwin[:menu], Ncurses::Menu::REQ_UP_ITEM)
                 when Ncurses::KEY_RIGHT
                     break
                 else  :do_nothing
             end
-            choice_window.wrefresh
+            menuwin[:window].wrefresh
         end
         
-        item = Ncurses::Menu::current_item(choice_menu)
+        item = Ncurses::Menu::current_item(menuwin[:menu])
         case Ncurses::Menu::item_description(item)
             when "make_move"
                 debug_println("Picked Make Move!")
@@ -452,6 +411,85 @@ class Painter
         Ncurses.stdscr.addstr(str)
         Ncurses.stdscr.refresh()
         sleep(1)
+    end
+
+
+    def make_menu(menuspec)
+        title = menuspec[:title]
+        itemlist = menuspec[:items]
+    
+        longest = 1
+        itemlist.each do |itemhash|
+            longest = itemhash[:name].length if itemhash[:name].length > longest
+        end
+        longest = title.length if title.length > longest
+    
+        items = itemlist.map do |x|
+            name = x[:name]
+            if name.length < longest
+                diff = longest - name.length
+                padding = ""
+                1.upto(diff / 2) { padding += " " }
+                name = padding + name + padding
+            end
+            Ncurses::Menu.new_item(name, x[:retval])
+        end
+        menu = Ncurses::Menu.new_menu(items)
+        menu.menu_opts_off(Ncurses::Menu::O_SHOWDESC)
+    
+        height = menuspec[:height]
+        width  = menuspec[:width]
+    
+        if height.nil?
+            height = itemlist.length + 6
+        end
+    
+        if width.nil?
+            width = 2 * (longest + 4) # Padding of two for each side
+        end
+    
+        x = nil
+        y = nil
+        location = menuspec[:draw_at]
+        if location.is_a? Hash
+            x = location[:x] if location[:x].is_a?(Fixnum)
+            x = (Ncurses.COLS / 2) - (width / 2) if location[:x].is_a?(Symbol) && location[:x] == :center
+
+            y = location[:y] if location[:y].is_a?(Fixnum)
+            y = (Ncurses.LINES / 2) - (height / 2) if location[:y].is_a?(Symbol) && location[:y] == :center
+        elsif location.is_a? Symbol
+            if location == :center
+                x = (Ncurses.COLS / 2) - (width / 2)
+                y = (Ncurses.LINES / 2) - (height / 2)
+            end
+        end
+
+        menu_win = Ncurses.newwin(height, width, y, x)
+        Ncurses.keypad(menu_win, true)
+    
+        menu.set_menu_win(menu_win)
+        derwin_startcol = (width / 2 - longest / 2) - 3
+        menu.set_menu_sub(menu_win.derwin(itemlist.length, width - derwin_startcol, 4, derwin_startcol))
+    
+        menu.set_menu_mark(" * ")
+    
+        menu_win.box(0,0)
+    
+        color = Ncurses.COLOR_PAIR(1)
+        color = menuspec[:color] if not menuspec[:color].nil?
+        menu_win.attron(color);
+        col_loc = (width / 2) - (menuspec[:title].length / 2)
+        menu_win.mvprintw(1, col_loc, "%s", menuspec[:title])
+        menu_win.attroff(color);
+    
+        menu_win.mvaddch(2, 0, Ncurses::ACS_LTEE)
+        menu_win.mvwhline(2, 1, Ncurses::ACS_HLINE, width - 2)
+        menu_win.mvaddch(2, width - 1, Ncurses::ACS_RTEE)
+    
+        Ncurses.refresh
+        menu.post_menu
+        menu_win.wrefresh
+        {:menu => menu, :window => menu_win}
     end
 
 
