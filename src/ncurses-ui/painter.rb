@@ -67,7 +67,7 @@ class Painter
                    :cyan => Ncurses.COLOR_PAIR(4),  
                    :magenta => Ncurses.COLOR_PAIR(5),  
                    :highlight => Ncurses.COLOR_PAIR(6)
-                   }
+                  }
     end
 
 
@@ -366,22 +366,51 @@ class Painter
         item = Ncurses::Menu::current_item(menuwin[:menu])
         case Ncurses::Menu::item_description(item)
             when "make_move"
-                debug_println("Picked Make Move!")
-                Ncurses::Menu.free_menu(choice_menu)
-                Ncurses.delwin(choice_window)
-                Ncurses.stdscr.clear
+                Ncurses::Menu.free_menu(menuwin[:menu])
+                Ncurses.delwin(menuwin[:window])
                 :move
             when "ai"
-                debug_println("Picked AI!")
-                Ncurses::Menu.free_menu(choice_menu)
-                Ncurses.delwin(choice_window)
+                Ncurses::Menu.free_menu(menuwin[:menu])
+                Ncurses.delwin(menuwin[:window])
                 :ai
         end
     end
 
 
-    def get_a_move
-        :ok
+    def get_a_move(board, boardwin)
+        tiles = board.tiles
+        cursor = {:x => 1, :y => 1}
+        move = []   # A move is just a list of tiles.
+
+        while (char = Ncurses.getch) do
+            case char
+                when Ncurses::KEY_DOWN
+                    cursor[:y] += 1 if cursor[:y] < 15
+                when Ncurses::KEY_UP
+                    cursor[:y] -= 1 if cursor[:y] > 1
+                when Ncurses::KEY_RIGHT
+                    cursor[:x] += 1 if cursor[:x] < 15
+                when Ncurses::KEY_LEFT
+                    cursor[:x] -= 1 if cursor[:x] > 1
+                when ?q
+                    break
+                else
+                    char = char.chr.to_s.upcase
+                    tile = tiles[cursor[:y]][cursor[:x]]
+                    # Lame Ruby, having state and shit...
+                    newtile = {:letter => char, :letter_type => :character,
+                               :bonus => tile[:bonus], :row => tile[:row], :col => tile[:col]}
+
+                    move << newtile
+                    # repainting code that takes board AND move into consideration.
+                    move.each do |x|
+                        self.draw_tile(x, boardwin)
+                    end
+                    cursor[:x] += 1 if cursor[:x] < 15
+             end
+             boardwin.wrefresh
+        end
+        move
     end
 
     def get_a_rack

@@ -35,9 +35,10 @@ Features:
                 - Draw Board (DONE), Scores (DONE), * on who's turn (DONE)
                 - Get user choice (input move or get moves)
                 - Input Move:
-                    - Build navigation of board, with visible cursor.
-                    - Let user build move visually on board.
-                    - Get user's final submitted move, place it to server and update gamestate.
+                    - Build navigation of board, with visible cursor. 
+                    - Let user build move visually on board. DONE -- need error handling.
+                    - Get user's final submitted move, place it to server and update gamestate. DONE
+                    - Helpful instructions!
                 - Get Moves:
                     - Display menu with the moves sorted by score.
                     - Highlight the board with the currently selected move.
