@@ -59,6 +59,15 @@ class Painter
         Ncurses.init_pair(3, COLOR_BLUE, COLOR_BLACK);
         Ncurses.init_pair(4, COLOR_CYAN, COLOR_BLACK);
         Ncurses.init_pair(5, COLOR_MAGENTA, COLOR_BLACK);
+        Ncurses.init_pair(6, COLOR_WHITE, COLOR_WHITE);
+
+        @colors = {:red => Ncurses.COLOR_PAIR(1),
+                   :yellow => Ncurses.COLOR_PAIR(2),  
+                   :blue => Ncurses.COLOR_PAIR(3),  
+                   :cyan => Ncurses.COLOR_PAIR(4),  
+                   :magenta => Ncurses.COLOR_PAIR(5),  
+                   :highlight => Ncurses.COLOR_PAIR(6)
+                   }
     end
 
 
@@ -69,9 +78,7 @@ class Painter
         Ncurses.stdscr.clear
         draw_preamble
 
-        spec = WELCOME_MENU_SPEC
-        spec[:draw_at] = :center
-        menuwin = self.make_menu(spec)
+        menuwin = self.make_menu(WELCOME_MENU_SPEC)
 
         char = nil
         while (char = Ncurses.getch) do
@@ -131,7 +138,7 @@ class Painter
         
         name_form_win.box(0, 0)
         str = "Please enter the names of up to 4 players"
-        print_in_middle(name_form_win, 2, 10, str.length, str, Ncurses.COLOR_PAIR(1))
+        print_in_middle(name_form_win, 2, 10, str.length, str, @colors[:red])
 
         name_form.post_form
         name_form_win.mvaddstr(5, 20, "Player 1:")
@@ -140,7 +147,7 @@ class Painter
         name_form_win.mvaddstr(8, 20, "Player 4:")
 
         str = "Press ENTER when done"
-        print_in_middle(name_form_win, 11, 20, str.length, str, Ncurses.COLOR_PAIR(1))
+        print_in_middle(name_form_win, 11, 20, str.length, str, @colors[:red])
 
         name_form_win.wrefresh
         Ncurses.stdscr.refresh
@@ -213,13 +220,13 @@ class Painter
         Ncurses.stdscr.clear
         self.draw_preamble
         self.paint_scores(scores, turn)
-        self.paint_board(board)
+        boardwin = self.paint_board(board)
         self.paint_history(history)
 
         option = self.present_action_request
         case option
             when :move 
-                move = self.get_a_move
+                move = self.get_a_move(board, boardwin)
                 {:state => :play_move, :data => move}
             when :ai
                 rack = self.get_a_rack
@@ -233,11 +240,11 @@ class Painter
         width = 35  
         height = 20
         board_win = WINDOW.new(height, width, 4, (Ncurses.COLS / 2) - (2 + width))
-        print_in_middle(board_win, 1, 13, 10, "-- Board --", Ncurses.COLOR_PAIR(1))
+        print_in_middle(board_win, 1, 13, 10, "-- Board --", @colors[:red])
         board_win.box(0,0)
 
         # Print top edge
-        board_win.attron(Ncurses.COLOR_PAIR(2))
+        board_win.attron(@colors[:yellow])
         col = 3
         while col < 32
             board_win.mvaddstr(2, col, "_ ")
@@ -250,52 +257,57 @@ class Painter
             board_win.mvaddstr(row, 2, "|")
             row += 1
         end
-        board_win.attroff(Ncurses.COLOR_PAIR(2))
+        board_win.attroff(@colors[:yellow])
 
 
         # Print each tile
         tiles = board.tiles
         1.upto 15 do |row|
             1.upto 15 do |col|
-                this_tile = tiles[row][col]
-                y = this_tile[:row] + 2
-                x = (2 * this_tile[:col]) + 1
-
-                case this_tile[:letter]
-                    when :none
-                        case this_tile[:bonus]
-                            when :none # Yellow
-                                board_win.attron(Ncurses.COLOR_PAIR(2))
-                                board_win.mvaddstr(y, x, "_")
-                                board_win.attroff(Ncurses.COLOR_PAIR(2))
-                            when :triple_word_score # Red
-                                board_win.attron(Ncurses.COLOR_PAIR(1))
-                                board_win.mvaddstr(y, x, "*")
-                                board_win.attroff(Ncurses.COLOR_PAIR(1))
-                            when :double_word_score # Magenta
-                                board_win.attron(Ncurses.COLOR_PAIR(5))
-                                board_win.mvaddstr(y, x, "*")
-                                board_win.attroff(Ncurses.COLOR_PAIR(5))
-                            when :triple_letter_score # Blue
-                                board_win.attron(Ncurses.COLOR_PAIR(3))
-                                board_win.mvaddstr(y, x, "*")
-                                board_win.attroff(Ncurses.COLOR_PAIR(3))
-                            when :double_letter_score # Cyan
-                                board_win.attron(Ncurses.COLOR_PAIR(4))
-                                board_win.mvaddstr(y, x, "*")
-                                board_win.attroff(Ncurses.COLOR_PAIR(4))
-                        end
-                    else
-                        char = this_tile[:letter]
-                        board_win.mvaddstr(y, x, char)
-                end
-
-                board_win.attron(Ncurses.COLOR_PAIR(2))
-                board_win.mvaddstr(y, x + 1, "|")
-                board_win.attroff(Ncurses.COLOR_PAIR(2))
+                draw_tile(tiles[row][col], board_win)
             end
         end
         board_win.wrefresh
+        board_win
+    end
+
+
+    def draw_tile(this_tile, board_win)
+        y = this_tile[:row] + 2
+        x = (2 * this_tile[:col]) + 1
+
+        case this_tile[:letter]
+            when :none
+                case this_tile[:bonus]
+                    when :none 
+                        board_win.attron(@colors[:yellow])
+                        board_win.mvaddstr(y, x, "_")
+                        board_win.attroff(@colors[:yellow])
+                    when :triple_word_score 
+                        board_win.attron(@colors[:red])
+                        board_win.mvaddstr(y, x, "*")
+                        board_win.attroff(@colors[:red])
+                    when :double_word_score
+                        board_win.attron(@colors[:magenta])
+                        board_win.mvaddstr(y, x, "*")
+                        board_win.attroff(@colors[:magenta])
+                    when :triple_letter_score 
+                        board_win.attron(@colors[:blue])
+                        board_win.mvaddstr(y, x, "*")
+                        board_win.attroff(@colors[:blue])
+                    when :double_letter_score 
+                        board_win.attron(@colors[:cyan])
+                        board_win.mvaddstr(y, x, "*")
+                        board_win.attroff(@colors[:cyan])
+                end
+            else
+                char = this_tile[:letter]
+                board_win.mvaddstr(y, x, char)
+        end
+
+        board_win.attron(@colors[:yellow])
+        board_win.mvaddstr(y, x + 1, "|")
+        board_win.attroff(@colors[:yellow])
     end
 
 
@@ -303,7 +315,7 @@ class Painter
         width = 20
         height = scores.length + 3
         score_win = WINDOW.new(height, width, 4, (Ncurses.COLS / 2) + 2)
-        print_in_middle(score_win, 1, 5, 10, "-- Scores --", Ncurses.COLOR_PAIR(1))
+        print_in_middle(score_win, 1, 5, 10, "-- Scores --", @colors[:red])
         score_win.box(0,0)
 
         y = 2
@@ -318,9 +330,9 @@ class Painter
             score_win.mvaddstr(y, width - score.length - 2, score)
 
             if my_turn
-                score_win.attron(Ncurses.COLOR_PAIR(1))
+                score_win.attron(@colors[:red])
                 score_win.mvaddstr(y, 1, "*")
-                score_win.attroff(Ncurses.COLOR_PAIR(1))
+                score_win.attroff(@colors[:red])
             end
             y += 1
         end
@@ -475,7 +487,7 @@ class Painter
     
         menu_win.box(0,0)
     
-        color = Ncurses.COLOR_PAIR(1)
+        color = @colors[:red]
         color = menuspec[:color] if not menuspec[:color].nil?
         menu_win.attron(color);
         col_loc = (width / 2) - (menuspec[:title].length / 2)
