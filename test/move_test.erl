@@ -89,7 +89,17 @@ score_parallel_test() ->
 	io:format("Score is ~p~n", [Score]),
 	?assert(Score =:= 12).
 	
+score_along_wall_test() ->
+	Tiles = [{{character, $E}, triple_word_score, {15,15}}, 
+			{{character, $L}, none, {15,14}},
+			{{character, $B}, none, {15,13}},
+			{{character, $A}, none, {15,12}}],
+	Move = foldl(fun move:add_to_move/2, new_move(), Tiles),
+	Score = score(Move, new_board()),
+	io:format("Score is ~p~n", [Score]),
+	?assert(Score =:= 18).
 
+	
 score_parallel_many_bonuses_test() ->
 	Tiles = [{{character, $Z}, none, {8,3}}, 
 			{{character, $Y}, double_letter_score, {8,4}},
