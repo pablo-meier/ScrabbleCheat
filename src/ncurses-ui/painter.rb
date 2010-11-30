@@ -33,6 +33,8 @@ class Painter
     AUTHOR_LINE =  "by Paul Meier - www.morepaul.com"
     COMMEMORATE_LINE = "For Sam"
 
+    CAPITAL_LETTER_PATTERN = /[A-Z]/
+
     WELCOME_MENU_SPEC = {:title => "What would you like to do?",
                          :items => [{:name => "Start a New Game", :retval => "new_game"},
                                     {:name => "Quit", :retval => "quit"}],
@@ -178,11 +180,9 @@ class Painter
                     # Go to next field
                     name_form.form_driver(REQ_NEXT_CHAR);
                 
-                when KEY_BACKSPACE
-                when KEY_DC
+                when KEY_BACKSPACE, KEY_DC
                     name_form.form_driver(REQ_DEL_PREV);
-                when KEY_ENTER
-                when ?q
+                when KEY_ENTER, ?1
                     break
                 else
                     # If this is a normal character, it gets printed
@@ -199,8 +199,6 @@ class Painter
         names = fields.map { |x| x.field_buffer(0) }
 
         names = names.map { |x| x.strip }.reject { |x| x.empty? }
-        #names << "Names has #{names.length} entries"
-        self.debug_println("Exited form with names #{names}")
 
         name_form.unpost_form
         name_form.free_form
@@ -225,12 +223,12 @@ class Painter
         self.paint_history(history)
 
         option = self.present_action_request
-        case option
+        case option[:state]
             when :move 
-                move = self.get_a_move(board, boardwin)
+                move = self.get_a_move(board, boardwin, option[:window])
                 {:state => :play_move, :data => move}
             when :ai
-                rack = self.get_a_rack
+                rack = self.get_a_rack(option[:window])
                 {:state => :get_moves, :data => rack}
         end
     end
@@ -370,20 +368,40 @@ class Painter
         end
         
         item = Ncurses::Menu::current_item(menuwin[:menu])
-        case Ncurses::Menu::item_description(item)
-            when "make_move"
-                Ncurses::Menu.free_menu(menuwin[:menu])
-                Ncurses.delwin(menuwin[:window])
-                :move
-            when "ai"
-                Ncurses::Menu.free_menu(menuwin[:menu])
-                Ncurses.delwin(menuwin[:window])
-                :ai
-        end
+        retval = case Ncurses::Menu::item_description(item)
+                     when "make_move"
+                         :move
+                     when "ai"
+                         :ai
+                 end
+        menuwin[:menu].unpost_menu
+        menuwin[:menu].free_menu
+        {:state => retval, :window => menuwin[:window]}
     end
 
 
-    def get_a_move(board, boardwin)
+    def get_a_move(board, boardwin, presentation_win)
+
+        title_str = "How to Add a Move From Your Rack"
+        presentation_win.attron(@colors[:red])
+        presentation_win.mvaddstr(1, 23, title_str)
+        presentation_win.attroff(@colors[:red])
+
+        str1 = "Use the arrow keys to move the cursor, and the keyboard to add"
+        str2 = "   characters to the board.  Use the SPACE BAR to delete a"
+        str3 = "mistaken character.  Press ENTER when finished to add the move" 
+        str4 = "                         to the game."
+
+        row = 3
+        col = 6
+
+        presentation_win.mvaddstr(row, col, str1)
+        presentation_win.mvaddstr(row + 1, col, str2)
+        presentation_win.mvaddstr(row + 2, col, str3)
+        presentation_win.mvaddstr(row + 3, col, str4)
+        presentation_win.box(0,0)
+        presentation_win.wrefresh
+
         tiles = board.tiles
         cursor = {:x => 1, :y => 1}
         move = []   # A move is just a list of tiles.
@@ -392,23 +410,22 @@ class Painter
         boardwin.wrefresh
         while (char = Ncurses.getch) do
             case char
-                when Ncurses::KEY_DOWN
+                when KEY_DOWN
                     cursor[:y] += 1 if cursor[:y] < 15
-                when Ncurses::KEY_UP
+                when KEY_UP
                     cursor[:y] -= 1 if cursor[:y] > 1
-                when Ncurses::KEY_RIGHT
+                when KEY_RIGHT
                     cursor[:x] += 1 if cursor[:x] < 15
-                when Ncurses::KEY_LEFT
+                when KEY_LEFT
                     cursor[:x] -= 1 if cursor[:x] > 1
-                when Ncurses::KEY_BACKSPACE
-                when 32 # Space bar, don't know how to char literal a space in Ruby.
+                when KEY_BACKSPACE, 32 # Space bar, don't know how to char literal a space in Ruby.
                     move = move.reject { |x| x[:row] == cursor[:y] && x[:col] == cursor[:x] } 
-                when ?q
+                when KEY_ENTER, ?1
                     break
                 else
                     char = char.chr.to_s.upcase
                     tile = tiles[cursor[:y]][cursor[:x]]
-                    if tile[:letter] == :none
+                    if char.match(CAPITAL_LETTER_PATTERN) && tile[:letter] == :none
                         # Lame Ruby, having state and shit, making me make my own copies of things...
                         newtile = {:letter => char, :letter_type => :character,
                                    :bonus => tile[:bonus], :row => tile[:row], :col => tile[:col]}
@@ -431,7 +448,7 @@ class Painter
 
 
 
-    def get_a_rack
+    def get_a_rack(window)
         :ok
     end
 
