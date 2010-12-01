@@ -39,9 +39,10 @@ Features:
                     - Let user build move visually on board. DONE
                     - Get user's final submitted move, place it to server and update gamestate. DONE
                     - Allow deletion (make a square empty again). DONE
-                    - Helpful instructions!
-                    - Reject incorrect moves (server side)
+                    - Helpful instructions! DONE
+                    - Reject incorrect moves (server side)  TABLED
                 - Get Moves:
+                    - Get Rack. DONE
                     - Display menu with the moves sorted by score.
                     - Highlight the board with the currently selected move.
                     - Retrieve and play move from user's choice.

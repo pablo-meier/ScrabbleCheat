@@ -35,6 +35,10 @@ class Painter
 
     CAPITAL_LETTER_PATTERN = /[A-Z]/
 
+    CHARACTER_TAB = 9  # Ascii values for pattern matching
+    CHARACTER_CR = 13
+    CHARACTER_LF = 10
+
     WELCOME_MENU_SPEC = {:title => "What would you like to do?",
                          :items => [{:name => "Start a New Game", :retval => "new_game"},
                                     {:name => "Quit", :retval => "quit"}],
@@ -90,7 +94,7 @@ class Painter
                     Ncurses::Menu.menu_driver(menuwin[:menu], Ncurses::Menu::REQ_DOWN_ITEM)
                 when Ncurses::KEY_UP
                     Ncurses::Menu.menu_driver(menuwin[:menu], Ncurses::Menu::REQ_UP_ITEM)
-                when Ncurses::KEY_RIGHT
+                when CHARACTER_CR, CHARACTER_LF
                     break
                 else  :do_nothing
             end
@@ -155,10 +159,9 @@ class Painter
         name_form_win.wrefresh
         Ncurses.stdscr.refresh
 
-        char = nil
         while (char = name_form_win.getch) 
             case char
-                when KEY_DOWN
+                when KEY_DOWN, CHARACTER_TAB
                     # Go to next field 
                     name_form.form_driver(REQ_VALIDATION);
                     name_form.form_driver(REQ_NEXT_FIELD);
@@ -182,7 +185,7 @@ class Painter
                 
                 when KEY_BACKSPACE, KEY_DC
                     name_form.form_driver(REQ_DEL_PREV);
-                when KEY_ENTER, ?1
+                when KEY_ENTER, ?1, CHARACTER_CR, CHARACTER_LF
                     break
                 else
                     # If this is a normal character, it gets printed
@@ -360,7 +363,7 @@ class Painter
                     Ncurses::Menu.menu_driver(menuwin[:menu], Ncurses::Menu::REQ_DOWN_ITEM)
                 when Ncurses::KEY_UP
                     Ncurses::Menu.menu_driver(menuwin[:menu], Ncurses::Menu::REQ_UP_ITEM)
-                when Ncurses::KEY_RIGHT
+                when CHARACTER_CR, CHARACTER_LF
                     break
                 else  :do_nothing
             end
@@ -420,7 +423,7 @@ class Painter
                     cursor[:x] -= 1 if cursor[:x] > 1
                 when KEY_BACKSPACE, 32 # Space bar, don't know how to char literal a space in Ruby.
                     move = move.reject { |x| x[:row] == cursor[:y] && x[:col] == cursor[:x] } 
-                when KEY_ENTER, ?1
+                when KEY_ENTER, ?1, CHARACTER_CR, CHARACTER_LF
                     break
                 else
                     char = char.chr.to_s.upcase
@@ -448,8 +451,80 @@ class Painter
 
 
 
-    def get_a_rack(window)
-        :ok
+    def get_a_rack(presentation_win)
+        presentation_win.wclear
+
+        fields = []
+        field = FIELD.new(1, 7, 1, 1, 0, 0)
+        field.set_field_back(A_UNDERLINE)
+        field.set_field_type(TYPE_ALPHA, 0)
+        fields << field
+        rack_form = FORM.new(fields)
+        rack_form.user_object = "Rack Entry"
+
+        rack_form.set_form_win(presentation_win)
+        rack_form.set_form_sub(presentation_win.derwin(3, 33, 3, 33))
+        
+        presentation_win.box(0, 0)
+        str = "Please enter the letters in your rack"
+
+        presentation_win.attron(@colors[:red])
+        presentation_win.mvaddstr(1, 19, str)
+        presentation_win.attroff(@colors[:red])
+
+        str = "Press ENTER when done"
+        presentation_win.mvaddstr(6, 27, str)
+
+        rack_form.post_form
+        rack_form.set_current_field(field)
+
+        presentation_win.box(0,0)
+        presentation_win.wrefresh
+
+        while (char = presentation_win.getch) 
+            case char
+                when KEY_DOWN
+                    rack_form.form_driver(REQ_VALIDATION);
+                    rack_form.form_driver(REQ_NEXT_FIELD);
+                    rack_form.form_driver(REQ_END_LINE);
+                
+                when KEY_UP
+                    rack_form.form_driver(REQ_VALIDATION);
+                    rack_form.form_driver(REQ_PREV_FIELD);
+                    rack_form.form_driver(REQ_END_LINE);
+                
+                when KEY_LEFT
+                    rack_form.form_driver(REQ_PREV_CHAR);
+                
+                when KEY_RIGHT
+                    rack_form.form_driver(REQ_NEXT_CHAR);
+ 
+                when KEY_BACKSPACE, KEY_DC
+                    rack_form.form_driver(REQ_DEL_PREV);
+                when KEY_ENTER, ?1, CHARACTER_CR, CHARACTER_LF
+                    break
+                else
+                    if char < 256 && char.chr.match(/[a-zA-Z]/)
+                        rack_form.form_driver(char.chr.upcase[0])
+                    end
+            end
+            presentation_win.wrefresh
+        end
+
+        # Process the form data.  Begins with a dirty hack to collect all names,
+        # since field_buffer wasn't counting a field that hasn't been exited from.
+        rack_form.form_driver(REQ_NEXT_FIELD);
+        rack_form.form_driver(REQ_PREV_FIELD);
+
+        rack = field.field_buffer(0).strip
+
+        rack_form.unpost_form
+        rack_form.free_form
+        field.free_field 
+
+        debug_println("Rack is #{rack}")
+
+        rack
     end
 
 
