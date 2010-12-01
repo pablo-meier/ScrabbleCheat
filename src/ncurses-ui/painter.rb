@@ -94,7 +94,7 @@ class Painter
                     Ncurses::Menu.menu_driver(menuwin[:menu], Ncurses::Menu::REQ_DOWN_ITEM)
                 when Ncurses::KEY_UP
                     Ncurses::Menu.menu_driver(menuwin[:menu], Ncurses::Menu::REQ_UP_ITEM)
-                when CHARACTER_CR, CHARACTER_LF
+                when KEY_ENTER, ?1, CHARACTER_CR, CHARACTER_LF
                     break
                 else  :do_nothing
             end
@@ -242,14 +242,15 @@ class Painter
         width = 35  
         height = 20
         board_win = WINDOW.new(height, width, 4, (Ncurses.COLS / 2) - (2 + width))
-        print_in_middle(board_win, 1, 13, 10, "-- Board --", @colors[:red])
-        board_win.box(0,0)
-
         paint_board_win(board, board_win)
     end
 
 
     def paint_board_win(board, board_win)
+
+        print_in_middle(board_win, 1, 13, 10, "-- Board --", @colors[:red])
+        board_win.box(0,0)
+
         # Print top edge
         board_win.attron(@colors[:yellow])
         col = 3
@@ -363,7 +364,7 @@ class Painter
                     Ncurses::Menu.menu_driver(menuwin[:menu], Ncurses::Menu::REQ_DOWN_ITEM)
                 when Ncurses::KEY_UP
                     Ncurses::Menu.menu_driver(menuwin[:menu], Ncurses::Menu::REQ_UP_ITEM)
-                when CHARACTER_CR, CHARACTER_LF
+                when KEY_ENTER, ?1, CHARACTER_CR, CHARACTER_LF
                     break
                 else  :do_nothing
             end
@@ -521,12 +522,65 @@ class Painter
         rack_form.unpost_form
         rack_form.free_form
         field.free_field 
-
-        debug_println("Rack is #{rack}")
-
+        presentation_win.delwin
         rack
     end
 
+
+    def draw_move_select_menu(hash)
+        gamestate = hash[:gamestate]
+        board = gamestate[:board]
+        scores = gamestate[:scores]
+        turn = gamestate[:turn]
+        history = gamestate[:history]
+
+        Ncurses.stdscr.clear
+        self.draw_preamble
+        self.paint_scores(scores, turn)
+        boardwin = self.paint_board(board)
+
+        moves = hash[:moves]
+        move_menu_spec = {:title => "Please select a move to play",
+                          :draw_at => {:x => :center, :y => 25}}
+
+        move_items = []
+        0.upto(moves.length - 1) do |index|
+            move_items << {:name => moves[index][:score].to_s, :retval => index.to_s}
+        end
+        move_menu_spec[:items] = move_items
+ 
+        menuwin = self.make_menu(move_menu_spec)
+        menuwin[:menu].set_current_item(menuwin[:items][0])
+        index = menuwin[:menu].current_item.item_description.to_i
+        curr_move = moves[index][:move]
+ 
+        curr_move.each { |tile| draw_tile(tile, boardwin) }
+        menuwin[:window].wrefresh
+        boardwin.wrefresh
+        while (char = Ncurses.getch) do
+            boardwin.wclear
+            self.paint_board_win(board, boardwin)
+            case char
+                when Ncurses::KEY_DOWN
+                    Ncurses::Menu.menu_driver(menuwin[:menu], Ncurses::Menu::REQ_DOWN_ITEM)
+               when Ncurses::KEY_UP
+                    Ncurses::Menu.menu_driver(menuwin[:menu], Ncurses::Menu::REQ_UP_ITEM)
+                when KEY_ENTER, ?1, CHARACTER_CR, CHARACTER_LF
+                    break
+                else  :do_nothing
+            end
+             index = menuwin[:menu].current_item.item_description.to_i
+             curr_move = moves[index][:move]
+             curr_move.each { |tile| draw_tile(tile, boardwin) }
+             menuwin[:window].wrefresh
+             boardwin.wrefresh
+        end
+        
+        index = Ncurses::Menu::current_item(menuwin[:menu]).item_description.to_i
+        menuwin[:menu].unpost_menu
+        menuwin[:menu].free_menu
+        {:state => :play_move, :data => moves[index][:move] }
+    end
 
 
     ########################################################################
@@ -640,7 +694,7 @@ class Painter
         Ncurses.refresh
         menu.post_menu
         menu_win.wrefresh
-        {:menu => menu, :window => menu_win}
+        {:menu => menu, :window => menu_win, :items => items}
     end
 
 

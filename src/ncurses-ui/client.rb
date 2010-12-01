@@ -107,15 +107,12 @@ class Client
             # {:state => :get_moves, :data => Rack}
             when :action_choose
                 @painter.draw_action_choose(client_state[:data])
-            when :move_choose
-                handle_move_choose(client_state[:data])
+            # Presents a list of possible moves to the user, allows them to select
+            # one to play.  Returns 
+            # {:state => :play_move, :data => Move}
+             when :move_choose
+                @painter.draw_move_select_menu(client_state[:data])
         end
-    end
-
-    # Presents a list of possible moves to the user, allows them to select
-    # one to play.  Returns 
-    # {:state => :play_move, :data => Move}
-    def handle_move_choose(moves)
     end
 end
 

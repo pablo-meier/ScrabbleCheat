@@ -133,7 +133,8 @@ check_other_directions(Followstruct, Char, Master) ->
     {Tile, Direction, _, Board, _} = Followstruct,
     CheckDirections = orthogonals(Direction),
     Orthogonals = map(fun (X) -> get_adjacent(Tile, Board, X) end, CheckDirections),
-    Occupied = any(fun (X) -> is_occupied(X) end, Orthogonals),
+    Filtered = filter(fun (X) -> X =/= none end, Orthogonals),
+    Occupied = any(fun (X) -> is_occupied(X) end, Filtered),
     case Occupied of
         false -> true;
         %% if either is occupied, 
