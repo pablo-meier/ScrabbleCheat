@@ -88,9 +88,9 @@ get_best_move_function(Gaddag) ->
 %% generate_move_candidate_locations ::  Board -> [Candidate] 
 generate_move_candidate_locations(Board) ->
     Flat = flatten(as_list(Board)),
-    Occupied = filter(fun (X) -> get_tile_letter(X) =/= none end, Flat),
+    Occupied = filter(fun tile:is_occupied/1, Flat),
     Adjacents = map(fun (X) -> get_adjacents(X, Board) end, Occupied),
-    OpenFlat = filter(fun (X) -> get_tile_letter(X) =:= none end, flatten(Adjacents)),
+    OpenFlat = filter(fun (X) -> tile:is_occupied(X) =:= false end, flatten(Adjacents)),
     remove_duplicates(OpenFlat, fun compare_candidate/2).
 
 
@@ -126,6 +126,7 @@ compare_candidate(Candidate1, Candidate2) ->
     {ThatRow, ThatCol} = get_tile_location(Candidate2),
     ThisRow =:= ThatRow andalso ThisCol =:= ThatCol.
 
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% find_all_moves :: Candidate * Rack * Board -> [Move]
 %%
@@ -148,8 +149,8 @@ compare_candidate(Candidate1, Candidate2) ->
 %% back, THEN traversing the GADDAG greedily using backtracking and 
 %% accumulators to slowly build up a move.
 find_all_moves(Candidate, Rack, Board, Gaddag) ->
-    ZoomTiles = get_zoomtiles(Candidate, Board, Gaddag),
-    StartLocations = map(fun (X) -> create_origin_followstructs(X, Board) end, ZoomTiles),
+    ZoomTriples = get_zoomtiles(Candidate, Board, Gaddag),
+    StartLocations = map(fun (X) -> create_origin_followstructs(X, Board) end, ZoomTriples),
     Perpendiculars = map(fun ({Followstruct, _}) -> make_perpendicular_followstructs(Followstruct, Gaddag) end, StartLocations),
     Total = append(Perpendiculars, StartLocations),
     flatmap(fun ({FollowStruct, ZoomTile}) -> 
@@ -178,11 +179,11 @@ get_zoomtiles(Candidate, Board, Gaddag) ->
 %% want a simple forward word (P&AUL).  We just get past the separator (&) and move on.
 create_origin_followstructs(ThisTriple, Board) ->
     {ZoomTile, Direction, Gaddag} = ThisTriple,
+    NewDirection = flip(Direction),
     if
-        Direction =:= right orelse Direction =:= down ->
-            {travel(ZoomTile, flip(Direction), Gaddag, Board), ZoomTile};   
-        Direction =:= left orelse Direction =:= up ->
-            NewDirection = flip(Direction),
+        NewDirection =:= left orelse NewDirection =:= up ->
+            {travel(ZoomTile, NewDirection, Gaddag, Board), ZoomTile};   
+        NewDirection =:= right orelse NewDirection =:= down ->
             {branch, NewGaddag} = get_branch(get_tile_letter(ZoomTile), Gaddag),
             NextTile = get_adjacent(ZoomTile, Board, NewDirection),
             {branch, GoForward} = get_branch(?SEPARATOR, NewGaddag),

@@ -321,6 +321,18 @@ perpendicular_rightside_test() ->
 
 	lists:foreach(fun (X) -> ?assert(lists:any(fun (Y) -> duplicate_moves(X, Y) end, Run)) end, Solutions).
 
+
+%% this has been crashing in the client, worth automating
+able_zygote_test() ->
+	Search = movesearch:get_best_move_function(parse(?TESTDICT)),
+	Board = place_word("ZYGOTE", right, {8,4}, place_word("ABLE", right, {7,8}, new_board())),
+	Rack = "PAULIE",
+
+    Moves = Search(Board, Rack),
+    ?assert(lists:any(fun (X) -> X =:= {move, [{{character, $A}, none, {9,5}}]} end, Moves)).
+
+
+
 %% No Moves?
 %% Crosses
 

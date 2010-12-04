@@ -108,6 +108,7 @@ handle_connection(Socket, Search) ->
             polite_response(Socket, gamestate:serialize(WithMove)),
             handle_connection(Socket, Search);
         {ai, Gamestate, Rack} ->
+            io:format("Rack is ~p~n", [Rack]),
             Board = gamestate:get_gamestate_board(Gamestate),
             Moves = Search(Board, Rack),
             WithScores = lists:map(fun (X) -> {X, move:score(X, Board)} end, Moves),
