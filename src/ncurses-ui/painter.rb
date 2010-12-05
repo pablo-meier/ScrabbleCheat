@@ -52,6 +52,8 @@ class Painter
  
 
     def initialize
+        @debug_file = File.new("debug", "w")
+
         Ncurses.initscr
         Ncurses.start_color
         Ncurses.cbreak                  # provide unbuffered input
@@ -372,16 +374,18 @@ class Painter
         end
         
         item = Ncurses::Menu::current_item(menuwin[:menu])
-        retval = case Ncurses::Menu::item_description(item)
-                     when "make_move"
-                         :move
-                     when "ai"
-                         :ai
-                 end
+        retval = Ncurses::Menu::item_description(item)
+        menuwin[:items].each { |i| i.free_item }
         menuwin[:menu].unpost_menu
         menuwin[:menu].free_menu
-        {:state => retval, :window => menuwin[:window]}
-    end
+        menuwin[:derwin].delwin
+        case retval
+            when "make_move"
+                {:state => :move, :window => menuwin[:window]}
+            when "ai"
+                {:state => :ai, :window => menuwin[:window]}
+            end
+        end
 
 
     def get_a_move(board, boardwin, presentation_win)
@@ -464,7 +468,8 @@ class Painter
         rack_form.user_object = "Rack Entry"
 
         rack_form.set_form_win(presentation_win)
-        rack_form.set_form_sub(presentation_win.derwin(3, 33, 3, 33))
+        the_derwin = presentation_win.derwin(3, 33, 3, 33)
+        rack_form.set_form_sub(the_derwin)
         
         presentation_win.box(0, 0)
         str = "Please enter the letters in your rack"
@@ -512,8 +517,6 @@ class Painter
             presentation_win.wrefresh
         end
 
-        # Process the form data.  Begins with a dirty hack to collect all names,
-        # since field_buffer wasn't counting a field that hasn't been exited from.
         rack_form.form_driver(REQ_NEXT_FIELD);
         rack_form.form_driver(REQ_PREV_FIELD);
 
@@ -522,6 +525,7 @@ class Painter
         rack_form.unpost_form
         rack_form.free_form
         field.free_field 
+        the_derwin.delwin
         presentation_win.delwin
         rack
     end
@@ -532,20 +536,27 @@ class Painter
         board = gamestate[:board]
         scores = gamestate[:scores]
         turn = gamestate[:turn]
-        history = gamestate[:history]
+
+        self.draw_preamble
+        self.paint_scores(scores, turn)
+        boardwin = self.paint_board(board)
 
         Ncurses.stdscr.clear
         self.draw_preamble
         self.paint_scores(scores, turn)
         boardwin = self.paint_board(board)
 
-        moves = hash[:moves]
-        move_menu_spec = {:title => "Please select a move to play",
-                          :draw_at => {:x => :center, :y => 25}}
+        moves = hash[:moves][0, 4]
+        title_str = "Please select a move to play"
+        move_menu_spec = {:title => title_str,
+                          :draw_at => {:x => :center, :y => 25},
+                          :height => 10}
 
         move_items = []
         0.upto(moves.length - 1) do |index|
-            move_items << {:name => moves[index][:score].to_s, :retval => index.to_s}
+            move_score = moves[index][:score].to_s
+            access_index = index.to_s
+            move_items << {:name => move_score, :retval => access_index}
         end
         move_menu_spec[:items] = move_items
  
@@ -569,16 +580,19 @@ class Painter
                     break
                 else  :do_nothing
             end
-             index = menuwin[:menu].current_item.item_description.to_i
-             curr_move = moves[index][:move]
-             curr_move.each { |tile| draw_tile(tile, boardwin) }
-             menuwin[:window].wrefresh
-             boardwin.wrefresh
+            curr_move = moves[index][:move]
+            curr_move.each { |tile| draw_tile(tile, boardwin) }
+            menuwin[:window].wrefresh
+            menuwin[:window].wrefresh
+            boardwin.wrefresh
         end
         
         index = Ncurses::Menu::current_item(menuwin[:menu]).item_description.to_i
+        menuwin[:items].each { |i| i.free_item }
         menuwin[:menu].unpost_menu
         menuwin[:menu].free_menu
+        menuwin[:derwin].delwin
+        menuwin[:window].delwin
         {:state => :play_move, :data => moves[index][:move] }
     end
 
@@ -674,7 +688,8 @@ class Painter
     
         menu.set_menu_win(menu_win)
         derwin_startcol = (width / 2 - longest / 2) - 3
-        menu.set_menu_sub(menu_win.derwin(itemlist.length, width - derwin_startcol, 4, derwin_startcol))
+        the_derwin = menu_win.derwin(itemlist.length, width - derwin_startcol, 4, derwin_startcol)
+        menu.set_menu_sub(the_derwin)
     
         menu.set_menu_mark(" * ")
     
@@ -694,7 +709,7 @@ class Painter
         Ncurses.refresh
         menu.post_menu
         menu_win.wrefresh
-        {:menu => menu, :window => menu_win, :items => items}
+        {:menu => menu, :window => menu_win, :items => items, :derwin => the_derwin}
     end
 
 
@@ -716,7 +731,6 @@ end
 
 
 at_exit {
-    Ncurses.curs_set(1)
     Ncurses.echo
     Ncurses.nocbreak
     Ncurses.nl
