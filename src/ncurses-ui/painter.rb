@@ -537,10 +537,6 @@ class Painter
         scores = gamestate[:scores]
         turn = gamestate[:turn]
 
-        self.draw_preamble
-        self.paint_scores(scores, turn)
-        boardwin = self.paint_board(board)
-
         Ncurses.stdscr.clear
         self.draw_preamble
         self.paint_scores(scores, turn)
@@ -549,8 +545,7 @@ class Painter
         moves = hash[:moves][0, 4]
         title_str = "Please select a move to play"
         move_menu_spec = {:title => title_str,
-                          :draw_at => {:x => :center, :y => 25},
-                          :height => 10}
+                          :draw_at => {:x => :center, :y => 25}}
 
         move_items = []
         0.upto(moves.length - 1) do |index|
@@ -566,12 +561,12 @@ class Painter
         curr_move = moves[index][:move]
  
         curr_move.each { |tile| draw_tile(tile, boardwin) }
-        menuwin[:window].wrefresh
-        boardwin.wrefresh
+        Ncurses.redrawwin(boardwin)
+        Ncurses.redrawwin(menuwin[:window])
+        Ncurses.wrefresh(boardwin)
+        Ncurses.wrefresh(menuwin[:window])
         while (char = Ncurses.getch) do
-            boardwin.wclear
-            self.paint_board_win(board, boardwin)
-            case char
+           case char
                 when Ncurses::KEY_DOWN
                     Ncurses::Menu.menu_driver(menuwin[:menu], Ncurses::Menu::REQ_DOWN_ITEM)
                when Ncurses::KEY_UP
@@ -581,11 +576,14 @@ class Painter
                 else  :do_nothing
             end
             curr_move = moves[index][:move]
+            boardwin.wclear
+            self.paint_board_win(board, boardwin)
             curr_move.each { |tile| draw_tile(tile, boardwin) }
-            menuwin[:window].wrefresh
-            menuwin[:window].wrefresh
-            boardwin.wrefresh
-        end
+            Ncurses.redrawwin(boardwin)
+            Ncurses.redrawwin(menuwin[:window])
+            Ncurses.wrefresh(boardwin)
+            Ncurses.wrefresh(menuwin[:window])
+         end
         
         index = Ncurses::Menu::current_item(menuwin[:menu]).item_description.to_i
         menuwin[:items].each { |i| i.free_item }
