@@ -556,7 +556,8 @@ class Painter
         move_menu_spec[:items] = move_items
  
         menuwin = self.make_menu(move_menu_spec)
-        menuwin[:menu].set_current_item(menuwin[:items][0])
+        menu_item_index = 0
+        menuwin[:menu].set_current_item(menuwin[:items][menu_item_index])
         index = menuwin[:menu].current_item.item_description.to_i
         curr_move = moves[index][:move]
  
@@ -568,17 +569,24 @@ class Painter
         while (char = Ncurses.getch) do
            case char
                 when Ncurses::KEY_DOWN
-                    Ncurses::Menu.menu_driver(menuwin[:menu], Ncurses::Menu::REQ_DOWN_ITEM)
+                    if menu_item_index < (menuwin[:items].length - 1) 
+                        Ncurses::Menu.menu_driver(menuwin[:menu], Ncurses::Menu::REQ_DOWN_ITEM)
+                        menu_item_index += 1 
+                    end
                when Ncurses::KEY_UP
-                    Ncurses::Menu.menu_driver(menuwin[:menu], Ncurses::Menu::REQ_UP_ITEM)
+                   if menu_item_index > 0 
+                       Ncurses::Menu.menu_driver(menuwin[:menu], Ncurses::Menu::REQ_UP_ITEM)
+                       menu_item_index -= 1 
+                   end
                 when KEY_ENTER, ?1, CHARACTER_CR, CHARACTER_LF
                     break
                 else  :do_nothing
             end
             index = Ncurses::Menu::current_item(menuwin[:menu]).item_description.to_i
+            menuwin[:menu].set_current_item(menuwin[:items][menu_item_index])
             curr_move = moves[index][:move]
             boardwin.wclear
-            self.paint_board_win(board, boardwin)
+#            self.paint_board_win(board, boardwin)
             curr_move.each { |tile| draw_tile(tile, boardwin) }
             Ncurses.redrawwin(boardwin)
             Ncurses.redrawwin(menuwin[:window])
