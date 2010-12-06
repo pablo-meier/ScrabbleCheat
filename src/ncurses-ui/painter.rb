@@ -575,6 +575,7 @@ class Painter
                     break
                 else  :do_nothing
             end
+            index = Ncurses::Menu::current_item(menuwin[:menu]).item_description.to_i
             curr_move = moves[index][:move]
             boardwin.wclear
             self.paint_board_win(board, boardwin)
