@@ -26,20 +26,31 @@ ERL_END = -run erlang halt
 ERL_RUN = $(ERL) $(ERL_FLAGS)
 
 
+CLIENT_SRC=$(SRCDIR)/ncurses-ui
+CLIENT_TESTS=$(TESTDIR)/ncurses-ui
 
 
-test: compile compile-tests
+test-client:
+	ruby -I $(CLIENT_SRC) -I $(CLIENT_TESTS) $(CLIENT_TESTS)/client_serializable_test.rb
+
+test: test-server test-client
+
+test-server: compile compile-tests
 	$(ERL) $(ERL_TEST_FLAGS) $(ERL_FLAGS) -run gaddag_test test $(ERL_END)
 	$(ERL) $(ERL_TEST_FLAGS) $(ERL_FLAGS) -run parser_test test $(ERL_END)
 	$(ERL) $(ERL_TEST_FLAGS) $(ERL_FLAGS) -run board_test test $(ERL_END)
 	$(ERL) $(ERL_TEST_FLAGS) $(ERL_FLAGS) -run movesearch_test test $(ERL_END)
 	$(ERL) $(ERL_TEST_FLAGS) $(ERL_FLAGS) -run followstruct_test test $(ERL_END)
 	$(ERL) $(ERL_TEST_FLAGS) $(ERL_FLAGS) -run move_test test $(ERL_END)
+	$(ERL) $(ERL_TEST_FLAGS) $(ERL_FLAGS) -run serialization_test test $(ERL_END)
+	$(ERL) $(ERL_TEST_FLAGS) $(ERL_FLAGS) -run tile_test test $(ERL_END)
+	$(ERL) $(ERL_TEST_FLAGS) $(ERL_FLAGS) -run gamestate_test test $(ERL_END)
 
 all: binary-gaddag test run
 
 run: compile
-	$(ERL_RUN) -run main main 
+	./start_server.sh
+	#$(ERL_RUN) -run main main 
   
 shell: compile
 	$(ERL) $(ERL_TEST_FLAGS) $(ERL_INCLUDE_FLAGS)

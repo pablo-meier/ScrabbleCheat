@@ -21,7 +21,13 @@
 -module(move_test).
 -include_lib("eunit/include/eunit.hrl").
 
--import(move, [duplicate_moves/2, score/2, new_move/0, add_to_move/2]).
+-import(move, [duplicate_moves/2, 
+               score/2, 
+               new_move/0, 
+               add_to_move/2,
+               serialize/1,
+               deserialize/1]).
+
 -import(lists, [foldl/3]).
 -import(board, [place_word/4]).
 -import(board_parser, [new_board/0]).
@@ -83,9 +89,18 @@ score_parallel_test() ->
 	io:format("Score is ~p~n", [Score]),
 	?assert(Score =:= 12).
 	
+score_along_wall_test() ->
+	Tiles = [{{character, $E}, triple_word_score, {15,15}}, 
+			{{character, $L}, none, {15,14}},
+			{{character, $B}, none, {15,13}},
+			{{character, $A}, none, {15,12}}],
+	Move = foldl(fun move:add_to_move/2, new_move(), Tiles),
+	Score = score(Move, new_board()),
+	io:format("Score is ~p~n", [Score]),
+	?assert(Score =:= 18).
 
+	
 score_parallel_many_bonuses_test() ->
-	io:format(user, "-------------------~n", []),
 	Tiles = [{{character, $Z}, none, {8,3}}, 
 			{{character, $Y}, double_letter_score, {8,4}},
 			{{character, $G}, none, {8,5}},
@@ -96,4 +111,11 @@ score_parallel_many_bonuses_test() ->
 	Score = score(Move, place_word("ABLE", right, {7,7}, new_board())),
 	io:format("Score is ~p~n", [Score]),
 	?assert(Score =:= 56).
-	
+
+serialize_first_test() ->
+    Tiles = [{{character, $A}, double_word_score, {11,12}},
+            {{wildcard, $C}, none, {11, 15}},
+            {{character, $X}, none, {11, 9}}],
+    Move = lists:foldl(fun move:add_to_move/2, new_move(), Tiles),
+    ?assert(move:deserialize(move:serialize(Move)) == Move).
+

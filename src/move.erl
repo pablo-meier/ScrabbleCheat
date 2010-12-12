@@ -22,8 +22,8 @@
 
 -import(tile, [get_tile_letter/1, is_wildcard/1, get_tile_location/1, is_occupied/1, get_tile_bonus/1, duplicate_tile/2]).
 -import(board, [place_move_on_board/2, to_beginning/1, orthogonals/1, get_adjacent/3, zoom/3, flip/1]).
--import(lists, [foldl/3, filter/2, any/2]).
--export([new_move/0, add_to_move/2, duplicate_moves/2, get_move_tiles/1, score/2]).
+-import(lists, [foldl/3, filter/2, any/2, map/2]).
+-export([new_move/0, add_to_move/2, duplicate_moves/2, get_move_tiles/1, score/2, serialize/1, deserialize/1]).
 
 %% The move datatype.  Checks structural integrity of moves, not
 %% responsible for legal placement relative to a board, or dictionary
@@ -72,7 +72,7 @@ check_integrity(Row, Col) ->
     Row =< 15 andalso Row >= 1 andalso Col =< 15 andalso Col >= 1.
 
 
-%% score :: Move -> Int
+%% score :: Move * Board -> Int
 %%
 %% Calculates the score of a move.
 score(Move, Board) ->
@@ -109,7 +109,9 @@ get_move_orientation([H|T]) ->
 %% Follows a path, and if it sees moves in perpendicular directions, scores them.
 score_perpendiculars(Tile, Direction, Board, MoveComponents, Accum) ->
     %% See if you have a perpendicular path.
-    Surrounding = filter(fun (X) -> is_occupied(get_adjacent(Tile, Board, X)) end, orthogonals(Direction)),
+    OrthogonalTiles = map(fun (X) -> get_adjacent(Tile, Board, X) end, orthogonals(Direction)),
+    Filtered = filter(fun (X) -> X =/= none end, OrthogonalTiles),
+    Surrounding = filter(fun (ThisTile) -> is_occupied(ThisTile) end, Filtered),
     %% Ensure it's perpendicular to a tile that's fresh in this move.
     IsNew = is_part_of_new_move(Tile, MoveComponents),
     %% Score it as a word if there exists a perpendicular path to a new tile component.
@@ -192,3 +194,15 @@ letter_score($M) -> 3;  letter_score($N) -> 1;  letter_score($O) -> 1;  letter_s
 letter_score($Q) -> 10; letter_score($R) -> 1;  letter_score($S) -> 1;  letter_score($T) -> 1;
 letter_score($U) -> 1;  letter_score($V) -> 4;  letter_score($W) -> 4;  letter_score($X) -> 8;
 letter_score($Y) -> 4;  letter_score($Z) -> 10.
+
+
+%% serialize :: Move -> String
+%%
+%% Converts this move into a machine-parsable representation.  Since a move is 
+%% just a list of tiles, we'll serialize the list into tiles, which are themselves tuples.
+serialize({move, MoveList}) ->
+    serialization:serialize_list(MoveList, fun tile:serialize/1).
+
+deserialize(MoveString) ->
+    Lst = serialization:deserialize_list(MoveString, fun tile:deserialize/1),
+    {move, Lst}.

@@ -24,6 +24,9 @@
 -import(board_parser, [new_board/0]).
 -import(board, [place_letter_on_board/5,
 				place_bonus_on_board/4,
+				place_word/4,
+				serialize/1,
+				deserialize/1,
 				get_tile/3]).
 -import(tile, [get_tile_letter/1, get_tile_bonus/1]).
 
@@ -52,3 +55,12 @@ preservation_test() ->
 	?assertException(throw, {tile_already_occupied, $C}, place_letter_on_board(13, 4, $M, AndWithC, false)),
 	?assertException(throw, {tile_already_with_bonus, double_word_score}, place_bonus_on_board(13, 4, triple_letter_score, AndWithC)).
 	
+serialize_test() ->
+	Board = place_word("ABLE", right, {1,1}, new_board()),
+    {FirstBits, _} = lists:split(32, board:serialize(Board)),
+    ?assert(FirstBits == "CAT0101|CBn0102|CLn0103|CEd0104|"),
+    {_, LastBits} = lists:split(221 * 8, board:serialize(Board)),  
+    ?assert(LastBits == "--d1512|--n1513|--n1514|--T1515|"),
+    
+    ?assert(board:deserialize(board:serialize(Board)) == Board).
+

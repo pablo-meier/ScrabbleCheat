@@ -2,36 +2,94 @@
 SHORT-TERM:
 
 Features:
-	- Connections between 'islands:' when you build a bridge between two words to
-	  build a longer, more impressive word.
-	- Dumping the real GADDAG to disk in a format so we don't have to re-parse all 
-	  the time.
-	     -> Add file checks:  use generated gaddag if it exists, parse a new 
-	        one otherwise
-	     -> Tests?
-	- Move selection (after generation, likely start out with naive high score).
-	- UI. Curses/Nitrogen?
+    - Connections between 'islands:' when you build a bridge between two words to
+      build a longer, more impressive word.
+    - Critical optimizations
+    - Move selection (after generation, likely start out with naive high score).
+    - UI. Curses/Nitrogen? CURSES.
+        - Set up main.erl to act as a server, respond to requests with a string. DONE
+        - Set up client.rb to ping our new server, and receive response. DONE
+        - Heavily define/specify what you will be sending to and fro, and create serializable
+          datatypes on both ends.  
+            - This mostly means prototyping a few transactions/use cases for the client, 
+              and seeing what it 'needs.'  Also need to answer the question:  do you
+              want to simulate a whole game, or just prod the AI?  Should the server
+              store/retrieve games, or is that the client? DONE (see main:parse_message)
+
+        - Test the serialization. DONE
+        - Write game playing/flow logic.  Um, done?
+        - Write Hello World in Ruby Curses, client.rb. DONE
+        - FINNISH HYMN!
+            - Welcome Screen
+                - Center Menu appropriately DONE
+                - Draw title correctly DONE (copypasta)
+                - Colors DONE
+                - Get menu value DONE
+            -> Name input
+                - Simple forms from example.  Get values, place in array.
+                    - Title DONE
+                    - Bigger spaced box DONE
+                    - Enter rather than 'q'
+                    - get the names in the forms! DONE
+            -> Action choose!       
+                - Draw Board (DONE), Scores (DONE), * on who's turn (DONE)
+                - Get user choice (input move or get moves)
+                - Input Move:
+                    - Build navigation of board, with visible cursor. DONE
+                    - Let user build move visually on board. DONE
+                    - Get user's final submitted move, place it to server and update gamestate. DONE
+                    - Allow deletion (make a square empty again). DONE
+                    - Helpful instructions! DONE
+                    - Reject incorrect moves (server side)  TABLED
+                - Get Moves:
+                    - Get Rack. DONE
+                    - Display menu with the moves sorted by score.
+                    - Highlight the board with the currently selected move.
+                    - Retrieve and play move from user's choice.
+        - TEST TEST TEST.  Handle incorrect input/gamestates
 
 	- Optimize Wildcards/Movesearch.
 	    - nlogn duplication removal (currently n^2).
 	    - Only check half as many candidates by looking for border cases.
 
 Code Quality:
-	- Better use of branching, git.  So far mostly just check-in/check-out to 
-	  master, pretty lame.
-	- Types with Dialyzer.
-	- Better, more rigorous testing.  Mostly in movesearches.  Use abstractions!
 
-- grep TODO and FIXME in the source to find something to do!
+SERVER
+    - Better, more rigorous testing.  Mostly in movesearches, and the most recent features (wildcards, 
+      serialization, dumping previous computation to disk).  Use abstractions!
+    - Optimize, optimize, optimize.  Especially with wildcards.
+        Immediate, obvious optimizations:
+            -> Don't check candidate tiles on the right/bottom of an occupied tile
+               unless there isn't another way of reaching it, i.e. from above or from the right.
+            -> Remove duplicate candidates and duplicate moves with a sort-and-filter (nlog(n)),
+               rather than the current one-sweep naive traversal (n^2-ish).
+            -> Make better use of spawn(), especially on all the maps and foldls.  Paralellize 
+               candidates, for example.
+    - Types with Dialyzer.
+    - Refactor/restructure the src/ directory for a clear separation of modules:  game (for things 
+      like boards, tiles, etc), server (for things like serialization and/or database handling), 
+      and ai (for movesearches, finding the best move, etc.).
 
-------
-BROADER:
+    - Use Thrift, instead of your crappy-ass homebrew serialization/deserializtion scheme.
+      It's a hack where you gave much more than it deserved.
 
-- Generalize the board and board parser to take different default
-  configurations, such as a Lexulous board, Words With Friends, or a custom
-  board.  The hard-coding is more a result of the fact that I'm in a place with
-  no internet and can't consult the Regex library, and also because this is
-  slightly easier.  This will mostly involve changing the new_board to parse the
-  board in lib/, and changing the BOARD_HEIGHT and BOARD_LENGTH constants to
-  read from that file as well. Ideally, one could start a game parametrized by
-  game type (words_with_friends) and dictionary (twl, international) etc.
+    - Generalize the board and board parser to take different default
+      configurations, such as a Lexulous board, Words With Friends, or a custom
+      board.  The hard-coding is more a result of the fact that I'm in a place with
+      no internet and can't consult the Regex library, and also because this is
+      slightly easier.  This will mostly involve changing the new_board to parse the
+      board in lib/, and changing the BOARD_HEIGHT and BOARD_LENGTH constants to
+      read from that file as well. Ideally, one could start a game parametrized by
+      game type (words_with_friends) and dictionary (twl, international) etc.
+
+    - I might be missing something. grep TODO and FIXME in the source to find something to do!
+
+
+CLIENT
+    - Allow save games.
+    - Allow to check move validity on play_move.
+    - Show history.
+
+    - HOLY SHIT REFACTOR
+        - At the very least, generalize board printing code with some kind of board_window coordinates, 
+          rather than duplicating  your hackey logic everywhere (most areas that print to the board).

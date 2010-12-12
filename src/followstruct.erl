@@ -133,20 +133,35 @@ next(Followstruct, Char, Master) ->
 %% moves if successful, and 'fail' if a move isn't present with that char.
 check_followstruct_on_char(Followstruct, Char, Master, IsWildcard) ->
     {Tile, Direction, Gaddag, Board, Move} = Followstruct,
-    HasBranch = get_branch(Char, Gaddag),
-    WorksOrthogonally = check_other_directions(Followstruct, Char, Master),
-    case {HasBranch, WorksOrthogonally} of
-        {none, _}  -> fail;
-        {_, false} -> fail;
-        {{branch, NextPath}, _} ->
-            {Row, Col} = get_tile_location(Tile),
-            NewBoard = place_letter_on_board(Row, Col, Char, Board, IsWildcard),
-            NewMove = add_to_move(board:get_tile(Row, Col, NewBoard), Move),
-            Complete = case is_terminator(NextPath) of true -> [NewMove]; false -> [] end,
-            NewTile = get_adjacent(Tile, Board, Direction),
-            NewFollow = make_followstruct(NewTile, Direction, NextPath, NewBoard, NewMove),
-
-            {success, NewFollow, Complete}
+    case tile:is_occupied(Tile) of
+        true ->  
+            NextTile = get_adjacent(Tile, Board, Direction),
+            CanAdvance = get_branch(get_tile_letter(Tile), Gaddag),
+            case {NextTile, CanAdvance} of 
+                {_, none} -> fail;
+                {none, _} -> fail;
+                {_Next, {branch, Further}} ->
+                    NewFollow = make_followstruct(NextTile, Direction, Further, Board, Move),
+                    next(NewFollow, Char, Master)
+            end;
+        false ->
+            HasBranch = get_branch(Char, Gaddag),
+            WorksOrthogonally = check_other_directions(Followstruct, Char, Master),
+            case {HasBranch, WorksOrthogonally} of
+                {none, _}  -> fail;
+                {_, false} -> fail;
+                {{branch, NextPath}, _} ->
+                    {Row, Col} = get_tile_location(Tile),
+                    NewBoard = place_letter_on_board(Row, Col, Char, Board, IsWildcard),
+                    NewMove = add_to_move(board:get_tile(Row, Col, NewBoard), Move),
+                    Complete = case is_terminator(NextPath) of true -> [NewMove]; false -> [] end,
+                    NewTile = get_adjacent(Tile, Board, Direction),
+                    NewFollow = make_followstruct(NewTile, Direction, NextPath, NewBoard, NewMove),
+                    case NewTile of
+                        none -> fail;
+                        _Else -> {success, NewFollow, Complete}
+                    end
+            end
     end.
     
 
@@ -161,7 +176,8 @@ check_other_directions(Followstruct, Char, Master) ->
     {Tile, Direction, _, Board, _} = Followstruct,
     CheckDirections = orthogonals(Direction),
     Orthogonals = map(fun (X) -> get_adjacent(Tile, Board, X) end, CheckDirections),
-    Occupied = any(fun (X) -> is_occupied(X) end, Orthogonals),
+    Filtered = filter(fun (X) -> X =/= none end, Orthogonals),
+    Occupied = any(fun (X) -> is_occupied(X) end, Filtered),
     case Occupied of
         false -> true;
         %% if either is occupied, 
