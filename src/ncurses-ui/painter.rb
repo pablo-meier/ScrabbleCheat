@@ -23,6 +23,7 @@ require 'board.rb'
 require 'ncurses.rb'
 
 
+
 class Painter
 
     include Ncurses
@@ -32,6 +33,7 @@ class Painter
     TITLE_LINE = "Welcome to ScrabbleCheat!"
     AUTHOR_LINE =  "by Paul Meier - www.morepaul.com"
     COMMEMORATE_LINE = "For Sam"
+
 
     CAPITAL_LETTER_PATTERN = /[A-Z]/
 
@@ -52,7 +54,7 @@ class Painter
  
 
     def initialize
-        @debug_file = File.new("debug", "w")
+        @debug = false
 
         Ncurses.initscr
         Ncurses.start_color
@@ -249,7 +251,6 @@ class Painter
 
 
     def paint_board_win(board, board_win)
-
         print_in_middle(board_win, 1, 13, 10, "-- Board --", @colors[:red])
         board_win.box(0,0)
 
@@ -291,33 +292,33 @@ class Painter
                 case this_tile[:bonus]
                     when :none 
                         board_win.attron(@colors[:yellow])
-                        board_win.mvaddstr(y, x, "_")
+                        board_win.mvwaddstr(y, x, "_")
                         board_win.attroff(@colors[:yellow])
                     when :triple_word_score 
                         board_win.attron(@colors[:red])
-                        board_win.mvaddstr(y, x, "*")
+                        board_win.mvwaddstr(y, x, "*")
                         board_win.attroff(@colors[:red])
                     when :double_word_score
                         board_win.attron(@colors[:magenta])
-                        board_win.mvaddstr(y, x, "*")
+                        board_win.mvwaddstr(y, x, "*")
                         board_win.attroff(@colors[:magenta])
                     when :triple_letter_score 
                         board_win.attron(@colors[:blue])
-                        board_win.mvaddstr(y, x, "*")
+                        board_win.mvwaddstr(y, x, "*")
                         board_win.attroff(@colors[:blue])
                     when :double_letter_score 
                         board_win.attron(@colors[:cyan])
-                        board_win.mvaddstr(y, x, "*")
+                        board_win.mvwaddstr(y, x, "*")
                         board_win.attroff(@colors[:cyan])
                 end
             else
                 char = this_tile[:letter]
-                board_win.mvaddstr(y, x, char)
+                board_win.mvwaddstr(y, x, char)
         end
 
-        board_win.attron(@colors[:yellow])
-        board_win.mvaddstr(y, x + 1, "|")
-        board_win.attroff(@colors[:yellow])
+        board_win.wattron(@colors[:yellow])
+        board_win.mvwaddstr(y, x + 1, "|")
+        board_win.wattroff(@colors[:yellow])
     end
 
 
@@ -560,6 +561,8 @@ class Painter
         menuwin[:menu].set_current_item(menuwin[:items][menu_item_index])
         index = menuwin[:menu].current_item.item_description.to_i
         curr_move = moves[index][:move]
+
+        @debug = true
  
         curr_move.each { |tile| draw_tile(tile, boardwin) }
         Ncurses.redrawwin(boardwin)
@@ -567,7 +570,11 @@ class Painter
         Ncurses.wrefresh(boardwin)
         Ncurses.wrefresh(menuwin[:window])
         while (char = Ncurses.getch) do
-           case char
+            Ncurses.redrawwin(boardwin)
+            Ncurses.redrawwin(menuwin[:window])
+            Ncurses.wrefresh(boardwin)
+            Ncurses.wrefresh(menuwin[:window])
+            case char
                 when Ncurses::KEY_DOWN
                     if menu_item_index < (menuwin[:items].length - 1) 
                         Ncurses::Menu.menu_driver(menuwin[:menu], Ncurses::Menu::REQ_DOWN_ITEM)
@@ -587,12 +594,14 @@ class Painter
             curr_move = moves[index][:move]
             boardwin.wclear
 #            self.paint_board_win(board, boardwin)
-            curr_move.each { |tile| draw_tile(tile, boardwin) }
+#            curr_move.each { |tile| draw_tile(tile, boardwin) }
             Ncurses.redrawwin(boardwin)
             Ncurses.redrawwin(menuwin[:window])
             Ncurses.wrefresh(boardwin)
             Ncurses.wrefresh(menuwin[:window])
          end
+
+        @debug = false
         
         index = Ncurses::Menu::current_item(menuwin[:menu]).item_description.to_i
         menuwin[:items].each { |i| i.free_item }
@@ -633,10 +642,12 @@ class Painter
 
 
     def debug_println(str)
-        Ncurses.stdscr.move(4, 4)
-        Ncurses.stdscr.addstr(str)
-        Ncurses.stdscr.refresh()
-        sleep(1)
+        if @debug
+            Ncurses.stdscr.move(4, 4)
+            Ncurses.stdscr.addstr(str)
+            Ncurses.stdscr.refresh()
+            sleep(4)
+        end
     end
 
 
