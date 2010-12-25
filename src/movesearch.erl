@@ -79,8 +79,9 @@
 get_best_move_function(Gaddag) ->
     fun (Board, Rack) ->
         Candidates = generate_move_candidate_locations(Board),
-        _MoveList = flatmap(fun (X) -> find_all_moves(X, Rack, Board, Gaddag) end, Candidates)
-        %select_best_move(MoveList, Board)
+        MoveList = flatmap(fun (X) -> find_all_moves(X, Rack, Board, Gaddag) end, Candidates),
+        _Uniques = remove_duplicates(MoveList, fun move:duplicate_moves/2)
+        %select_best_move(Uniques, Board)
     end.
 
 
@@ -196,12 +197,11 @@ create_origin_followstructs(ThisTriple, Board) ->
 %% Given all the information, construct every possible move given your
 %% rack and the board by following using your followstruct, containing direction.
 get_moves_from_candidate(Followstruct, ZoomTile, Rack, Accum, Master) ->
-    ListOfMoves = case can_flip_followstruct(Followstruct, ZoomTile) of
+    case can_flip_followstruct(Followstruct, ZoomTile) of
         false -> get_moves_from_candidate_recur(Followstruct, ZoomTile, Rack, Accum, Master);
         true -> append(get_moves_from_candidate_recur(Followstruct, ZoomTile, Rack, Accum, Master),
                         get_moves_from_candidate_recur(flip_followstruct(Followstruct, ZoomTile), ZoomTile, Rack, Accum, Master))
-    end,
-    remove_duplicates(ListOfMoves, fun move:duplicate_moves/2).
+    end.
 
 
 %% make_perpendicular_followstructs :: Followstruct * Gaddag -> {FollowStruct, Tile}
