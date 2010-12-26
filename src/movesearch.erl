@@ -192,18 +192,6 @@ create_origin_followstructs(ThisTriple, Board) ->
     end.
 
 
-%% get_moves_from_candidate :: FollowStruct * Tile * [Char] * Move * [Move] -> [Move]
-%%
-%% Given all the information, construct every possible move given your
-%% rack and the board by following using your followstruct, containing direction.
-get_moves_from_candidate(Followstruct, ZoomTile, Rack, Accum, Master) ->
-    case can_flip_followstruct(Followstruct, ZoomTile) of
-        false -> get_moves_from_candidate_recur(Followstruct, ZoomTile, Rack, Accum, Master);
-        true -> append(get_moves_from_candidate_recur(Followstruct, ZoomTile, Rack, Accum, Master),
-                        get_moves_from_candidate_recur(flip_followstruct(Followstruct, ZoomTile), ZoomTile, Rack, Accum, Master))
-    end.
-
-
 %% make_perpendicular_followstructs :: Followstruct * Gaddag -> {FollowStruct, Tile}
 %%
 %% Gives us a start point from which to generate moves that hook in a perpendicular
@@ -211,16 +199,29 @@ get_moves_from_candidate(Followstruct, ZoomTile, Rack, Accum, Master) ->
 make_perpendicular_followstructs(Followstruct, Master) ->
     Tile = get_followstruct_tile(Followstruct),
     Board = get_followstruct_board(Followstruct),
-
     Direction = get_followstruct_direction(Followstruct),
+
     [Perpendicular|_] = orthogonals(Direction),
     BackPerpendicular = to_beginning(Perpendicular),
     {make_followstruct(Tile, BackPerpendicular, Master, Board, new_move()), Tile}.
 
 
+%% get_moves_from_candidate :: FollowStruct * Tile * [Char] * Move * [Move] -> [Move]
+%%
+%% Given all the information, construct every possible move given your
+%% rack and the board by following using your followstruct, containing direction.
+get_moves_from_candidate(Followstruct, ZoomTile, Rack, Accum, Master) ->
+    ListOfMoves = case can_flip_followstruct(Followstruct, ZoomTile) of
+        false -> get_moves_from_candidate_recur(Followstruct, ZoomTile, Rack, Accum, Master);
+        true -> append(get_moves_from_candidate_recur(Followstruct, ZoomTile, Rack, Accum, Master),
+                       get_moves_from_candidate_recur(flip_followstruct(Followstruct, ZoomTile), ZoomTile, Rack, Accum, Master))
+    end,
+    remove_duplicates(ListOfMoves, fun move:duplicate_moves/2).
+
+
 %% The hairiest part of the movesearch algorithm.  The rest is just foreplay...
 get_moves_from_candidate_recur(Followstruct, ZoomTile, Rack, Accum, Master) ->
-    %% Fold the results into a unified list.  For every character in your rack...
+   %% Fold the results into a unified list.  For every character in your rack...
     foldl(fun (X, Y) -> 
               %% See if you can place that character per the data in the followstruct.
               case next(Followstruct, X, Master) of
@@ -246,7 +247,8 @@ get_moves_from_candidate_recur(Followstruct, ZoomTile, Rack, Accum, Master) ->
 
 get_move_helper(NewFollowstruct, ZoomTile, RestOfRack, NewAccum, Master) ->
     %% If you can swap to the other side,
-    case can_flip_followstruct(NewFollowstruct, ZoomTile) of
+    Tile = get_followstruct_tile(NewFollowstruct),
+    case can_flip_followstruct(NewFollowstruct, ZoomTile) andalso not is_occupied(Tile) of
         true ->
             %% Do so, and append the results of both the backwards and forwards direction.
             BranchFollowstruct = flip_followstruct(NewFollowstruct, ZoomTile),
