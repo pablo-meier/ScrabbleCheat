@@ -96,7 +96,7 @@ can_flip_followstruct({_, Direction, Gaddag, Board, _}, ZoomTile) ->
     NextTile = get_adjacent(ZoomTile, Board, NewDirection),
     case {has_branch($&, Gaddag), NextTile} of
         {false, _} -> false;
-        {true, none} -> false;
+        {_, none} -> false;
         _Else -> true
     end.
 

@@ -312,14 +312,14 @@ perpendicular_rightside_test() ->
 	Run = get_moves_from_candidate(Followstruct, Zoomtile, Rack, Accum, Gaddag),
 
 	%% Test CHRONO, where 'R' hooks onto ABLE to form ABLER
-	Solutions = [{move, [{{character, $C}, double_word_score, {5,11}},
+	Solution = {move, [{{character, $C}, double_word_score, {5,11}},
 						{{character, $H}, none, {6,11}},
 						{{character, $R}, none, {7,11}},
 						{{character, $O}, none, {8,11}},
 						{{character, $N}, none, {9,11}},
-						{{character, $O}, none, {10,11}}]}],
+						{{character, $O}, none, {10,11}}]},
 
-	lists:foreach(fun (X) -> ?assert(lists:any(fun (Y) -> duplicate_moves(X, Y) end, Run)) end, Solutions).
+	?assert(lists:any(fun (Y) -> duplicate_moves(Solution, Y) end, Run)).
 
 
 %% this has been crashing in the client, worth automating
@@ -329,8 +329,23 @@ able_zygote_test() ->
 	Rack = "PAULIE",
 
     Moves = Search(Board, Rack),
-    ?assert(lists:any(fun (X) -> X =:= {move, [{{character, $A}, none, {9,5}}]} end, Moves)).
+    ?assert(lists:any(fun (X) -> move:duplicate_moves(X, {move, [{{character, $A}, none, {9,5}}]}) end, Moves)).
 
+
+%% this has been crashing in the client, worth automating
+sigma_perpendicular_test() ->
+	Search = movesearch:get_best_move_function(parse(?TESTDICT)),
+	Board = place_word("ZYGOTE", right, {8,4}, place_word("ABLE", right, {7,8}, new_board())),
+	Rack = "SIGMA",
+
+    Moves = Search(Board, Rack),
+    ForbiddenMove = {move, [{{character, $S}, none, {8, 10}},
+                            {{character, $I}, none, {9,10}},
+                            {{character, $G}, triple_letter_score, {10,10}},
+                            {{character, $M}, none, {11,10}},
+                            {{character, $A}, none, {12,10}}]},
+  
+    ?assert(lists:all(fun (X) -> not move:duplicate_moves(X, ForbiddenMove) end, Moves)).
 
 
 %% No Moves?
