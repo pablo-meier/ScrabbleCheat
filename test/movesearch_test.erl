@@ -352,6 +352,24 @@ sigma_perpendicular_test() ->
     ?assert(lists:all(fun (X) -> not move:duplicate_moves(X, Forbidden2) end, Moves)).
 
 
+island_1_test() ->
+   	Search = movesearch:get_best_move_function(parse(?TESTDICT)),
+	PreBoard = place_word("BAS", down, {7,8}, place_word("TERM", right, {10,7}, new_board())),
+	Board = place_word("TRA", down, {7,10}, PreBoard),
+	Rack = "TARYO",
+
+    Moves = Search(Board, Rack),
+    %% The word BAT, between BASE and TRAM
+    Connected1 = {move, [{{character, $A}, double_letter_score, {7, 9}}]},
+    %% The word TARRY, between BASE and TRAM
+    Connected2 = {move, [{{character, $T}, none, {8, 7}},
+                         {{character, $R}, none, {8, 9}},
+                         {{character, $Y}, none, {8, 11}}]},
+
+    ?assert(lists:any(fun (X) -> move:duplicate_moves(X, Connected1) end, Moves)),
+    ?assert(lists:any(fun (X) -> move:duplicate_moves(X, Connected2) end, Moves)).
+
+
 %% No Moves?
 %% Crosses
 
