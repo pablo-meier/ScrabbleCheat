@@ -345,7 +345,11 @@ sigma_perpendicular_test() ->
                             {{character, $M}, none, {11,10}},
                             {{character, $A}, none, {12,10}}]},
   
-    ?assert(lists:all(fun (X) -> not move:duplicate_moves(X, ForbiddenMove) end, Moves)).
+    Forbidden2 = {move, [{{character, $A}, none, {8, 10}},
+                         {{character, $M}, none, {8,11}}]},
+ 
+    ?assert(lists:all(fun (X) -> not move:duplicate_moves(X, ForbiddenMove) end, Moves)),
+    ?assert(lists:all(fun (X) -> not move:duplicate_moves(X, Forbidden2) end, Moves)).
 
 
 %% No Moves?

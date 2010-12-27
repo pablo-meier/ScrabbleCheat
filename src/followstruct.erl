@@ -154,7 +154,7 @@ check_followstruct_on_char(Followstruct, Char, Master, IsWildcard) ->
                     {Row, Col} = get_tile_location(Tile),
                     NewBoard = place_letter_on_board(Row, Col, Char, Board, IsWildcard),
                     NewMove = add_to_move(board:get_tile(Row, Col, NewBoard), Move),
-                    Complete = case is_terminator(NextPath) of true -> [NewMove]; false -> [] end,
+                    Complete = check_completeness(Tile, NextPath, NewMove, NewBoard, Direction),
                     NewTile = get_adjacent(Tile, Board, Direction),
                     NewFollow = make_followstruct(NewTile, Direction, NextPath, NewBoard, NewMove),
                     case NewTile of
@@ -162,6 +162,51 @@ check_followstruct_on_char(Followstruct, Char, Master, IsWildcard) ->
                         _Else -> {success, NewFollow, Complete}
                     end
             end
+    end.
+    
+
+%% check_completeness :: Tile * Gaddag * Move * Board * Direction -> [Move]
+%%
+%% Checks whether the addition of the new tile forms a new complete move or 
+%% not.  If it doesn't, we return an empty list (since it contributes no new moves).
+%% If it does, we return a list of all the moves the new tile forms.
+check_completeness(Tile, Gaddag, Move, Board, Direction) ->
+    NextTile = get_adjacent(Tile, Board, Direction),
+    if 
+        NextTile =:= none -> [];
+        true ->
+            case is_occupied(NextTile) of
+                true -> trace_occupied_tiles_with_gaddag(NextTile, Board, Direction, Gaddag, Move);
+                false ->
+                    case is_terminator(Gaddag) of true -> [Move]; false -> [] end
+            end
+    end.
+
+
+%% trace_occupied_tiles_with_gaddag :: Tile * Board * Direction * Gaddag * Move -> [Move]
+%%
+%% Like board:travel/4 and board:zoom/3, we go along the board until the next adjacent
+%% tile is empty, using the supplied GADDAG as a guide.  If the gaddag doesn't contain
+%% a pertinent branch, or the move doesn't end in a terminator, we don't consider the move
+%% complete.  Note that this does NOT verify whether or not a move is valid between 
+%% 'islands,' that is done by subsequent calls to next().  We simply check whether a move
+%% should be called "complete."
+trace_occupied_tiles_with_gaddag(Tile, Board, Direction, Gaddag, Move) ->
+    case is_occupied(Tile) of
+        true -> 
+            NextTile = get_adjacent(Tile, Board, Direction),
+            case NextTile of
+                none -> case is_terminator(Gaddag) of true -> [Move]; false -> [] end;
+                _Else ->
+                    Char = tile:get_tile_letter(Tile),
+                    case get_branch(Char, Gaddag) of
+                        none -> [];
+                        {branch, Further} ->
+                            trace_occupied_tiles_with_gaddag(NextTile, Board, Direction, Further, Move)
+                    end
+            end;
+        false ->
+            case is_terminator(Gaddag) of true -> [Move]; false -> [] end
     end.
     
 
