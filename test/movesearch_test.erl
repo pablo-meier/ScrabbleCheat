@@ -370,6 +370,17 @@ island_1_test() ->
     ?assert(lists:any(fun (X) -> move:duplicate_moves(X, Connected2) end, Moves)).
 
 
+%% Bug where we forget to remove 'none' values after get_adjacent calls
+%% in finding zoomtiles for candidates.  Below is a case where it failed.
+candidate_on_edge_test() ->
+   	Search = movesearch:get_best_move_function(parse(?TESTDICT)),
+	Board = place_word("AFOUL", down, {10,10}, new_board()),
+	Rack = "SLUANIQ",
+
+    %% Should not throw error -- function clause, get_tile_letter, [none]
+    Search(Board, Rack).
+   
+
 %% No Moves?
 %% Crosses
 

@@ -167,7 +167,7 @@ find_all_moves(Candidate, Rack, Board, Gaddag) ->
 %% we create the appropriate Followstructs.
 get_zoomtiles(Candidate, Board, Gaddag) ->
     Adjacents = map(fun (X) -> {get_adjacent(Candidate, Board, X), X, Gaddag} end, [left,right,up,down]),
-    StartPoints = filter(fun ({X,_,_}) -> is_occupied(X) end, Adjacents),
+    StartPoints = filter(fun ({X,_,_}) -> X =/= none andalso is_occupied(X) end, Adjacents),
     WithZooms = map(fun({Tile, Direction, _}) -> {zoom(Tile, Direction, Board), Direction, Gaddag} end, StartPoints),
     filter(fun (X) -> X =/= edge_of_board end, WithZooms).
 

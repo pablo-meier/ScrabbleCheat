@@ -173,7 +173,7 @@ check_followstruct_on_char(Followstruct, Char, Master, IsWildcard) ->
 check_completeness(Tile, Gaddag, Move, Board, Direction) ->
     NextTile = get_adjacent(Tile, Board, Direction),
     if 
-        NextTile =:= none -> is_terminator(Gaddag) of true -> [Move]; false -> [] end;
+        NextTile =:= none -> case is_terminator(Gaddag) of true -> [Move]; false -> [] end;
         true ->
             case is_occupied(NextTile) of
                 true -> trace_occupied_tiles_with_gaddag(NextTile, Board, Direction, Gaddag, Move);
