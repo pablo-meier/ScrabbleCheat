@@ -112,7 +112,6 @@ get_move_from_candidate_open_horiz_test() ->
 				{move, [{{character, $T}, none, {7,6}},{{character, $S}, none, {7,11}}]},
 				{move, [{{character, $T}, none, {7,6}},{{character, $S}, none, {7,5}}]}],
 
-	?assert(length(Run) =:= length(Solutions)),
 	lists:foreach(fun (X) -> ?assert(lists:any(fun (Y) -> duplicate_moves(X, Y) end, Run)) end, Solutions).
 
 
@@ -136,7 +135,6 @@ get_move_from_candidate_open_vert_test() ->
 				{move, [{{character, $T}, none, {6,7}},{{character, $S}, none, {11,7}}]},
 				{move, [{{character, $T}, none, {6,7}},{{character, $S}, none, {5,7}}]}],
 
-	?assert(length(Run) =:= length(Solutions)),
 	lists:foreach(fun (X) -> ?assert(lists:any(fun (Y) -> duplicate_moves(X, Y) end, Run)) end, Solutions).
 
 
@@ -157,7 +155,6 @@ left_wall_candidate_generate_test() ->
 	%% Should include SABLE, TABLE, ABLER, TABLES, STABLE
 	Solutions = [{move, [{{character, $R}, none, {7,5}}]}],
 
-	?assert(length(Run) =:= length(Solutions)),
 	lists:foreach(fun (X) -> ?assert(lists:any(fun (Y) -> duplicate_moves(X, Y) end, Run)) end, Solutions).
 
 
@@ -199,7 +196,6 @@ top_wall_candidate_generate_test() ->
 	%% Should include SABLE, TABLE, ABLER, TABLES, STABLE
 	Solutions = [{move, [{{character, $R}, none, {5,7}}]}],
 
-	?assert(length(Run) =:= length(Solutions)),
 	lists:foreach(fun (X) -> ?assert(lists:any(fun (Y) -> duplicate_moves(X, Y) end, Run)) end, Solutions).
 
 
@@ -221,7 +217,6 @@ bottom_wall_candidate_generate_test() ->
 				{move, [{{character, $T}, none, {11,7}}]},
 				{move, [{{character, $T}, none, {11,7}},{{character, $S}, none, {10,7}}]}],
 
-	?assert(length(Run) =:= length(Solutions)),
 	lists:foreach(fun (X) -> ?assert(lists:any(fun (Y) -> duplicate_moves(X, Y) end, Run)) end, Solutions).
 
 
@@ -350,6 +345,37 @@ sigma_perpendicular_test() ->
  
     ?assert(lists:all(fun (X) -> not move:duplicate_moves(X, ForbiddenMove) end, Moves)),
     ?assert(lists:all(fun (X) -> not move:duplicate_moves(X, Forbidden2) end, Moves)).
+
+
+%% Another incorrect move generation, from not checking neighbors in same plane.
+stigma_peps_test() ->
+   	Search = movesearch:get_best_move_function(parse(?TESTDICT)),
+   	LetterPlacements = [{"ABLE", right, {7,7}}, 
+                        {"Z", down, {6,9}}, 
+                        {"OTYS", down, {8,9}},
+                        {"IZY", right, {11,10}}],
+    FirstBoard = lists:foldl(fun ({Word, Dir, Loc}, Accum) -> place_word(Word, Dir, Loc, Accum) end, new_board(), LetterPlacements), 
+    Rack = "SIGMAT",
+
+    Moves = Search(FirstBoard, Rack),
+    ForbiddenMove = {move, [{{character, $S}, none, {8,3}},
+                            {{character, $T}, double_letter_score, {8,4}},
+                            {{character, $I}, none, {8,5}},
+                            {{character, $G}, none, {8,6}},
+                            {{character, $M}, none, {8,7}},
+                            {{character, $A}, double_word_score, {8,8}}]},
+
+    ?assert(lists:all(fun (X) -> not move:duplicate_moves(X, ForbiddenMove) end, Moves)),
+    
+    NextBoard = place_word("MIR", down, {8,11}, place_word("AS", down, {12,11}, FirstBoard)),
+    NewMoves = Search(NextBoard, "SLTNPEP"), % Salt-n-Pepa's here!
+    
+    Forbidden2 = {move, [{{character, $P}, none, {4,11}},
+                         {{character, $E}, none, {5,11}},
+                         {{character, $P}, none, {6,11}},
+                         {{character, $S}, none, {7,11}}]},
+
+    ?assert(lists:all(fun (X) -> not move:duplicate_moves(X, Forbidden2) end, NewMoves)).
 
 
 island_1_test() ->

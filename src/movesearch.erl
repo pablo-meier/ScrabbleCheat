@@ -197,13 +197,42 @@ create_origin_followstructs(ThisTriple, Board) ->
 %% Gives us a start point from which to generate moves that hook in a perpendicular
 %% fashion, rather than in the direction facing outward.
 make_perpendicular_followstructs(Followstruct, Master) ->
+    %% We first get the set of acceptable keys for our 'parallel' direction.
     Tile = get_followstruct_tile(Followstruct),
     Board = get_followstruct_board(Followstruct),
     Direction = get_followstruct_direction(Followstruct),
 
+    %% We then see if we're attached to another Zoomtile (being directly adjacent to another
+    %% parallel move, for instance.  
     [Perpendicular|_] = orthogonals(Direction),
     BackPerpendicular = to_beginning(Perpendicular),
-    {make_followstruct(Tile, BackPerpendicular, Master, Board, new_move()), Tile}.
+    FrontPerpendicular = flip(BackPerpendicular),
+    case get_adjacent(Tile, Board, FrontPerpendicular) of
+        none -> {make_followstruct(Tile, BackPerpendicular, Master, Board, new_move()), Tile};
+        AdjacentTile ->
+            case is_occupied(AdjacentTile) of
+                false -> {make_followstruct(Tile, BackPerpendicular, Master, Board, new_move()), Tile};
+                true ->
+                    %% If so, we zoom to the bottom and travel our way up.
+                    NewZoomtile = zoom(AdjacentTile, FrontPerpendicular, Board),
+                    OtherFollow = travel(NewZoomtile, BackPerpendicular, Master, Board),
+                    NewGaddag = get_followstruct_gaddag(OtherFollow),
+
+                    %% Finally, we create the new gaddag by getting the set intersection of both sets of acceptable 
+                    %% keys, and pruning the Gaddag to disallow anything else.
+                    Gaddag = get_followstruct_gaddag(Followstruct),
+                    Constraints = gaddag:keys(Gaddag),
+                    PrunedGaddag = foldl(fun (Key,Accum) -> 
+                                             case lists:any(fun (X) -> X =:= Key end, Constraints) of 
+                                                 true -> Accum;
+                                                 false -> gaddag:delete_branch(Key, Accum)
+                                             end
+                                       end, NewGaddag, gaddag:keys(NewGaddag)),
+                    {make_followstruct(Tile, BackPerpendicular, PrunedGaddag, Board, new_move()), NewZoomtile}
+             end
+    end.
+
+   
 
 
 %% get_moves_from_candidate :: FollowStruct * Tile * [Char] * Move * [Move] -> [Move]

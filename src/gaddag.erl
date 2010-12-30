@@ -24,6 +24,7 @@
          empty_gaddag/0, 
          has_branch/2, 
          get_branch/2, 
+         delete_branch/2,
          has_word/2,
          is_terminator/1,
          naive_path_search/2,
@@ -33,7 +34,7 @@
 -define(WILDCARD, $*).
 -define(SEPARATOR, $&).
 
--import(gb_trees, [empty/0, lookup/2, is_defined/2, enter/3, to_list/1]).
+-import(gb_trees, [empty/0, delete/2, lookup/2, is_defined/2, enter/3, to_list/1]).
 -import(lists, [filter/2, reverse/1, foldl/3]).
 -import(string, [concat/2]).
 
@@ -47,6 +48,14 @@
 %% Asks whether the subtree (GADDAG) contains a branch for the parameter.
 has_branch(Char, Trie) ->
     is_defined(Char, Trie).
+
+
+%% delete_branch :: Char * Gaddag -> Gaddag
+%%
+%% Prunes a key from a gaddag, returning the gaddag with all other keys intact.
+%% Assumes the key exists, crashes otherwise.
+delete_branch(Key, Gaddag) ->
+    gb_trees:delete(Key, Gaddag).
 
 
 %% get_branch :: Char * Trie -> Trie
