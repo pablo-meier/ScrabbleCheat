@@ -581,10 +581,10 @@ class Painter
                         menu_item_index += 1 
                     end
                when Ncurses::KEY_UP
-                   if menu_item_index > 0 
-                       Ncurses::Menu.menu_driver(menuwin[:menu], Ncurses::Menu::REQ_UP_ITEM)
-                       menu_item_index -= 1 
-                   end
+                    if menu_item_index > 0 
+                        Ncurses::Menu.menu_driver(menuwin[:menu], Ncurses::Menu::REQ_UP_ITEM)
+                        menu_item_index -= 1 
+                    end
                 when KEY_ENTER, ?1, CHARACTER_CR, CHARACTER_LF
                     break
                 else  :do_nothing
@@ -593,8 +593,8 @@ class Painter
             menuwin[:menu].set_current_item(menuwin[:items][menu_item_index])
             curr_move = moves[index][:move]
             boardwin.wclear
-#            self.paint_board_win(board, boardwin)
-#            curr_move.each { |tile| draw_tile(tile, boardwin) }
+            self.paint_board_win(board, boardwin)
+            curr_move.each { |tile| draw_tile(tile, boardwin) }
             Ncurses.redrawwin(boardwin)
             Ncurses.redrawwin(menuwin[:window])
             Ncurses.wrefresh(boardwin)
