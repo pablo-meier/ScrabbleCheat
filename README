@@ -63,6 +63,12 @@ Check out these git tags for particular milestones in the project.
   returns a list of words you can generate with those letters.  Use '*' is 
   for a wildcard.
 
+* GADDAG_WITH_CLIENT -> The first "real" "release," a simple ncurses UI
+  is provided to communicate to the Erlang backend, which allows you to
+  either add moves (such as your opponent's) or query the game for the
+  4 highest scoring moves given a rack.  Requires ncurses-ruby 
+  package to use the client. 
+
 ##################
 ### Branches
 
