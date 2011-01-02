@@ -550,9 +550,12 @@ class Painter
 
         move_items = []
         0.upto(moves.length - 1) do |index|
-            move_score = moves[index][:score].to_s
+            curr_move = moves[index]
+            board_copy = board.deep_copy
+            board_copy.place_move(curr_move)
+            move_name = get_move_name(curr_move, board_copy)
             access_index = index.to_s
-            move_items << {:name => move_score, :retval => access_index}
+            move_items << {:name => move_name, :retval => access_index}
         end
         move_menu_spec[:items] = move_items
  
@@ -638,6 +641,70 @@ class Painter
          win.mvprintw(y[0], x[0], "%s", string);
          win.attroff(color);
          Ncurses.refresh();
+    end
+
+
+    # Given a move (a hash), return a name for it's label.  This should
+    # be the "primary" word it makes, and the score.
+    def get_move_name(movehash, board)
+        move = movehash[:move]
+        score = movehash[:score]
+        orientation = nil
+
+        # Find the orientation: 
+        #   If move is two or more tiles, check two tiles of the move and see what plane they are on.
+        #   Else, check adjacents.
+        if move.length > 1 
+            component1, component2 = move[0], move[1]
+            if component1[:row] == component2[:row]
+                orientation = :horizontal
+            else
+                orientation = :vertical
+            end
+        elsif 
+            row = move[0][:row] 
+            col = move[0][:col]
+            if board[row][col - 1][:letter] != :none || board[row][col + 1][:letter] != :none
+                orientation = :horizontal
+            else
+                orientation = :vertical
+            end
+        end
+
+        # Zoom as far back, trace the word
+        row, col = move[0][:row], move[0][:col]
+        currtile = board[row][col]
+        if orientation == :horizontal
+            while currtile[:letter] != :none && col != 0 do
+                 col -= 1
+                 currtile = board[row][col]
+            end
+            namestring = ""
+            col += 1 if currtile[:letter] == :none
+            currtile = board[row][col]
+
+            while currtile[:letter] != :none && col != 16 do
+                namestring += currtile[:letter]
+                col += 1
+                currtile = board[row][col]
+            end
+            namestring + " -- " + score.to_s
+        else
+            while currtile[:letter] != :none && row != 0 do
+                 row -= 1
+                 currtile = board[row][col]
+            end
+            namestring = ""
+            row += 1 if currtile[:letter] == :none
+            currtile = board[row][col]
+
+            while currtile[:letter] != :none && row != 16 do
+                namestring += currtile[:letter]
+                row += 1
+                currtile = board[row][col]
+            end
+            namestring + " -- " + score.to_s
+        end
     end
 
 
