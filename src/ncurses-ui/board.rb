@@ -50,4 +50,24 @@ class Board
         end
     end
 
+
+    # Places a move on this board.  Note that move is the move hash,
+    # including score.
+    def place_move(movehash)
+        movetiles = movehash[:move]
+        movetiles.each do |tile|
+            row, col = tile[:row], tile[:col] 
+            @tiles[row][col] = tile
+        end
+        :done
+    end
+
+    # Object.dup or Object.clone provide shallow copies, which is 
+    # great unless you want to modify @tiles... which is almost certainly
+    # what you want to do.  This provides a real copy of the board.  
+    def deep_copy
+        Marshal.load(Marshal.dump(self))
+    end
+
+
 end
