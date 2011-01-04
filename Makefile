@@ -15,6 +15,7 @@ ERLC = erlc
 ERLC_SRC_FLAGS = -v -o $(BUILD_BEAM_DIR) -pa $(SRCDIR)
 ERLC_TEST_FLAGS = -v -o $(BUILD_TEST_DIR) -pa $(SRCDIR) -pa $(LIBDIR) -pz $(TESTDIR)
 
+THRIFT_PATH = $(LIBDIR)/ScrabbleCheat.thrift
 
 ERL = erl
 ERL_INCLUDE_FLAGS = -pa $(BUILD_BEAM_DIR)
@@ -58,7 +59,11 @@ shell: compile
 binary-gaddag: compile
 	$(ERL_RUN) -run main make_binary_gaddag $(ERL_END)
 
-compile: prepare
+thrift-classes: 
+	thrift -o $(BUILDDIR) --gen erl $(THRIFT_PATH)
+	thrift -o $(BUILDDIR) --gen rb $(THRIFT_PATH)
+
+compile: prepare thrift-classes
 	$(ERLC) $(ERLC_SRC_FLAGS) $(SRCDIR)/*.erl
 
 compile-tests: 
