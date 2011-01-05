@@ -19,8 +19,6 @@ Features:
         - Substitute your crappy client for a full ScrabbleCheat::ScrabbleCheat::Client
 
 
-    - Connections between 'islands:' when you build a bridge between two words to
-      build a longer, more impressive word.
     - Critical optimizations
     - Move selection (after generation, likely start out with naive high score).
     - UI. Curses/Nitrogen? CURSES.
@@ -36,6 +34,7 @@ Features:
         - TEST TEST TEST.  Handle incorrect input/gamestates
 
 	- Optimize Wildcards/Movesearch.
+	    - PROFILE DAT
 	    - nlogn duplication removal (currently n^2).
 	    - Only check half as many candidates by looking for border cases.
     - Integrate the bug list with the Github issue tracker?
@@ -78,3 +77,7 @@ CLIENT
     - HOLY SHIT REFACTOR
         - At the very least, generalize board printing code with some kind of board_window coordinates, 
           rather than duplicating  your hackey logic everywhere (most areas that print to the board).
+
+GENERAL
+
+    - Update/create this file dynamically with git issues API.
