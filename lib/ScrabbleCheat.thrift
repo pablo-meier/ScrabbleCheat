@@ -77,28 +77,48 @@ struct Gamestate {
 }
 
 
+/**
+ * Called when a client asks for moves with a bad rack -- empty, containing bad characters, too many chars, etc.
+ */ 
+exception BadRackException {
+    1: string reprimand,
+}
+
+/**
+ * Called when a client asks for moves with a bad board -- Invalid state, wrong size, etc.
+ */
+exception BadBoardException {
+    1: string reprimand,
+}
+
+exception BadMoveException { 1: string reprimand, }
+exception BadGamestateException { 1: string reprimand, }
+exception BadNamelistException { 1: string reprimand, }
+
 service ScrabbleCheat {
 
     /**
      * Initiates a new game with the server.  This creates a new empty gamestate with the specified players.
      */
-    Gamestate new_game(1: list<string> players),
+    Gamestate new_game(1: list<string> players)
+                throws(1: BadNamelistException boo),
 
 
     /**
      * Plays the specified move on the board, for the player.
      */
-    Gamestate play_move(1: list<Tile> tiles, 2: Gamestate gamestate),
+    Gamestate play_move(1: list<Tile> tiles, 2: Gamestate gamestate)
+                 throws(1: BadMoveException boo, 2: BadGamestateException urns),
 
 
     /**
      * The good stuff.  Get a list of moves given a rack and a board.
      */
-    list<Move> get_scrabblecheat_suggestions(1: string rack, 2: Board board),
+    list<Move> get_scrabblecheat_suggestions(1: string rack, 2: Board board) 
+                                     throws (1: BadRackException boo, 2: BadBoardException urns),
 
     /**
      * Tells the server we're done here.
      */
-    void quit()
-
+    oneway void quit()
 }

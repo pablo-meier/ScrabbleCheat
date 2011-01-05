@@ -1,13 +1,11 @@
 ------
 SHORT-TERM:
 
-Features:
     - Allow for null moves/lost turns
     - Undo
-    - Multiple clients no breakey.
-    - BINGOS!  (+ 50)
+    - Multiple clients no breakey. (Solved by Thrift?)
 
-    - Use Thrift, instead of your crappy-ass homebrew serialization/deserializtion scheme.
+    - Use Thrift, instead of your crappy-ass homebrew serialization/deserialization scheme.
       It's a hack where you gave much more than it deserved.
         - Make the spec file. DONE
         - Generate the client/server code with calls to Thrift. DONE
@@ -18,8 +16,6 @@ Features:
         - Substitute your crappy server for a full thrift_socket_server
         - Substitute your crappy client for a full ScrabbleCheat::ScrabbleCheat::Client
 
-
-    - Critical optimizations
     - Move selection (after generation, likely start out with naive high score).
     - UI. Curses/Nitrogen? CURSES.
        - FINNISH HYMN!
@@ -37,9 +33,8 @@ Features:
 	    - PROFILE DAT
 	    - nlogn duplication removal (currently n^2).
 	    - Only check half as many candidates by looking for border cases.
-    - Integrate the bug list with the Github issue tracker?
+    - Integrate the bug list/this file with the Github issue tracker, API?
 
-Code Quality:
 
 SERVER
     - Better, more rigorous testing.  Mostly in movesearches, and the most recent features (wildcards, 
@@ -70,14 +65,12 @@ SERVER
 
 
 CLIENT
-    - Allow save games.
+    - Undo/back.
+    - Allow a turn to pass/skip.
+    - Allow save/resume games.
     - Allow to check move validity on play_move.
     - Show history.
 
-    - HOLY SHIT REFACTOR
+    - HOLY SHIT REFACTOR (if you want to preserve the client at all)
         - At the very least, generalize board printing code with some kind of board_window coordinates, 
           rather than duplicating  your hackey logic everywhere (most areas that print to the board).
-
-GENERAL
-
-    - Update/create this file dynamically with git issues API.
