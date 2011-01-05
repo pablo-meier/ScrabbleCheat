@@ -94,6 +94,11 @@ service ScrabbleCheat {
     /**
      * The good stuff.  Get a list of moves given a rack and a board.
      */
-    list<Move> get_scrabblecheat_suggestions(1: string rack, 2: Board board)
+    list<Move> get_scrabblecheat_suggestions(1: string rack, 2: Board board),
+
+    /**
+     * Tells the server we're done here.
+     */
+    void quit()
 
 }
