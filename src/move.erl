@@ -20,6 +20,9 @@
 
 -module(move).
 
+-define(SCRABBLE_RACK_SIZE, 7).
+-define(SCRABBLE_BINGO_BONUS, 50).
+
 -import(tile, [get_tile_letter/1, is_wildcard/1, get_tile_location/1, is_occupied/1, get_tile_bonus/1, duplicate_tile/2]).
 -import(board, [place_move_on_board/2, to_beginning/1, orthogonals/1, get_adjacent/3, zoom/3, flip/1]).
 -import(lists, [foldl/3, filter/2, any/2, map/2]).
@@ -91,7 +94,20 @@ score(Move, Board) ->
     %% Calculate the score of any Perpendicular moves 
     Perpendiculars = score_perpendiculars(StartTile, Forward, MockBoard, Lst, 0),
 
-    Original + Perpendiculars.
+    Original + Perpendiculars + get_bingo_bonus(Lst).
+
+
+%% get_bingo_bonus :: [Tile] -> Int
+%%
+%% Returns bonus points if this move is a 'bingo': where it uses and player's
+%% entire rack. TODO:  If we make the AI game-agnostic (say, using Lexulous rules)
+%% this is a spot where we need to add a check, since some other games have more than
+%% 7 tiles in a rack.
+get_bingo_bonus(List) ->
+    case length(List) of
+        ?SCRABBLE_RACK_SIZE -> ?SCRABBLE_BINGO_BONUS;
+        _Else -> 0
+    end.
 
 
 %% get_move_orientation :: [Tile] -> horizontal | vertical
