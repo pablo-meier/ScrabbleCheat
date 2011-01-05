@@ -18,6 +18,10 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
+
+$:.push('build/gen-rb')
+$:.unshift('lib/thrift-rb')
+
 require 'serialization.rb'
 
 
