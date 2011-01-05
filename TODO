@@ -9,10 +9,14 @@ Features:
 
     - Use Thrift, instead of your crappy-ass homebrew serialization/deserializtion scheme.
       It's a hack where you gave much more than it deserved.
-        - Make the spec file.
-        - Compile the client/server.
-        - Add it into build scripts.
-        - Update test cases.
+        - Make the spec file. DONE
+        - Generate the client/server code with calls to Thrift. DONE
+        - Add the necessary binary files to lib/ DONE
+        - Compile the newly-built Erlang files to .beam DONE
+        - Add all compilation/building of new components to build system. DONE
+        - Test cases?
+        - Substitute your crappy server for a full thrift_socket_server
+        - Substitute your crappy client for a full ScrabbleCheat::ScrabbleCheat::Client
 
 
     - Connections between 'islands:' when you build a bridge between two words to

@@ -12,10 +12,16 @@ SRCDIR = src
 LIBDIR = lib
 ERLC = erlc
 
-ERLC_SRC_FLAGS = -v -o $(BUILD_BEAM_DIR) -pa $(SRCDIR)
-ERLC_TEST_FLAGS = -v -o $(BUILD_TEST_DIR) -pa $(SRCDIR) -pa $(LIBDIR) -pz $(TESTDIR)
-
 THRIFT_PATH = $(LIBDIR)/ScrabbleCheat.thrift
+
+ERL_THRIFT_INCLUDE = $(LIBDIR)/thrift-erl
+ERL_THRIFT_SRC_OUTPUT = $(BUILDDIR)/gen-erl
+ERL_THRIFT_BEAM_OUTPUT = $(BUILDDIR)/thrift-beam
+ERL_THRIFT_INCLUDES = -I $(ERL_THRIFT_INCLUDE) -I $(ERL_THRIFT_SRC_OUTPUT)
+ERL_THRIFT_COMPILE_FLAGS = -o $(ERL_THRIFT_BEAM_OUTPUT) $(ERL_THRIFT_INCLUDES)
+
+ERLC_SRC_FLAGS = -v -o $(BUILD_BEAM_DIR) -pa $(SRCDIR) $(ERL_THRIFT_INCLUDES) -pa $(ERL_THRIFT_BEAM_OUTPUT)
+ERLC_TEST_FLAGS = -v -o $(BUILD_TEST_DIR) -pa $(SRCDIR) -pa $(LIBDIR) -pz $(TESTDIR)
 
 ERL = erl
 ERL_INCLUDE_FLAGS = -pa $(BUILD_BEAM_DIR)
@@ -47,11 +53,12 @@ test-server: compile compile-tests
 	$(ERL) $(ERL_TEST_FLAGS) $(ERL_FLAGS) -run tile_test test $(ERL_END)
 	$(ERL) $(ERL_TEST_FLAGS) $(ERL_FLAGS) -run gamestate_test test $(ERL_END)
 
-all: binary-gaddag test run
+all: compile-all test run
+
+compile-all: binary-gaddag thrift-classes compile compile-tests
 
 run: compile
 	./start_server.sh
-	#$(ERL_RUN) -run main main 
   
 shell: compile
 	$(ERL) $(ERL_TEST_FLAGS) $(ERL_INCLUDE_FLAGS)
@@ -59,9 +66,10 @@ shell: compile
 binary-gaddag: compile
 	$(ERL_RUN) -run main make_binary_gaddag $(ERL_END)
 
-thrift-classes: 
+thrift-classes: prepare
 	thrift -o $(BUILDDIR) --gen erl $(THRIFT_PATH)
 	thrift -o $(BUILDDIR) --gen rb $(THRIFT_PATH)
+	$(ERLC) $(ERL_THRIFT_COMPILE_FLAGS) $(ERL_THRIFT_SRC_OUTPUT)/*.erl
 
 compile: prepare thrift-classes
 	$(ERLC) $(ERLC_SRC_FLAGS) $(SRCDIR)/*.erl
@@ -70,7 +78,7 @@ compile-tests:
 	$(ERLC) $(ERLC_TEST_FLAGS) $(TESTDIR)/*.erl
 
 prepare:
-	test -d $(BUILDDIR) || mkdir -p $(BUILD_BEAM_DIR) $(BUILD_TEST_DIR)
+	test -d $(BUILDDIR) || mkdir -p $(BUILD_BEAM_DIR) $(BUILD_TEST_DIR) $(ERL_THRIFT_BEAM_OUTPUT)
 
 clean:
 	test -d $(BUILDDIR) && rm -rf $(BUILDDIR)
