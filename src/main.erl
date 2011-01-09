@@ -19,6 +19,7 @@
 %% THE SOFTWARE.
 
 -module(main).
+
 -import(movesearch, [get_best_move_function/1]).
 -import(dict_parser, [parse/1, output_to_file/2]).
 -import(board, [print_board/1, place_move_on_board/2]).
@@ -34,17 +35,121 @@
 -define(TCP_OPTIONS, [binary, {packet, 0}, {active, false}, {reuseaddr, true}]).
 -define(PORT, 6655). %% Hard coded for testing, can make this command-line option.
 
+
+-include("scrabbleCheat_thrift.hrl").
+
+
 -export([main/0,
-         make_binary_gaddag/0]).
 
-%% Eventually the main program, right now just a testing runtime while I get
-%% move generation/selection up.
+        start/0,
+        start/1,
+        stop/1,
+        handle_function/2,
+        new_game/1,
+        play_move/2,
+        get_scrabblecheat_suggestions/2,
+        quit/0,
+
+        make_binary_gaddag/0]).
+
+
+%% make_binary_gaddag :: () -> File ()
+%%
+%% The program can be invoked to build the data structures and save them disk
+%% ahead of time.
+make_binary_gaddag() ->
+    output_to_file(?LARGE_DICT_FILE, ?DICT_BIN_PATH).
 
 
 
+
+%% start :: () -> ()
+%%
+%% Starts a new ScrabbleCheat server on the default port.
+start() ->
+    start(?PORT).
+
+
+%% start :: Int -> ()
+%%
+%% Starts a new ScrabbleCheat server on the parametrized port.  Follows the 
+%% example of the Mighty Mighty Todd Lipcon on his Thrift tutorial.  Todd 
+%% Lipcon is a Boss, if you didn't know.
+start(Port) ->
+    Handler = ?MODULE,
+    thrift_socket_server:start([{handler, Handler},
+                                {service, scrabbleCheat_thrift},
+                                {port, Port},
+                                {name, scrabbleCheat_server}]).
+
+%% stop :: (or Name Pid) -> ()
+%%
+%% Stops the server named by the parameter, or its Pid.
+stop(Server) ->
+    thrift_socket_server:stop(Server).
+
+
+handle_function(Function, Args) when is_atom(Function), is_tuple(Args) ->
+    case apply(?MODULE, Function, tuple_to_list(Args)) of
+        ok -> ok;
+        Reply -> {reply, Reply}
+    end.
+
+
+debug(Format, Data) ->
+    error_logger:info_msg(Format, Data).
+
+
+%% new_game :: [String] -> Gamestate
+%%
+%% Given a list of players, return a fresh gamestate to start a new game.  
+%% Throws BadNamelistException if the list is empty, or the player's names are
+%% too long.
+new_game(Playerlist) ->
+    debug("New Game for ~p~n", Playerlist),
+    Stringlist = lists:map(fun binary_to_list/1, Playerlist),
+    io:format(user, "Input to fresh_gamestate is ~p~n", [Stringlist]),
+    Gamestate = gamestate:fresh_gamestate(Stringlist).
+
+
+%% play_move :: [ThriftTile] * ThriftGamestate -> ThriftGamestate
+%%
+%% Given a set of tiles and a gamestate, returns a new gamestate with the tiles 
+%% placed as a move.  Throws BadMoveException, or BadGamestateException if incoming 
+%% data is bad.
+play_move(Tiles, Gamestate) ->
+    debug("play_move for ~p tiles, and ~p~n", [Tiles, Gamestate]),
+    ok.
+
+
+%% get_scrabblecheat_suggestions :: String * ThriftBoard -> [ThriftMove]
+%%
+%% Given a rack and a board, return a list of Thrift-compliant moves that 
+%% clients can use.  Throws BadRackException and BadBoardException, if your
+%% incoming data sucks.
+get_scrabblecheat_suggestions(Rack, Board) ->
+    debug("get_scrabblecheat_suggestions for rack ~p and board ~p~n", [Rack, Board]),
+    ok.
+
+
+%% quit :: () -> ()
+%%
+%% Receive the quit notification from a client.  Should really take in a Pid or something.
+quit() ->
+    debug("Quit message received.~n", []),
+    ok.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
+%%          "CLASSIC" CODE KEPT UNTIL TRANSITION TO THRIFT IS OVAR!
+%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% main :: () -> IO ()
 %% 
+%% The "classic" routine using my own home-rolled hacktackular server.  We keep this
+%% here for compatibility until the Thrift code can take over safely.
 %% Creates a server and listens for requests for move searches.
 main() ->
     Gaddag = case file:read_file_info(?DICT_BIN_PATH) of
@@ -69,13 +174,6 @@ loop(LSocket, Search) ->
 
 
 %% handle_connection :: Socket * (String -> [Move]) -> ()
-%%
-%% NOTE:  After a terrible, stupid blip in my memory, I completely forgot
-%%      that Thrift exists for this very problem.  I'm so far down it that
-%%      I've resolved to finish this way, but note that in the future, I'm
-%%      going to turn it back at some point.  That being said, Thrift doesn't
-%%      have AS bindings, which may make it hard to build an AIR wrapper...
-%%      maybe I should add?
 %%
 %% The main socket handler loop, takes incoming directions from
 %% the client and dispatches information appropriately.  The server
@@ -163,6 +261,7 @@ parse_message(Data) ->
     end.
 
 
+
 %% polite_response :: Socket * String -> ()
 %%
 %% Accomodates the 'polite_request' protocol of the Ruby client, where
@@ -175,12 +274,4 @@ polite_response(Socket, Message) ->
         {ok, Something} -> io:format("Whoa!  Got ~p instead!~n", [Something]);
         {error, closed} -> io:format("Error!  Halting.  Goodbye ^_^~n"), terminate
     end.
-
-%% make_binary_gaddag :: () -> File ()
-%%
-%% The program can be invoked to build the data structures and save them disk
-%% ahead of time.
-make_binary_gaddag() ->
-    output_to_file(?LARGE_DICT_FILE, ?DICT_BIN_PATH).
-
 

@@ -8,8 +8,6 @@
 namespace erl ScrabbleCheat
 namespace rb  ScrabbleCheat
 
-typedef i32 int
-
 
 /** 
  * Tells us what kind of letter is in the tile, as this affects scoring.
@@ -40,8 +38,8 @@ enum Bonus {
  * If the tile is empty the string is empty and LetterType is EMPTY.
  */
 struct Tile {
-    1: int row,
-    2: int col,
+    1: byte row,
+    2: byte col,
     3: LetterType type,
     4: string letter,
     5: Bonus bonus,
@@ -55,7 +53,7 @@ typedef list<Tile> Board
 
 struct Move {
     1: list<Tile> move,
-    2: int score,
+    2: i16 score,
 }
 
 struct Turn {
@@ -70,7 +68,7 @@ struct Turn {
  */
 struct Gamestate {
     1: Board board,
-    2: map<string, int> scores,
+    2: map<string, i16> scores,
     3: string player_turn,
     4: list<string> turn_order,
     5: list<Turn> history,

@@ -21,11 +21,11 @@ ERL_THRIFT_INCLUDES = -I $(ERL_THRIFT_INCLUDE) -I $(ERL_THRIFT_SRC_OUTPUT)
 ERL_THRIFT_COMPILE_FLAGS = -o $(ERL_THRIFT_BEAM_OUTPUT) $(ERL_THRIFT_INCLUDES)
 
 ERLC_SRC_FLAGS = -v -o $(BUILD_BEAM_DIR) -pa $(SRCDIR) $(ERL_THRIFT_INCLUDES) -pa $(ERL_THRIFT_BEAM_OUTPUT)
-ERLC_TEST_FLAGS = -v -o $(BUILD_TEST_DIR) -pa $(SRCDIR) -pa $(LIBDIR) -pz $(TESTDIR)
+ERLC_TEST_FLAGS = -v -o $(BUILD_TEST_DIR) -pa $(SRCDIR) -pa $(LIBDIR) -pz $(TESTDIR) $(ERL_THRIFT_INCLUDES)
 
 ERL = erl
 ERL_INCLUDE_FLAGS = -pa $(BUILD_BEAM_DIR)
-ERL_TEST_FLAGS = -pa $(BUILD_TEST_DIR) 
+ERL_TEST_FLAGS = -pa $(BUILD_TEST_DIR) -pa $(ERL_THRIFT_BEAM_OUTPUT) 
 ERL_RUN_FLAGS = -noshell
 
 ERL_FLAGS = $(ERL_INCLUDE_FLAGS) $(ERL_RUN_FLAGS)
@@ -52,6 +52,7 @@ test-server: compile compile-tests
 	$(ERL) $(ERL_TEST_FLAGS) $(ERL_FLAGS) -run serialization_test test $(ERL_END)
 	$(ERL) $(ERL_TEST_FLAGS) $(ERL_FLAGS) -run tile_test test $(ERL_END)
 	$(ERL) $(ERL_TEST_FLAGS) $(ERL_FLAGS) -run gamestate_test test $(ERL_END)
+	$(ERL) $(ERL_TEST_FLAGS) $(ERL_FLAGS) -run server_test test $(ERL_END)
 
 all: compile-all test run
 
@@ -74,7 +75,7 @@ thrift-classes: prepare
 compile: prepare thrift-classes
 	$(ERLC) $(ERLC_SRC_FLAGS) $(SRCDIR)/*.erl
 
-compile-tests: 
+compile-tests: compile
 	$(ERLC) $(ERLC_TEST_FLAGS) $(TESTDIR)/*.erl
 
 prepare:
