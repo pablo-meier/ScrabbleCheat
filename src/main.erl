@@ -108,8 +108,7 @@ debug(Format, Data) ->
 new_game(Playerlist) ->
     debug("New Game for ~p~n", Playerlist),
     Stringlist = lists:map(fun binary_to_list/1, Playerlist),
-    io:format(user, "Input to fresh_gamestate is ~p~n", [Stringlist]),
-    Gamestate = gamestate:fresh_gamestate(Stringlist).
+    thrift_helper:gamestate_to_thrift(gamestate:fresh_gamestate(Stringlist)).
 
 
 %% play_move :: [ThriftTile] * ThriftGamestate -> ThriftGamestate

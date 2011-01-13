@@ -31,6 +31,7 @@
          get_tile_bonus/1,
          get_tile_location/1,
          set_tile_letter/2,
+         get_tile_letter_type/1,
          set_tile_letter_type/2,
          set_tile_bonus/2,
          set_tile_location/2,
@@ -57,6 +58,8 @@ get_tile_letter({none, _, _}) -> none.
 
 get_tile_bonus({_, Bonus, _}) -> Bonus.
 get_tile_location({_, _, Location}) -> Location.
+
+get_tile_letter_type({{LetterType, _}, _, _}) -> LetterType.
 
 
 is_wildcard({{wildcard,_}, _, _}) -> true;
