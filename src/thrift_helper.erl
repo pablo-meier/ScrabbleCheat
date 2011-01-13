@@ -44,12 +44,12 @@ gamestate_to_thrift(Gamestate) ->
     Turn = get_gamestate_turn(Gamestate),
     History = get_gamestate_history(Gamestate),
 
-    ThriftBoard = lists:map(fun native_to_thrift_tile/1, board:as_list(Board)),
+    ThriftBoard = lists:map(fun native_to_thrift_tile/1, lists:flatten(board:as_list(Board))),
     ThriftScores = dict:from_list(Scores),
     ThriftTurnOrder = lists:map(fun ({Name,_}) -> Name end, Scores),
     ThriftHistory = lists:map(fun ({Name, Move, Score}) ->
                                   MoveList = lists:map(fun native_to_thrift_tile/1, Move),
-                                  ThriftMove = {move, MoveList, Score},
+                                  ThriftMove = {move, {MoveList, Score}},
                                   {turn, ThriftMove, Name}
                               end, History),
     {gamestate, ThriftBoard, ThriftScores, Turn, ThriftTurnOrder, ThriftHistory}.

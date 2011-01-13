@@ -62,10 +62,9 @@ new_game_test() ->
     {Client1, {ok, Gamestate}} = thrift_client:call(Client0, new_game, [["Paul", "Sam"]]),
     #gamestate{board = Board, scores = Scores, player_turn = CurrentTurn} = Gamestate,
     #gamestate{turn_order = TurnOrder, history = History} = Gamestate,
-    io:format(user, "A Map looks like ~p~n", [Scores]),
-    ?assert(string:equal(CurrentTurn, "Paul")),
+    ?assert(string:equal(CurrentTurn, <<"Paul">>)),
     ?assert(length(History) =:= 0),
-    ?assert(TurnOrder =:= ["Paul", "Sam"]),
+    ?assert(TurnOrder =:= [<<"Paul">>, <<"Sam">>]),
     teardown(ServerName).
 
 

@@ -59,6 +59,7 @@ get_tile_letter({none, _, _}) -> none.
 get_tile_bonus({_, Bonus, _}) -> Bonus.
 get_tile_location({_, _, Location}) -> Location.
 
+get_tile_letter_type({none, _, _}) -> none;
 get_tile_letter_type({{LetterType, _}, _, _}) -> LetterType.
 
 
