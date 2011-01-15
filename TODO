@@ -12,10 +12,14 @@ SHORT-TERM:
         - Add the necessary binary files to lib/ DONE
         - Compile the newly-built Erlang files to .beam DONE
         - Add all compilation/building of new components to build system. DONE
-        - Test cases?
+        - Substitute your crappy server for a full thrift_socket_server DONE
+        - Functionality/Test cases?
           - Include tests of exceptions!
-        - Substitute your crappy server for a full thrift_socket_server
         - Substitute your crappy client for a full ScrabbleCheat::ScrabbleCheat::Client
+        - Functionality/Test cases?
+          - Include tests of exceptions!
+        - Remove crappy server, crappy client
+        - Test, commit, merge, push!
 
     - Move selection (after generation, likely start out with naive high score).
     - UI. Curses/Nitrogen? CURSES.

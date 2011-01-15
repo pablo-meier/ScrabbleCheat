@@ -108,17 +108,21 @@ debug(Format, Data) ->
 new_game(Playerlist) ->
     debug("New Game for ~p~n", Playerlist),
     Stringlist = lists:map(fun binary_to_list/1, Playerlist),
-    thrift_helper:gamestate_to_thrift(gamestate:fresh_gamestate(Stringlist)).
+    Gamestate = gamestate:fresh_gamestate(Stringlist),
+    thrift_helper:gamestate_to_thrift(Gamestate).
 
 
 %% play_move :: [ThriftTile] * ThriftGamestate -> ThriftGamestate
 %%
 %% Given a set of tiles and a gamestate, returns a new gamestate with the tiles 
 %% placed as a move.  Throws BadMoveException, or BadGamestateException if incoming 
-%% data is bad.
+%% data is invalid.
 play_move(Tiles, Gamestate) ->
     debug("play_move for ~p tiles, and ~p~n", [Tiles, Gamestate]),
-    ok.
+    NativeTiles = lists:map(fun thrift_helper:thrift_to_native_tile/1, Tiles),
+    NativeGamestate = thrift_helper:thrift_to_gamestate(Gamestate),
+    WithMove = gamestate:play_move(NativeGamestate, NativeTiles),
+    thrift_helper:gamestate_to_thrift(WithMove).
 
 
 %% get_scrabblecheat_suggestions :: String * ThriftBoard -> [ThriftMove]

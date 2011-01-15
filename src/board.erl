@@ -52,7 +52,8 @@
          serialize/1,
          deserialize/1,
          place_word/4,
-         as_list/1]).
+         as_list/1,
+         from_list/1]).
 
 %% The actual board datatype.  Queried lots to generate moves.
 
@@ -271,7 +272,13 @@ serialize(Board) ->
 %%
 %% Turns a serialized string back into the board datatype.
 deserialize(BoardString) ->
-    BigList = serialization:deserialize_list(BoardString, fun tile:deserialize/1),
+    from_list(serialization:deserialize_list(BoardString, fun tile:deserialize/1)).
+
+
+%% from_list :: [Tile] -> Board
+%%
+%% Creates a board from a list of tiles.  Note that the list MUST be the correct size.
+from_list(BigList) ->
     ListOfLists = recursive_split_lists(0, BigList, []),
     ListOfArrays = lists:map(fun (X) -> array:fix(array:from_list(X)) end, ListOfLists),
     array:fix(array:from_list(ListOfArrays)).

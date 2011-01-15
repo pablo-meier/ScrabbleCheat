@@ -59,13 +59,49 @@ teardown(ServerName) ->
 
 new_game_test() ->
     {ok, ServerName, Client0} = setup(),
-    {Client1, {ok, Gamestate}} = thrift_client:call(Client0, new_game, [["Paul", "Sam"]]),
-    #gamestate{board = Board, scores = Scores, player_turn = CurrentTurn} = Gamestate,
+    {_Client1, {ok, Gamestate}} = thrift_client:call(Client0, new_game, [["Paul", "Sam"]]),
+    #gamestate{board = _Board, scores = _Scores, player_turn = CurrentTurn} = Gamestate,
     #gamestate{turn_order = TurnOrder, history = History} = Gamestate,
     ?assert(string:equal(CurrentTurn, <<"Paul">>)),
     ?assert(length(History) =:= 0),
     ?assert(TurnOrder =:= [<<"Paul">>, <<"Sam">>]),
     teardown(ServerName).
 
+
+
+play_move_test() ->
+    {ok, ServerName, Client0} = setup(),
+    {Client1, {ok, Fresh}} = thrift_client:call(Client0, new_game, [["Paul", "Sam"]]),
+    TileList = [tile:new_tile({character, $A},double_letter_score,7,7), 
+                tile:new_tile({character, $B},none,7,8), 
+                tile:new_tile({character, $L},double_letter_score,7,9), 
+                tile:new_tile({character, $E},none,7,10)], 
+    ThriftTileList = lists:map(fun thrift_helper:native_to_thrift_tile/1, TileList),
+    Score = 8,
+    {_Client2, {ok, Gamestate}} = thrift_client:call(Client1, play_move, [ThriftTileList, Fresh]),
+
+    #gamestate{board = Board, scores = Scores, player_turn = CurrentTurn} = Gamestate,
+    #gamestate{turn_order = TurnOrder, history = History} = Gamestate,
+
+    NativeBoard = thrift_helper:thrift_to_native_board(Board),
+    ?assert(tile:is_occupied(board:get_tile(7,7, NativeBoard))),
+    ?assert(tile:is_occupied(board:get_tile(7,8, NativeBoard))),
+    ?assert(tile:is_occupied(board:get_tile(7,9, NativeBoard))),
+    ?assert(tile:is_occupied(board:get_tile(7,10, NativeBoard))),
+    ?assert(not tile:is_occupied(board:get_tile(7,11, NativeBoard))),
+    
+    ?assert(dict:fetch(<<"Paul">>, Scores) =:= Score),
+    ?assert(dict:fetch(<<"Sam">>, Scores) =:= 0),
+ 
+    ?assert(string:equal(CurrentTurn, <<"Sam">>)),
+    ?assert(TurnOrder =:= [<<"Paul">>, <<"Sam">>]),
+
+    ?assert(length(History) =:= 1),
+    {turn, {move, Move, ReturnedScore}, Player} = hd(History),
+    ?assert(Move =:= ThriftTileList),
+    ?assert(<<"Paul">> =:= Player),
+    ?assert(ReturnedScore =:= Score),
+   
+    teardown(ServerName).
 
 

@@ -29,7 +29,13 @@
                     make_gamestate/4]).
 
 -export([gamestate_to_thrift/1,
-         thrift_to_gamestate/1]).
+         thrift_to_gamestate/1,
+
+         %% I don't really want to export these, but the tests need them :-/
+         native_to_thrift_tile/1,
+         thrift_to_native_tile/1,
+         native_to_thrift_board/1,
+         thrift_to_native_board/1]).
 
 
 %% gamestate_to_thrift :: Gamestate -> ThriftGamestate
@@ -44,7 +50,7 @@ gamestate_to_thrift(Gamestate) ->
     Turn = get_gamestate_turn(Gamestate),
     History = get_gamestate_history(Gamestate),
 
-    ThriftBoard = lists:map(fun native_to_thrift_tile/1, lists:flatten(board:as_list(Board))),
+    ThriftBoard = native_to_thrift_board(Board),
     ThriftScores = dict:from_list(Scores),
     ThriftTurnOrder = lists:map(fun ({Name,_}) -> Name end, Scores),
     ThriftHistory = lists:map(fun ({Name, Move, Score}) ->
@@ -58,12 +64,32 @@ gamestate_to_thrift(Gamestate) ->
 %% thrift_to_gamestate :: ThriftGamestate -> Gamestate
 %%
 %% Converts a Thrift gamestate into one of ours.
-thrift_to_gamestate(#gamestate{board = _Board, 
-                               scores = _Scores, 
-                               player_turn = _Turn, 
-                               turn_order = _Order, 
-                               history = _History}) ->
-    ok.
+thrift_to_gamestate(#gamestate{board = Board, 
+                               scores = Scores, 
+                               player_turn = Turn, 
+                               turn_order = Order, 
+                               history = History}) ->
+    NativeBoard = thrift_to_native_board(Board),
+    NativeScores = lists:map(fun (<<Name>> = Curr) -> 
+                                 Score = dict:fetch(Curr, Scores),
+                                 {Name, Score}
+                             end, Order),
+    <<NativeTurn>> = Turn,
+    NativeHistory = lists:map(fun (X) ->
+                                  {turn, {move, Tiles, Score}, <<Name>>} = X,
+                                  TileList = lists:map(fun thrift_to_native_tile/1, Tiles),
+                                  {Name, TileList, Score}
+                              end, History),
+    gamestate:make_gamestate(NativeBoard, NativeScores, NativeTurn, NativeHistory).
+
+
+
+thrift_to_native_board(ThriftBoard) ->
+    board:from_list(lists:map(fun thrift_to_native_tile/1, ThriftBoard)).
+
+native_to_thrift_board(Board) ->
+    lists:map(fun native_to_thrift_tile/1, lists:flatten(board:as_list(Board))).
+
 
 native_to_thrift_tile(Tile) ->
     {Row, Col} = tile:get_tile_location(Tile),
@@ -72,6 +98,18 @@ native_to_thrift_tile(Tile) ->
     LetterType = as_thrift_letter_type(tile:get_tile_letter_type(Tile)),
     
     #tile{row=Row, col=Col, type=LetterType, letter=Letter, bonus=Bonus}.
+
+
+thrift_to_native_tile(#tile{row=Row, col=Col, type=LetterType, letter=Letter, bonus=Bonus}) ->
+    NativeBonus = as_native_bonus(Bonus),
+    NativeType = as_native_letter_type(LetterType),
+    NativeLetter = as_native_letter(Letter),
+    case NativeType of
+        none -> tile:make_tile(none, NativeBonus, Row, Col);
+        _Else ->
+            tile:make_tile(NativeType, NativeLetter, Row, Col)
+    end.
+
 
 
 as_thrift_bonus(triple_word_score)   -> ?scrabbleCheat_Bonus_TRIPLE_WORD_SCORE;
@@ -96,8 +134,8 @@ as_native_bonus(?scrabbleCheat_Bonus_TRIPLE_LETTER_SCORE) -> triple_letter_score
 as_native_bonus(?scrabbleCheat_Bonus_DOUBLE_LETTER_SCORE) -> double_letter_score;
 as_native_bonus(?scrabbleCheat_Bonus_NONE)                -> none.
 
-as_native_letter("") -> none;
-as_native_letter(Else) -> Else.
+as_native_letter(<<"">>) -> none;
+as_native_letter(<<Else>>) -> Else.
 
 as_native_letter_type(?scrabbleCheat_LetterType_WILDCARD) -> wildcard;
 as_native_letter_type(?scrabbleCheat_LetterType_CHARACTER) -> character;
