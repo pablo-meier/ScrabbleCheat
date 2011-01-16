@@ -54,8 +54,9 @@ gamestate_to_thrift(Gamestate) ->
     ThriftScores = dict:from_list(Scores),
     ThriftTurnOrder = lists:map(fun ({Name,_}) -> Name end, Scores),
     ThriftHistory = lists:map(fun ({Name, Move, Score}) ->
-                                  MoveList = lists:map(fun native_to_thrift_tile/1, Move),
-                                  ThriftMove = {move, {MoveList, Score}},
+                                  MoveTiles = move:get_move_tiles(Move),
+                                  ThriftTileList = lists:map(fun native_to_thrift_tile/1, MoveTiles),
+                                  ThriftMove = {move, ThriftTileList, Score},
                                   {turn, ThriftMove, Name}
                               end, History),
     {gamestate, ThriftBoard, ThriftScores, Turn, ThriftTurnOrder, ThriftHistory}.
@@ -70,13 +71,16 @@ thrift_to_gamestate(#gamestate{board = Board,
                                turn_order = Order, 
                                history = History}) ->
     NativeBoard = thrift_to_native_board(Board),
-    NativeScores = lists:map(fun (<<Name>> = Curr) -> 
+    NativeScores = lists:map(fun (Curr) -> 
+                                 Name = binary_to_list(Curr),
                                  Score = dict:fetch(Curr, Scores),
                                  {Name, Score}
                              end, Order),
-    <<NativeTurn>> = Turn,
+    NativeTurn = binary_to_list(Turn),
     NativeHistory = lists:map(fun (X) ->
-                                  {turn, {move, Tiles, Score}, <<Name>>} = X,
+                                  io:format(user, "second map has ~p~n", [X]),
+                                  {turn, {move, Tiles, Score}, NameBin} = X,
+                                  Name = binary_to_list(NameBin),
                                   TileList = lists:map(fun thrift_to_native_tile/1, Tiles),
                                   {Name, TileList, Score}
                               end, History),
@@ -105,9 +109,9 @@ thrift_to_native_tile(#tile{row=Row, col=Col, type=LetterType, letter=Letter, bo
     NativeType = as_native_letter_type(LetterType),
     NativeLetter = as_native_letter(Letter),
     case NativeType of
-        none -> tile:make_tile(none, NativeBonus, Row, Col);
+        none -> tile:new_tile(none, NativeBonus, Row, Col);
         _Else ->
-            tile:make_tile(NativeType, NativeLetter, Row, Col)
+            tile:new_tile({NativeType, NativeLetter}, NativeBonus, Row, Col)
     end.
 
 
@@ -120,7 +124,7 @@ as_thrift_bonus(none)                -> ?scrabbleCheat_Bonus_NONE.
 
 
 as_thrift_letter(none) -> "";
-as_thrift_letter(Else) -> Else.
+as_thrift_letter(Else) -> <<Else>>.
 
 as_thrift_letter_type(wildcard) -> ?scrabbleCheat_LetterType_WILDCARD;
 as_thrift_letter_type(character) -> ?scrabbleCheat_LetterType_CHARACTER;
@@ -135,7 +139,7 @@ as_native_bonus(?scrabbleCheat_Bonus_DOUBLE_LETTER_SCORE) -> double_letter_score
 as_native_bonus(?scrabbleCheat_Bonus_NONE)                -> none.
 
 as_native_letter(<<"">>) -> none;
-as_native_letter(<<Else>>) -> Else.
+as_native_letter(Else) -> hd(binary_to_list(Else)).
 
 as_native_letter_type(?scrabbleCheat_LetterType_WILDCARD) -> wildcard;
 as_native_letter_type(?scrabbleCheat_LetterType_CHARACTER) -> character;

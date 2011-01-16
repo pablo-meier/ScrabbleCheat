@@ -118,10 +118,12 @@ new_game(Playerlist) ->
 %% placed as a move.  Throws BadMoveException, or BadGamestateException if incoming 
 %% data is invalid.
 play_move(Tiles, Gamestate) ->
-    debug("play_move for ~p tiles, and ~p~n", [Tiles, Gamestate]),
+    debug("play_move for ~p tiles~n", [Tiles]),
     NativeTiles = lists:map(fun thrift_helper:thrift_to_native_tile/1, Tiles),
     NativeGamestate = thrift_helper:thrift_to_gamestate(Gamestate),
-    WithMove = gamestate:play_move(NativeGamestate, NativeTiles),
+
+    Move = lists:foldl(fun (T, Acc) -> move:add_to_move(T, Acc) end, move:new_move(), NativeTiles),
+    WithMove = gamestate:play_move(NativeGamestate, Move),
     thrift_helper:gamestate_to_thrift(WithMove).
 
 

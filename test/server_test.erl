@@ -72,10 +72,10 @@ new_game_test() ->
 play_move_test() ->
     {ok, ServerName, Client0} = setup(),
     {Client1, {ok, Fresh}} = thrift_client:call(Client0, new_game, [["Paul", "Sam"]]),
-    TileList = [tile:new_tile({character, $A},double_letter_score,7,7), 
-                tile:new_tile({character, $B},none,7,8), 
-                tile:new_tile({character, $L},double_letter_score,7,9), 
-                tile:new_tile({character, $E},none,7,10)], 
+    TileList = [tile:new_tile({character, $A}, double_letter_score, 7, 7), 
+                tile:new_tile({character, $B}, none, 7, 8), 
+                tile:new_tile({character, $L}, double_letter_score, 7, 9), 
+                tile:new_tile({character, $E}, none, 7, 10)], 
     ThriftTileList = lists:map(fun thrift_helper:native_to_thrift_tile/1, TileList),
     Score = 8,
     {_Client2, {ok, Gamestate}} = thrift_client:call(Client1, play_move, [ThriftTileList, Fresh]),
@@ -98,7 +98,7 @@ play_move_test() ->
 
     ?assert(length(History) =:= 1),
     {turn, {move, Move, ReturnedScore}, Player} = hd(History),
-    ?assert(Move =:= ThriftTileList),
+    ?assert(lists:all(fun (X) -> lists:any(fun (Y) -> X =:= Y end, ThriftTileList) end, Move)),
     ?assert(<<"Paul">> =:= Player),
     ?assert(ReturnedScore =:= Score),
    
