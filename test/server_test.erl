@@ -103,5 +103,3 @@ play_move_test() ->
     ?assert(ReturnedScore =:= Score),
    
     teardown(ServerName).
-
-

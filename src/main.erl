@@ -77,15 +77,32 @@ start() ->
 %% Lipcon is a Boss, if you didn't know.
 start(Port) ->
     Handler = ?MODULE,
+    Gaddag = case file:read_file_info(?DICT_BIN_PATH) of
+                 {ok, _} -> dict_parser:read_from_binary(?DICT_BIN_PATH);
+                 {error, _} -> parse(?DICT_FILE)
+             end,
+    WordFunction = get_best_move_function(Gaddag),
+    ets:new(search_table, [set, protected, named_table, {keypos, 1}]), % {read_concurrency, true}]),
+    ets:insert(search_table, {search_function, WordFunction}),
     thrift_socket_server:start([{handler, Handler},
                                 {service, scrabbleCheat_thrift},
                                 {port, Port},
                                 {name, scrabbleCheat_server}]).
 
+
+%% get_search_function :: () -> (Board * Rack -> [Move])
+%%
+%% Returns a search function that takes a board and rack, and produces
+%% a list of moves.
+get_search_function() ->
+    [{search_function, Search}] = ets:lookup(search_table, search_function),
+    Search.
+
 %% stop :: (or Name Pid) -> ()
 %%
 %% Stops the server named by the parameter, or its Pid.
 stop(Server) ->
+    ets:delete(search_table),
     thrift_socket_server:stop(Server).
 
 
@@ -133,8 +150,18 @@ play_move(Tiles, Gamestate) ->
 %% clients can use.  Throws BadRackException and BadBoardException, if your
 %% incoming data sucks.
 get_scrabblecheat_suggestions(Rack, Board) ->
-    debug("get_scrabblecheat_suggestions for rack ~p and board ~p~n", [Rack, Board]),
-    ok.
+    debug("get_scrabblecheat_suggestions for rack ~p~n", [Rack]),
+    RackAsString = binary_to_list(Rack),
+    NativeBoard = thrift_helper:thrift_to_native_board(Board),
+    Search = get_search_function(),
+    Moves = Search(NativeBoard, RackAsString),
+    WithScores = lists:map(fun (X) -> {X, move:score(X, Board)} end, Moves),
+    Sorted = reverse(keysort(2, WithScores)),
+    lists:map(fun ({NativeMove, Score}) ->
+                  Tiles = move:get_move_tiles(NativeMove),
+                  ThriftTiles = lists:map(fun thrift_helper:native_to_thrift_tile/1, Tiles),
+                  {move, ThriftTiles, Score}
+              end, Sorted).
 
 
 %% quit :: () -> ()
