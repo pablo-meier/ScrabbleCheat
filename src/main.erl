@@ -155,7 +155,7 @@ get_scrabblecheat_suggestions(Rack, Board) ->
     NativeBoard = thrift_helper:thrift_to_native_board(Board),
     Search = get_search_function(),
     Moves = Search(NativeBoard, RackAsString),
-    WithScores = lists:map(fun (X) -> {X, move:score(X, Board)} end, Moves),
+    WithScores = lists:map(fun (X) -> {X, move:score(X, NativeBoard)} end, Moves),
     Sorted = reverse(keysort(2, WithScores)),
     lists:map(fun ({NativeMove, Score}) ->
                   Tiles = move:get_move_tiles(NativeMove),

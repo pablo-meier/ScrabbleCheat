@@ -103,3 +103,30 @@ play_move_test() ->
     ?assert(ReturnedScore =:= Score),
    
     teardown(ServerName).
+
+
+scrabblecheat_suggestions_test() ->
+    {ok, ServerName, Client0} = setup(),
+    {Client1, {ok, Fresh}} = thrift_client:call(Client0, new_game, [["Paul", "Sam"]]),
+    MoveTiles= [tile:new_tile({character, $A}, double_letter_score, 7, 7), 
+                tile:new_tile({character, $B}, none, 7, 8), 
+                tile:new_tile({character, $L}, double_letter_score, 7, 9), 
+                tile:new_tile({character, $E}, none, 7, 10)], 
+    ThriftTileList = lists:map(fun thrift_helper:native_to_thrift_tile/1, MoveTiles),
+    {Client2, {ok, Gamestate}} = thrift_client:call(Client1, play_move, [ThriftTileList, Fresh]),
+    {gamestate, Board, _, _, _, _} = Gamestate,
+    {_Client3, {ok, Suggestions}} = thrift_client:call(Client2, get_scrabblecheat_suggestions, [<<"TRS">>, Board]),
+    NativeMoves = lists:map(fun ({move, TileList, _Score}) -> 
+                                NativeTiles = lists:map(fun thrift_helper:thrift_to_native_tile/1, TileList),
+                                Move = lists:foldl(fun move:add_to_move/2, move:new_move(), NativeTiles),
+                                Move
+                            end, Suggestions),
+
+    Solutions = [{move, [{{character, $S}, none, {7,6}}]}, 
+                 {move, [{{character, $R}, none, {7,11}}]},
+                 {move, [{{character, $T}, none, {7,6}}]},
+                 {move, [{{character, $T}, none, {7,6}},{{character, $S}, none, {7,11}}]},
+                 {move, [{{character, $T}, none, {7,6}},{{character, $S}, none, {7,5}}]}],
+
+	lists:foreach(fun (X) -> ?assert(lists:any(fun (Y) -> move:duplicate_moves(X, Y) end, NativeMoves)) end, Solutions),
+    teardown(ServerName).
