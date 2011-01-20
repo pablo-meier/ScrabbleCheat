@@ -130,3 +130,18 @@ scrabblecheat_suggestions_test() ->
 
 	lists:foreach(fun (X) -> ?assert(lists:any(fun (Y) -> move:duplicate_moves(X, Y) end, NativeMoves)) end, Solutions),
     teardown(ServerName).
+
+
+bad_namelist_test() ->
+    {ok, ServerName, Client0} = setup(),
+
+    Thunk1 = fun() -> thrift_client:call(Client0, new_game, [[]]) end,
+    ?assertException(throw, {_, {exception, {badNamelistException, <<"There are no names here!">>}}}, Thunk1()),
+
+    Thunk2 = fun() -> thrift_client:call(Client0, new_game, [["Sam", "Robert", "PAULSNAMEISTOOLONGLIKETHIS"]]) end,
+    ?assertException(throw, {_, {exception, {badNamelistException, _Msg}}}, Thunk2()),
+
+    Thunk3 = fun() -> thrift_client:call(Client0, new_game, [["Arnegg", "Swartzenolder", [65,4,155]]]) end,
+    ?assertException(throw, {_, {exception, {badNamelistException, _Msg2}}}, Thunk3()),
+    teardown(ServerName).
+

@@ -31,6 +31,8 @@
 -define(DICT_FILE, "test/testdict.txt").
 -define(LARGE_DICT_FILE, "lib/twl06.txt").
 -define(DICT_BIN_PATH, "build/gaddag.dict").
+-define(SMALLEST_ASCII_CHARACTER, 33).
+-define(LARGEST_ASCII_CHARACTER, 126).
 
 -define(TCP_OPTIONS, [binary, {packet, 0}, {active, false}, {reuseaddr, true}]).
 -define(PORT, 6655). %% Hard coded for testing, can make this command-line option.
@@ -125,9 +127,46 @@ debug(Format, Data) ->
 new_game(Playerlist) ->
     debug("New Game for ~p~n", Playerlist),
     Stringlist = lists:map(fun binary_to_list/1, Playerlist),
+    validate_namelist(Stringlist),
     Gamestate = gamestate:fresh_gamestate(Stringlist),
     thrift_helper:gamestate_to_thrift(Gamestate).
 
+
+%% validate_namelist :: [String] -> ()
+%%
+%% Checks the validity of the list of names.  If the list is empty or the names aren't
+%% well formed, we throw an exception.
+validate_namelist([]) -> throw(#badNamelistException{reprimand="There are no names here!"});
+validate_namelist(Lst) ->
+    case is_list(Lst) of
+        false -> throw(#badNamelistException{reprimand="This is not a list!"});
+        true ->
+                lists:foreach(fun validate_length/1,  Lst),
+                lists:foreach(fun (X) -> lists:foreach(fun validate_list_contents/1, X) end, Lst),
+                ok
+    end.
+
+validate_list_contents(Elem) ->
+    case is_integer(Elem) of
+        false -> 
+            Reprimand = lists:concat(["Element \"", [Elem], "\" not valid in a name."]),
+            throw(#badNamelistException{reprimand=Reprimand});
+        true -> 
+            if 
+                Elem < ?SMALLEST_ASCII_CHARACTER orelse Elem > ?LARGEST_ASCII_CHARACTER ->
+                    Reprimand = lists:concat(["Character \"", [Elem], "\" not valid in a name."]),
+                    throw(#badNamelistException{reprimand=Reprimand});
+                true -> ok
+            end
+    end.
+
+validate_length(Name) ->
+    if 
+        length(Name) > 15 -> 
+            Message = lists:concat(["The name ", Name, " is too long!  15 Characters or less, please ^_^"]),
+            throw(#badNamelistException{reprimand=Message});
+        true -> ok
+    end.
 
 %% play_move :: [ThriftTile] * ThriftGamestate -> ThriftGamestate
 %%
