@@ -31,8 +31,10 @@
 -define(DICT_FILE, "test/testdict.txt").
 -define(LARGE_DICT_FILE, "lib/twl06.txt").
 -define(DICT_BIN_PATH, "build/gaddag.dict").
+-define(WILDCARD, $*).
 -define(SMALLEST_ASCII_CHARACTER, 33).
 -define(LARGEST_ASCII_CHARACTER, 126).
+-define(RACK_MAX_LENGTH, 7).
 
 -define(TCP_OPTIONS, [binary, {packet, 0}, {active, false}, {reuseaddr, true}]).
 -define(PORT, 6655). %% Hard coded for testing, can make this command-line option.
@@ -191,6 +193,7 @@ play_move(Tiles, Gamestate) ->
 get_scrabblecheat_suggestions(Rack, Board) ->
     debug("get_scrabblecheat_suggestions for rack ~p~n", [Rack]),
     RackAsString = binary_to_list(Rack),
+    validate_rack(RackAsString),
     NativeBoard = thrift_helper:thrift_to_native_board(Board),
     Search = get_search_function(),
     Moves = Search(NativeBoard, RackAsString),
@@ -201,6 +204,18 @@ get_scrabblecheat_suggestions(Rack, Board) ->
                   ThriftTiles = lists:map(fun thrift_helper:native_to_thrift_tile/1, Tiles),
                   {move, ThriftTiles, Score}
               end, Sorted).
+
+validate_rack([]) -> throw({badRackException, "This rack is empty!"});
+validate_rack(Rack) ->
+    Len = length(Rack) < ?RACK_MAX_LENGTH,
+    Valid = lists:all(fun (X) -> (X > $A andalso X < $Z) orelse X =:= ?WILDCARD end, Rack),
+    case {Len, Valid} of
+        {true, true} -> ok;
+        {false, _} -> throw({badRackException, "Rack is too long!"});
+        {_, false} -> throw({badRackException, "There is an invalid character in your rack."})
+    end.
+
+
 
 
 %% quit :: () -> ()

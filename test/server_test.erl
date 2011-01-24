@@ -145,3 +145,31 @@ bad_namelist_test() ->
     ?assertException(throw, {_, {exception, {badNamelistException, _Msg2}}}, Thunk3()),
     teardown(ServerName).
 
+%% bad rack 
+bad_rack_test() ->
+    {ok, ServerName, Client0} = setup(),
+    {Client1, {ok, Fresh}} = thrift_client:call(Client0, new_game, [["Paul", "Sam"]]),
+    MoveTiles= [tile:new_tile({character, $A}, double_letter_score, 7, 7), 
+                tile:new_tile({character, $B}, none, 7, 8), 
+                tile:new_tile({character, $L}, double_letter_score, 7, 9), 
+                tile:new_tile({character, $E}, none, 7, 10)], 
+    ThriftTileList = lists:map(fun thrift_helper:native_to_thrift_tile/1, MoveTiles),
+    {Client2, {ok, Gamestate}} = thrift_client:call(Client1, play_move, [ThriftTileList, Fresh]),
+    {gamestate, Board, _, _, _, _} = Gamestate,
+    Thunk1 = fun() -> thrift_client:call(Client2, get_scrabblecheat_suggestions, [<<"">>, Board]) end,
+    Thunk2 = fun() -> thrift_client:call(Client2, get_scrabblecheat_suggestions, [<<"ABCDEFGHIJKLMONPQURSTDKNKLN">>, Board]) end,
+    Thunk3 = fun() -> thrift_client:call(Client2, get_scrabblecheat_suggestions, [<<"PAUL&LU">>, Board]) end,
+    Thunk4 = fun() -> thrift_client:call(Client2, get_scrabblecheat_suggestions, [<<"lwrcase">>, Board]) end,
+
+    ?assertException(throw, {_, {exception, {badRackException, _Msg2}}}, Thunk1()),
+    ?assertException(throw, {_, {exception, {badRackException, _Msg2}}}, Thunk2()),
+    ?assertException(throw, {_, {exception, {badRackException, _Msg2}}}, Thunk3()),
+    ?assertException(throw, {_, {exception, {badRackException, _Msg2}}}, Thunk4()),
+
+    teardown(ServerName).
+
+
+%% bad board
+%% bad move
+%% bad gamestate
+
