@@ -195,6 +195,7 @@ get_scrabblecheat_suggestions(Rack, Board) ->
     RackAsString = binary_to_list(Rack),
     validate_rack(RackAsString),
     NativeBoard = thrift_helper:thrift_to_native_board(Board),
+    board:verify(NativeBoard),
     Search = get_search_function(),
     Moves = Search(NativeBoard, RackAsString),
     WithScores = lists:map(fun (X) -> {X, move:score(X, NativeBoard)} end, Moves),
@@ -205,6 +206,7 @@ get_scrabblecheat_suggestions(Rack, Board) ->
                   {move, ThriftTiles, Score}
               end, Sorted).
 
+
 validate_rack([]) -> throw({badRackException, "This rack is empty!"});
 validate_rack(Rack) ->
     Len = length(Rack) < ?RACK_MAX_LENGTH,
@@ -214,8 +216,6 @@ validate_rack(Rack) ->
         {false, _} -> throw({badRackException, "Rack is too long!"});
         {_, false} -> throw({badRackException, "There is an invalid character in your rack."})
     end.
-
-
 
 
 %% quit :: () -> ()

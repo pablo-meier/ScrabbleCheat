@@ -48,6 +48,7 @@
          orthogonals/1,
          to_beginning/1,
          flip/1,
+         verify/1,
          get_adjacents/2,
          serialize/1,
          deserialize/1,
@@ -279,9 +280,14 @@ deserialize(BoardString) ->
 %%
 %% Creates a board from a list of tiles.  Note that the list MUST be the correct size.
 from_list(BigList) ->
-    ListOfLists = recursive_split_lists(0, BigList, []),
-    ListOfArrays = lists:map(fun (X) -> array:fix(array:from_list(X)) end, ListOfLists),
-    array:fix(array:from_list(ListOfArrays)).
+    case length(BigList) of
+        ?BOARD_WIDTH * ?BOARD_HEIGHT ->    
+            ListOfLists = recursive_split_lists(0, BigList, []),
+            ListOfArrays = lists:map(fun (X) -> array:fix(array:from_list(X)) end, ListOfLists),
+            array:fix(array:from_list(ListOfArrays));
+        _Else ->
+            throw({badBoardException, <<"Not the correct number of tiles in list to create a board.">>})
+    end.
 
 recursive_split_lists(?BOARD_HEIGHT, [], Accum) -> lists:reverse(Accum);
 recursive_split_lists(Num, Lst, Accum) -> 
@@ -305,5 +311,51 @@ print_key() ->
     io:format("~nKey (for any character 'p'):~n  *p* -> Triple Word!~n  ^p^ -> Double Word!~n  -p- -> Triple Letter!~n  _p_ -> Double Letter~n~n").
 
 
-%% A little silly, but DRY...
+%% make_array_indices :: Int * Int -> {Int, Int}
+%%
+%% A little silly, but DRY till we die.  Facilitates 1-based board
+%% indexing by creating the proper indices to the arrays that underlie the
+%% implementation.
 make_array_indices(Num1, Num2) -> {Num1 - 1, Num2 - 1}.
+
+
+%% verify :: Board -> ()
+%%
+%% Verifies that the parameter it has received is, in fact, a valid board.
+%% Criteria for validity are:
+%%   - Every non-empty tile is connected (no 'islands')
+%%   - Every move is valid.
+%% If the board is found to be invalid, we throw a badBoardException, defined
+%% in the ScrabbleCheat Thrift protocol.
+verify(Board) ->
+    check_connectedness(Board),
+    check_valid_moves(Board).
+
+%% BFS from any tile, ensure that each occupied tile on board is contained in the BFS.
+check_connectedness(Board) ->
+    Occupied = lists:filter(fun tile:is_occupied/1, lists:flatten(as_list(Board))),
+    StartPoint = hd(Occupied),
+    OccupiedSet = sets:from_list(Occupied),
+    Connected = bfs_from_tile(Board, [StartPoint], sets:new()),
+    EmptySet = sets:new(),
+    case sets:subtract(OccupiedSet, Connected) of
+        EmptySet ->
+            ok;
+        _Else ->
+            throw({badBoardException, <<"Invalid board; some tiles are disconnected from game.">>})
+    end.
+
+bfs_from_tile(_, [], Visited) -> Visited;
+bfs_from_tile(Board, Accum, Visited) ->
+    Tile = hd(Accum),
+    Adjacents = lists:filter(fun tile:is_occupied/1, get_adjacents(Tile, Board)),
+    Newcomers = lists:filter(fun (X) -> not sets:is_element(X, Visited) end, Adjacents),
+    NewAccum = lists:append(Newcomers, tl(Accum)),
+    NewVisited = sets:add_element(Tile, Visited),
+    bfs_from_tile(Board, NewAccum, NewVisited).
+
+
+%% Go rightwards through every row, downwards through every col.  TODO: NEED A GADDAG.
+check_valid_moves(_Board) ->
+    ok.
+

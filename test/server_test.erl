@@ -145,7 +145,7 @@ bad_namelist_test() ->
     ?assertException(throw, {_, {exception, {badNamelistException, _Msg2}}}, Thunk3()),
     teardown(ServerName).
 
-%% bad rack 
+
 bad_rack_test() ->
     {ok, ServerName, Client0} = setup(),
     {Client1, {ok, Fresh}} = thrift_client:call(Client0, new_game, [["Paul", "Sam"]]),
