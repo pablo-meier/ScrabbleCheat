@@ -48,7 +48,7 @@
          orthogonals/1,
          to_beginning/1,
          flip/1,
-         verify/1,
+         verify/2,
          get_adjacents/2,
          serialize/1,
          deserialize/1,
@@ -286,7 +286,7 @@ from_list(BigList) ->
             ListOfArrays = lists:map(fun (X) -> array:fix(array:from_list(X)) end, ListOfLists),
             array:fix(array:from_list(ListOfArrays));
         _Else ->
-            throw({badBoardException, <<"Not the correct number of tiles in list to create a board.">>})
+            throw_badboard("Not the correct number of tiles in list to create a board.")
     end.
 
 recursive_split_lists(?BOARD_HEIGHT, [], Accum) -> lists:reverse(Accum);
@@ -319,7 +319,7 @@ print_key() ->
 make_array_indices(Num1, Num2) -> {Num1 - 1, Num2 - 1}.
 
 
-%% verify :: Board -> ()
+%% verify :: Board * Gaddag -> ()
 %%
 %% Verifies that the parameter it has received is, in fact, a valid board.
 %% Criteria for validity are:
@@ -327,9 +327,9 @@ make_array_indices(Num1, Num2) -> {Num1 - 1, Num2 - 1}.
 %%   - Every move is valid.
 %% If the board is found to be invalid, we throw a badBoardException, defined
 %% in the ScrabbleCheat Thrift protocol.
-verify(Board) ->
+verify(Board, Master) ->
     check_connectedness(Board),
-    check_valid_moves(Board).
+    check_valid_moves(Board, Master).
 
 %% BFS from any tile, ensure that each occupied tile on board is contained in the BFS.
 check_connectedness(Board) ->
@@ -342,7 +342,7 @@ check_connectedness(Board) ->
         EmptySet ->
             ok;
         _Else ->
-            throw({badBoardException, <<"Invalid board; some tiles are disconnected from game.">>})
+            throw_badboard("Invalid board; some tiles are disconnected from game.")
     end.
 
 bfs_from_tile(_, [], Visited) -> Visited;
@@ -355,7 +355,74 @@ bfs_from_tile(Board, Accum, Visited) ->
     bfs_from_tile(Board, NewAccum, NewVisited).
 
 
-%% Go rightwards through every row, downwards through every col.  TODO: NEED A GADDAG.
-check_valid_moves(_Board) ->
-    ok.
+%% Go rightwards through every row, downwards through every col, make sure everything 
+%% makes sense.
+check_valid_moves(Board, Master) ->
+    Rows = as_list(Board),
+    Cols = make_cols_from_rows(Rows),
+    io:format(user, "Rows is ~p, Cols is ~p~n", [Rows, Cols]),
+    lists:foreach(fun (Seq) -> judge_sequence(Seq, Master) end, lists:append(Rows, Cols)).
 
+make_cols_from_rows(Rows) ->
+    RowsEmpty = lists:all(fun (X) -> X =:= [] end, Rows),
+    case RowsEmpty of
+        true -> [];
+        false -> 
+            NewCol = lists:flatten(lists:map(fun (X) -> hd(X) end, Rows)),
+            Rst = lists:map(fun tl/1, Rows),
+            [NewCol|make_cols_from_rows(Rst)]
+    end.
+
+judge_sequence([], _) -> ok;
+judge_sequence(Seq, Master) ->
+    [Fst|Rst] = Seq,
+    case tile:is_occupied(Fst) of
+        true -> 
+            PastSubsequence = subsequence_check(Seq, Master),
+            judge_sequence(PastSubsequence, Master);
+        false -> judge_sequence(Rst, Master)
+    end.
+
+subsequence_check([Fst|Rst], Gaddag) ->
+    Letter = tile:get_tile_letter(Fst),
+    HasBranch = gaddag:has_branch(Letter, Gaddag),
+    IsSingleton = case Rst =:= [] of
+                      true -> true;
+                      false ->
+                          [Nxt|_] = Rst,
+                          not tile:is_occupied(Nxt)
+                  end,
+    case {HasBranch, IsSingleton} of
+        {false, _} ->
+            throw_badboard("Error with the board: Row begins with invalid character.");
+        {true, false} ->
+            {branch, Further} = gaddag:get_branch(Letter, Gaddag),
+            {branch, Forwards} = gaddag:get_branch($&, Further),
+            go_forwards(Rst, Forwards);
+        {true, true} ->
+            Rst
+    end.
+
+go_forwards(Tiles, Gaddag) ->
+    Top = hd(Tiles),
+    case tile:is_occupied(Top) of
+       true ->
+            Letter = tile:get_tile_letter(Top),
+            case gaddag:has_branch(Letter, Gaddag) of
+                true -> 
+                    {branch, Further} = gaddag:get_branch(Letter, Gaddag),
+                    go_forwards(tl(Tiles), Further);
+                false ->
+                    throw_badboard("Invalid word found on board")
+            end;
+       false -> 
+           case gaddag:is_terminator(Gaddag) of
+               true -> Tiles;
+               false -> throw_badboard("Error with the board: Row or col ends with invalid word.")
+           end
+     end.
+
+
+throw_badboard(Str) ->
+    Encoded = list_to_binary(Str),
+    throw({badBoardException, Encoded}).

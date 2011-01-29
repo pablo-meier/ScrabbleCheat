@@ -86,8 +86,9 @@ start(Port) ->
                  {error, _} -> parse(?DICT_FILE)
              end,
     WordFunction = get_best_move_function(Gaddag),
-    ets:new(search_table, [set, protected, named_table, {keypos, 1}]), % {read_concurrency, true}]),
-    ets:insert(search_table, {search_function, WordFunction}),
+    ets:new(globals, [set, protected, named_table, {keypos, 1}]), % {read_concurrency, true}]),
+    ets:insert(globals, {search_function, WordFunction}),
+    ets:insert(globals, {master_gaddag, Gaddag}),
     thrift_socket_server:start([{handler, Handler},
                                 {service, scrabbleCheat_thrift},
                                 {port, Port},
@@ -99,14 +100,23 @@ start(Port) ->
 %% Returns a search function that takes a board and rack, and produces
 %% a list of moves.
 get_search_function() ->
-    [{search_function, Search}] = ets:lookup(search_table, search_function),
+    [{search_function, Search}] = ets:lookup(globals, search_function),
     Search.
+
+%% get_master_gaddag :: () -> Gaddag
+%%
+%% Get's a master, top-level Gaddag.  These are mostly used for verification
+%% of moves and boards.
+get_master_gaddag() ->
+    [{master_gaddag, Gaddag}] = ets:lookup(globals, master_gaddag),
+    Gaddag.
+
 
 %% stop :: (or Name Pid) -> ()
 %%
 %% Stops the server named by the parameter, or its Pid.
 stop(Server) ->
-    ets:delete(search_table),
+    ets:delete(globals),
     thrift_socket_server:stop(Server).
 
 
@@ -195,7 +205,8 @@ get_scrabblecheat_suggestions(Rack, Board) ->
     RackAsString = binary_to_list(Rack),
     validate_rack(RackAsString),
     NativeBoard = thrift_helper:thrift_to_native_board(Board),
-    board:verify(NativeBoard),
+    Master = get_master_gaddag(),
+    board:verify(NativeBoard, Master),
     Search = get_search_function(),
     Moves = Search(NativeBoard, RackAsString),
     WithScores = lists:map(fun (X) -> {X, move:score(X, NativeBoard)} end, Moves),
