@@ -221,7 +221,7 @@ get_scrabblecheat_suggestions(Rack, Board) ->
 validate_rack([]) -> throw({badRackException, "This rack is empty!"});
 validate_rack(Rack) ->
     Len = length(Rack) < ?RACK_MAX_LENGTH,
-    Valid = lists:all(fun (X) -> (X > $A andalso X < $Z) orelse X =:= ?WILDCARD end, Rack),
+    Valid = lists:all(fun (X) -> (X >= $A andalso X =< $Z) orelse X =:= ?WILDCARD end, Rack),
     case {Len, Valid} of
         {true, true} -> ok;
         {false, _} -> throw({badRackException, "Rack is too long!"});

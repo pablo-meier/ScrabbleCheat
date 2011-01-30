@@ -360,7 +360,6 @@ bfs_from_tile(Board, Accum, Visited) ->
 check_valid_moves(Board, Master) ->
     Rows = as_list(Board),
     Cols = make_cols_from_rows(Rows),
-    io:format(user, "Rows is ~p, Cols is ~p~n", [Rows, Cols]),
     lists:foreach(fun (Seq) -> judge_sequence(Seq, Master) end, lists:append(Rows, Cols)).
 
 make_cols_from_rows(Rows) ->

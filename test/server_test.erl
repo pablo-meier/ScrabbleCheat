@@ -170,6 +170,47 @@ bad_rack_test() ->
 
 
 %% bad board
+bad_board_test() ->
+    {ok, ServerName, Client1} = setup(),
+    Rack = <<"ZYGOTE">>,
+
+    % wrong no of tiles
+    NewCleanBoard = board_parser:new_board(),
+
+    Thunk1 = fun() ->
+                 WrongNumber = board:from_list(lists:map(fun (X) -> tl(X) end, board:as_list(NewCleanBoard))),
+                 Board1 = thrift_helper:native_to_thrift_board(WrongNumber)
+             end,
+    ?assertException(throw, {badBoardException, _Str}, Thunk1()), 
+
+    WordPlacements = [{"ABLE", right, {7,7}}, {"C", down, {6,7}}, {"RE", down, {8,7}}],
+    ValidBoard = lists:foldl(fun ({W,D,L},Y) -> board:place_word(W,D,L,Y) end, NewCleanBoard, WordPlacements),
+
+    Board2 = thrift_helper:native_to_thrift_board(board:place_word("ZYGOTE", down, {1,1}, ValidBoard)),
+
+    Board3 = thrift_helper:native_to_thrift_board(board:place_word([257|"PEPS"], right, {11,6}, ValidBoard)),
+
+    Board4 = thrift_helper:native_to_thrift_board(board:place_word("VAGOO", right, {11, 7}, ValidBoard)),
+
+    Board5 = thrift_helper:native_to_thrift_board(board:place_word("VAGOO", down, {6, 11}, ValidBoard)),
+
+    % Islands
+    Thunk2 = fun() -> thrift_client:call(Client1, get_scrabblecheat_suggestions, [Rack, Board2]) end,
+    % invalid character on board?
+    Thunk3 = fun() -> thrift_client:call(Client1, get_scrabblecheat_suggestions, [Rack, Board3]) end,
+    % Wrong word (Row)
+    Thunk4 = fun() -> thrift_client:call(Client1, get_scrabblecheat_suggestions, [Rack, Board4]) end,
+    % Wrong word (Col)
+    Thunk5 = fun() -> thrift_client:call(Client1, get_scrabblecheat_suggestions, [Rack, Board5]) end,
+
+    ?assertException(throw, {_, {exception, {badBoardException, _Msg2}}}, Thunk2()),
+    ?assertException(throw, {_, {exception, {badBoardException, _Msg2}}}, Thunk3()),
+    ?assertException(throw, {_, {exception, {badBoardException, _Msg2}}}, Thunk4()),
+    ?assertException(throw, {_, {exception, {badBoardException, _Msg2}}}, Thunk5()),
+
+    teardown(ServerName).
+
+
 %% bad move
 %% bad gamestate
 
