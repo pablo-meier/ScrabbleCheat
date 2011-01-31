@@ -203,10 +203,10 @@ bad_board_test() ->
     % Wrong word (Col)
     Thunk5 = fun() -> thrift_client:call(Client1, get_scrabblecheat_suggestions, [Rack, Board5]) end,
 
-    ?assertException(throw, {_, {exception, {badBoardException, _Msg2}}}, Thunk2()),
-    ?assertException(throw, {_, {exception, {badBoardException, _Msg2}}}, Thunk3()),
-    ?assertException(throw, {_, {exception, {badBoardException, _Msg2}}}, Thunk4()),
-    ?assertException(throw, {_, {exception, {badBoardException, _Msg2}}}, Thunk5()),
+    ?assertException(throw, {_, {exception, {badBoardException, _Msg}}}, Thunk2()),
+    ?assertException(throw, {_, {exception, {badBoardException, _Msg}}}, Thunk3()),
+    ?assertException(throw, {_, {exception, {badBoardException, _Msg}}}, Thunk4()),
+    ?assertException(throw, {_, {exception, {badBoardException, _Msg}}}, Thunk5()),
 
     teardown(ServerName).
 

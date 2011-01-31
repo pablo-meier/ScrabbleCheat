@@ -53,6 +53,7 @@
         play_move/2,
         get_scrabblecheat_suggestions/2,
         quit/0,
+        get_master_gaddag/0,
 
         make_binary_gaddag/0]).
 
@@ -189,8 +190,12 @@ play_move(Tiles, Gamestate) ->
     debug("play_move for ~p tiles~n", [Tiles]),
     NativeTiles = lists:map(fun thrift_helper:thrift_to_native_tile/1, Tiles),
     NativeGamestate = thrift_helper:thrift_to_gamestate(Gamestate),
+    gamestate:verify(NativeGamestate),
 
     Move = lists:foldl(fun (T, Acc) -> move:add_to_move(T, Acc) end, move:new_move(), NativeTiles),
+    Board = gamestate:get_gamestate_board(NativeGamestate),
+    move:verify(Move, Board),
+
     WithMove = gamestate:play_move(NativeGamestate, Move),
     thrift_helper:gamestate_to_thrift(WithMove).
 

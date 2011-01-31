@@ -23,7 +23,7 @@
 -import(tile, [get_tile_letter/1, is_wildcard/1, get_tile_location/1, is_occupied/1, get_tile_bonus/1, duplicate_tile/2]).
 -import(board, [place_move_on_board/2, to_beginning/1, orthogonals/1, get_adjacent/3, zoom/3, flip/1]).
 -import(lists, [foldl/3, filter/2, any/2, map/2]).
--export([new_move/0, add_to_move/2, duplicate_moves/2, get_move_tiles/1, score/2, serialize/1, deserialize/1]).
+-export([new_move/0, verify/2, add_to_move/2, duplicate_moves/2, get_move_tiles/1, score/2, serialize/1, deserialize/1]).
 
 %% The move datatype.  Checks structural integrity of moves, not
 %% responsible for legal placement relative to a board, or dictionary
@@ -195,6 +195,29 @@ letter_score($Q) -> 10; letter_score($R) -> 1;  letter_score($S) -> 1;  letter_s
 letter_score($U) -> 1;  letter_score($V) -> 4;  letter_score($W) -> 4;  letter_score($X) -> 8;
 letter_score($Y) -> 4;  letter_score($Z) -> 10.
 
+
+%% verify :: Move * Board -> ()
+%%
+%% Throws a BadMoveException if the move isn't valid.  This can happen if it's empty,
+%% or disconnected from other moves on the board.
+verify(Move, Board) ->
+    Tiles = get_move_tiles(Move),
+    case Tiles of
+        [] -> throw_badMove("Move is empty!");
+        _Else ->
+            WithMove = board:place_move_on_board(Move, Board),
+            try
+                Gaddag = main:get_master_gaddag(),
+                board:verify(WithMove, Gaddag)
+            catch
+                {badBoardException, _} -> 
+                    throw_badMove("This move doesn't work with the board supplied in the gamestate.")
+            end
+    end.
+        
+throw_badMove(Msg) ->
+    Encoded = list_to_binary(Msg),
+    throw({badMoveException, Encoded}).
 
 %% serialize :: Move -> String
 %%

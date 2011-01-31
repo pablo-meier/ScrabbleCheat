@@ -334,15 +334,19 @@ verify(Board, Master) ->
 %% BFS from any tile, ensure that each occupied tile on board is contained in the BFS.
 check_connectedness(Board) ->
     Occupied = lists:filter(fun tile:is_occupied/1, lists:flatten(as_list(Board))),
-    StartPoint = hd(Occupied),
-    OccupiedSet = sets:from_list(Occupied),
-    Connected = bfs_from_tile(Board, [StartPoint], sets:new()),
-    EmptySet = sets:new(),
-    case sets:subtract(OccupiedSet, Connected) of
-        EmptySet ->
-            ok;
-        _Else ->
-            throw_badboard("Invalid board; some tiles are disconnected from game.")
+    case length(Occupied) of
+        0 -> ok;
+        _Else -> 
+            OccupiedSet = sets:from_list(Occupied),
+            EmptySet = sets:new(),
+            StartPoint = hd(Occupied),
+            Connected = bfs_from_tile(Board, [StartPoint], sets:new()),
+            case sets:subtract(OccupiedSet, Connected) of
+                EmptySet ->
+                    ok;
+                _False ->
+                    throw_badboard("Invalid board; some tiles are disconnected from game.")
+            end
     end.
 
 bfs_from_tile(_, [], Visited) -> Visited;

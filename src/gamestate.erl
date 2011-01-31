@@ -28,6 +28,7 @@
          play_move/2,
          serialize/1, 
          deserialize/1, 
+         verify/1,
          get_gamestate_board/1,
          get_gamestate_scores/1,
          get_gamestate_turn/1,
@@ -118,6 +119,23 @@ update_score(NewScore, OldList, Turn) ->
                   end
               end, OldList).
 
+
+%% verify :: Gamestate -> ()
+%%
+%% Verifies the Gamestate, throws badGamestateException if it isn't up to snuff.
+verify(Gamestate) ->
+    try 
+        {gamestate, Board, _Scores, _Turn, _History} = Gamestate,
+        Gaddag = main:get_master_gaddag(),
+        board:verify(Board, Gaddag)
+    catch
+        throw:{badMatchException, _} -> throw_badGamestate("Error with gamestate representation.");
+        throw:{badBoardException, _} -> throw_badGamestate("Error with supplied board.")
+    end.
+
+throw_badGamestate(Msg) ->
+    Encoded = list_to_binary(Msg),
+    throw({badGamestateException, Encoded}).
 
 %% serialize :: Gamestate -> String
 %%
