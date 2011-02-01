@@ -14,7 +14,7 @@ SHORT-TERM:
         - Add all compilation/building of new components to build system. DONE
         - Substitute your crappy server for a full thrift_socket_server DONE
         - Functionality/Test cases? DONE
-          - Include tests of exceptions!
+          - Include tests of exceptions! DONE (with one exception...)
         - Substitute your crappy client for a full ScrabbleCheat::ScrabbleCheat::Client
         - Functionality/Test cases?
           - Include tests of exceptions!

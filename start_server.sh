@@ -1,3 +1,3 @@
 #!/bin/bash
 
-erl -pa build/bin -noshell -run main main
+erl -pa build/bin -noshell -run main start

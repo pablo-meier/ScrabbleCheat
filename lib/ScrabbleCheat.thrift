@@ -6,7 +6,6 @@
  */
 
 namespace erl ScrabbleCheat
-namespace rb  ScrabbleCheat
 
 
 /** 

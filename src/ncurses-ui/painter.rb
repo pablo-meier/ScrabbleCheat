@@ -385,8 +385,8 @@ class Painter
                 {:state => :move, :window => menuwin[:window]}
             when "ai"
                 {:state => :ai, :window => menuwin[:window]}
-            end
         end
+    end
 
 
     def get_a_move(board, boardwin, presentation_win)
@@ -811,7 +811,6 @@ class Painter
         Ncurses.stdscr.move(Ncurses.LINES - 2, Ncurses.COLS - (COMMEMORATE_LINE.length + 2))
         Ncurses.stdscr.addstr(COMMEMORATE_LINE)
     end
-
 end
 
 

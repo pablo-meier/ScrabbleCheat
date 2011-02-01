@@ -23,7 +23,6 @@ require 'painter.rb'
 
 require 'socket'
 include Socket::Constants
-PORT = 6655                     # Hard coding for now, will generalize later.
 
 
 # Handles state transitions for the client.  Uses Conversationalist for server
@@ -48,8 +47,7 @@ PORT = 6655                     # Hard coding for now, will generalize later.
 class Client
 
     def initialize
-        socket = TCPSocket.new("localhost", PORT)
-        @connection = Conversationalist.new(socket)
+        @connection = Conversationalist.new
         @painter = Painter.new
 
         @gamestates = []
