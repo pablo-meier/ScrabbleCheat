@@ -179,7 +179,7 @@ bad_board_test() ->
 
     Thunk1 = fun() ->
                  WrongNumber = board:from_list(lists:map(fun (X) -> tl(X) end, board:as_list(NewCleanBoard))),
-                 Board1 = thrift_helper:native_to_thrift_board(WrongNumber)
+                 thrift_helper:native_to_thrift_board(WrongNumber)
              end,
     ?assertException(throw, {badBoardException, _Str}, Thunk1()), 
 

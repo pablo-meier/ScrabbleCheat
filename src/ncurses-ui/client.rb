@@ -63,7 +63,7 @@ class Client
             case response[:state]
                 when :new_game
                     names = response[:data]
-                    gamestate = @connection.create_new_game(names)
+                    gamestate = @connection.new_game(names)
                     self.add_gamestate(gamestate)
                     @curr_state = {:state => :action_choose, :data => gamestate}
                 when :play_move
@@ -74,7 +74,7 @@ class Client
                 when :get_moves
                     rack = response[:data]
                     this_gamestate = @gamestates[@gamestate_index]
-                    moves = @connection.get_scrabblecheat_moves(this_gamestate, rack)
+                    moves = @connection.get_scrabblecheat_suggestions(this_gamestate, rack)
                     @curr_state = {:state => :move_choose, :data => {:gamestate => this_gamestate, :moves => moves}}
                 when :quit
                     @connection.quit

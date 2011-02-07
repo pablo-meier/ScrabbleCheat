@@ -37,7 +37,7 @@
 -define(RACK_MAX_LENGTH, 7).
 
 -define(TCP_OPTIONS, [binary, {packet, 0}, {active, false}, {reuseaddr, true}]).
--define(PORT, 6655). %% Hard coded for testing, can make this command-line option.
+-define(PORT, 8888). %% Hard coded for testing, can make this command-line option.
 
 
 -include("scrabbleCheat_thrift.hrl").
@@ -84,7 +84,10 @@ start(Port) ->
     Handler = ?MODULE,
     Gaddag = case file:read_file_info(?DICT_BIN_PATH) of
                  {ok, _} -> dict_parser:read_from_binary(?DICT_BIN_PATH);
-                 {error, _} -> parse(?DICT_FILE)
+                 {error, _} -> 
+                    io:format("Gaddag file not found!  Using test dictionary in meantime.~n"),
+                    io:format("run `make binary-gaddag` to generate the full dictionary.~n"),
+                    parse(?DICT_FILE)
              end,
     WordFunction = get_best_move_function(Gaddag),
     ets:new(globals, [set, protected, named_table, {keypos, 1}]), % {read_concurrency, true}]),

@@ -22,61 +22,62 @@
 $:.push('build/gen-rb')
 $:.unshift('lib/thrift-rb')
 
-require 'serialization.rb'
-
 require 'thrift'
 require 'scrabble_cheat'
 
+require 'thrift_layer.rb'
+
+require 'serialization.rb'
 require 'board.rb'
 
 
 # Main class for communicating with the server. Handles communication protocols
-class Conversationalist < ScrabbleCheat::Client
+class Conversationalist 
 
     def initialize
-        port = 6655
-        url = "http://127.0.0.1:#{port}"
-        transport = Thrift::HTTPClientTransport.new(url)
-        protocol = Thrift::BinaryProtocol.new(transport)
-        super(protocol)
-        transport.open()
+        @thrift = ThriftLayer.new
     end
 
 
-    def new_game(players)
-        super(players)
+    def new_game(namelist)
+        rslt = @thrift.new_game(namelist)
+        parse_new_game(rslt)
     end
 
-    def recv_new_game
-        thrift_gamestate = super
+    def parse_new_game(thrift_gamestate)
         thrift_to_native_gamestate(thrift_gamestate)
     end
+
 
     def play_move(tiles, gamestate)
         thrift_tiles     = tiles.map { |x| native_to_thrift_tile(x) }
         thrift_gamestate = native_to_thrift_gamestate(gamestate)
-        super(thrift_tiles, thrift_gamestate)
+        rslt = @thrift.play_move(thrift_tiles, thrift_gamestate)
+        parse_play_move(rslt)
     end
 
-    def recv_play_move
-        thrift_gamestate = super 
+    def parse_play_move(thrift_gamestate)
         thrift_to_native_gamestate(thrift_gamestate)
     end
+
+
     
     def get_scrabblecheat_suggestions(rack, board)
         thrift_board = native_to_thrift_board(board)        
-        super(rack, thrift_board)
+        rslt = @thrift.get_scrabblecheat_suggestions(rack, thrift_board)
+        parse_get_scrabblecheat_suggestions(rslt)
     end
 
-    def recv_get_scrabblecheat_suggestions
-        thrift_movelist = super
+    def parse_get_scrabblecheat_suggestions(thrift_movelist)
         thrift_movelist.map do |move|
             movetiles = move.map { |x| thrift_to_native_tile(x) }
             {:move => movetiles, :score => move.score}
         end
     end
 
-    # quit implemented in superclass.  Sends no args ^_^
+    def quit
+        @thrift.quit
+    end
 
 
 
