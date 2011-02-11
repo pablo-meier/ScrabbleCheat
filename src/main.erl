@@ -96,6 +96,7 @@ start(Port) ->
     thrift_socket_server:start([{handler, Handler},
                                 {service, scrabbleCheat_thrift},
                                 {port, Port},
+                                {socket_opts, [{recv_timeout, 100000}]},
                                 {name, scrabbleCheat_server}]).
 
 
@@ -195,10 +196,9 @@ play_move(Tiles, Gamestate) ->
     NativeGamestate = thrift_helper:thrift_to_gamestate(Gamestate),
     gamestate:verify(NativeGamestate),
 
-    Move = lists:foldl(fun (T, Acc) -> move:add_to_move(T, Acc) end, move:new_move(), NativeTiles),
+    Move = move:from_list(NativeTiles),
     Board = gamestate:get_gamestate_board(NativeGamestate),
     move:verify(Move, Board),
-
     WithMove = gamestate:play_move(NativeGamestate, Move),
     thrift_helper:gamestate_to_thrift(WithMove).
 

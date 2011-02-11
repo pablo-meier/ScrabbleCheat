@@ -65,9 +65,9 @@ class Board
     # as simply a list of tiles, we'll just make a flat array of ourselves.
     def to_thrift
         retval = []
-        @tiles.each do |row|
-            row.each do |tile|
-                retval << tile
+        1.upto(@tiles.length - 1) do |row|
+            1.upto(@tiles[row].length - 1) do |col|
+                retval << @tiles[row][col]
             end
         end
         retval

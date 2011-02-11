@@ -23,7 +23,7 @@
 -import(tile, [get_tile_letter/1, is_wildcard/1, get_tile_location/1, is_occupied/1, get_tile_bonus/1, duplicate_tile/2]).
 -import(board, [place_move_on_board/2, to_beginning/1, orthogonals/1, get_adjacent/3, zoom/3, flip/1]).
 -import(lists, [foldl/3, filter/2, any/2, map/2]).
--export([new_move/0, verify/2, add_to_move/2, duplicate_moves/2, get_move_tiles/1, score/2, serialize/1, deserialize/1]).
+-export([new_move/0, verify/2, add_to_move/2, duplicate_moves/2, get_move_tiles/1, score/2, serialize/1, deserialize/1, from_list/1]).
 
 %% The move datatype.  Checks structural integrity of moves, not
 %% responsible for legal placement relative to a board, or dictionary
@@ -102,6 +102,13 @@ get_move_orientation([H|T]) ->
         true -> horizontal;
         _Else -> vertical
     end.
+
+
+%% from_list :: [Tile] -> Move
+%%
+%% Make a Move from a list of Tiles
+from_list(Lst) ->
+    lists:foldl(fun (T, Acc) -> move:add_to_move(T, Acc) end, move:new_move(), Lst).
 
 
 %% score_perpendiculars :: Tile * Direction * Board * [Tile] * Int -> Points 

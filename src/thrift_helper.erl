@@ -78,11 +78,11 @@ thrift_to_gamestate(#gamestate{board = Board,
                              end, Order),
     NativeTurn = binary_to_list(Turn),
     NativeHistory = lists:map(fun (X) ->
-                                  io:format(user, "second map has ~p~n", [X]),
                                   {turn, {move, Tiles, Score}, NameBin} = X,
                                   Name = binary_to_list(NameBin),
                                   TileList = lists:map(fun thrift_to_native_tile/1, Tiles),
-                                  {Name, TileList, Score}
+                                  Move = move:from_list(TileList),
+                                  {Name, Move, Score}
                               end, History),
     gamestate:make_gamestate(NativeBoard, NativeScores, NativeTurn, NativeHistory).
 
