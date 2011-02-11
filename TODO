@@ -15,9 +15,10 @@ SHORT-TERM:
         - Substitute your crappy server for a full thrift_socket_server DONE
         - Functionality/Test cases? DONE
           - Include tests of exceptions! DONE (with one exception...)
-        - Substitute your crappy client for a full ScrabbleCheat::ScrabbleCheat::Client
+        - Substitute your crappy client for a full ScrabbleCheat::ScrabbleCheat::Client DONE
         - Functionality/Test cases?
           - Include tests of exceptions!
+        - Critical memory increase - Verification code or Thrift?  See ~/scratch/ScrabbleCheat for pre-Thrift version.
         - Remove crappy server, crappy client
         - Test, commit, merge, push!
 

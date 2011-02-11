@@ -63,7 +63,7 @@ class Board
 
     # Returns a Thrift-friendly version of itself.  Since Thrift defines a board
     # as simply a list of tiles, we'll just make a flat array of ourselves.
-    def to_thrift
+    def to_list
         retval = []
         1.upto(@tiles.length - 1) do |row|
             1.upto(@tiles[row].length - 1) do |col|

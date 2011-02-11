@@ -67,15 +67,15 @@ class Conversationalist
 
     
     def get_scrabblecheat_suggestions(rack, board)
-        thrift_board = native_to_thrift_board(board)        
+        thrift_board = board.to_list.map { |x| native_to_thrift_tile(x) }
         rslt = @thrift.get_scrabblecheat_suggestions(rack, thrift_board)
         parse_get_scrabblecheat_suggestions(rslt)
     end
 
     def parse_get_scrabblecheat_suggestions(thrift_movelist)
-        thrift_movelist.map do |move|
-            movetiles = move.map { |x| thrift_to_native_tile(x) }
-            {:move => movetiles, :score => move.score}
+        thrift_movelist.map do |move_obj|
+            movetiles = move_obj.move.map { |x| thrift_to_native_tile(x) }
+            {:move => movetiles, :score => move_obj.score}
         end
     end
 
@@ -125,7 +125,7 @@ private
         debug(native_gamestate)
         debug(native_gamestate[:board])
         gamestate.player_turn = native_gamestate[:turn]
-        gamestate.board       = native_gamestate[:board].to_thrift.map { |x| native_to_thrift_tile(x) }
+        gamestate.board       = native_gamestate[:board].to_list.map { |x| native_to_thrift_tile(x) }
         gamestate.turn_order  = native_gamestate[:scores].map { |x| x[0] }
         gamestate.history     = native_to_thrift_history(native_gamestate[:history])
 
