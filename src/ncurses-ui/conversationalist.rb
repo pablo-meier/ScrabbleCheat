@@ -26,8 +26,6 @@ require 'thrift'
 require 'scrabble_cheat'
 
 require 'thrift_layer.rb'
-
-require 'serialization.rb'
 require 'board.rb'
 
 
@@ -36,11 +34,6 @@ class Conversationalist
 
     def initialize
         @thrift = ThriftLayer.new
-    end
-
-
-    def debug(msg)
-        eval("`echo \"#{msg}\" >> debug.txt`")
     end
 
     def new_game(namelist)
@@ -122,8 +115,6 @@ private
 
     def native_to_thrift_gamestate(native_gamestate)
         gamestate = Gamestate.new
-        debug(native_gamestate)
-        debug(native_gamestate[:board])
         gamestate.player_turn = native_gamestate[:turn]
         gamestate.board       = native_gamestate[:board].to_list.map { |x| native_to_thrift_tile(x) }
         gamestate.turn_order  = native_gamestate[:scores].map { |x| x[0] }

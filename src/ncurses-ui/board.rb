@@ -18,8 +18,6 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-require 'serialization'
-
 
 # Datatype for the board.  Late-night Ruby means this is sloppy, the way
 # we like it.  Refactors to come, I'm sure.
