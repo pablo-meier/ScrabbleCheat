@@ -25,8 +25,6 @@
 -export([new_tile/4, 
          print_tile/1,
          duplicate_tile/2,
-         serialize/1,
-         deserialize/1,
          get_tile_letter/1,
          get_tile_bonus/1,
          get_tile_location/1,
@@ -91,50 +89,3 @@ print_tile_skeleton(Letter, Bonus) ->
         double_letter_score -> io:format("_~s_", [[Letter]]);
         _false -> uh_oh
     end.
-
-
-%% serialize :: Tile -> String
-%%
-%% Letters are in two characters, "CX" for {character, X}, "WX" for 
-%% {wildcard, X}, and "--" for none.
-%%
-%% Note that we have our own format for Bonuses: 'T' and 'D' are triple_word and
-%% double_word, while 't' and 'd' are triple_letter and double_letter.  'n' is 
-%% none.
-%%
-%% Location coordinates are padded to 2 digits, so if you're row 4, col 11, 
-%% you're serialized 0411.
-serialize({Letter, Bonus, Location}) ->
-    lists:concat([letter_serialize(Letter), bonus_serialize(Bonus), location_serialize(Location)]).
-
-letter_serialize({character, X}) -> [$C,X];
-letter_serialize({wildcard, X})  -> [$W,X];
-letter_serialize(none) -> "--".
-
-bonus_serialize(double_letter_score) -> "d";   bonus_serialize(triple_letter_score) -> "t";
-bonus_serialize(double_word_score)   -> "D";   bonus_serialize(triple_word_score)   -> "T";
-bonus_serialize(none) -> "n".
-
-location_serialize({Row, Col}) -> lists:concat([two_digits(Row), two_digits(Col)]).
-two_digits(N) when N > 9 -> integer_to_list(N);
-two_digits(N) -> [$0, N + 48].
-
-
-%% deserialize :: String -> Tile
-%% 
-%% Turn the tile string into a bona-fide tile, per the description above.
-deserialize(TileString) ->
-    {Letter, [Bonus|Location]} = lists:split(2, TileString),
-    {letter_deserialize(Letter), bonus_deserialize([Bonus]), location_deserialize(Location)}.
-    
-letter_deserialize("--") -> none;
-letter_deserialize([$C|[P|[]]]) -> {character, P};
-letter_deserialize([$W|[P|[]]]) -> {wildcard, P}.
-
-bonus_deserialize("d") -> double_letter_score;  bonus_deserialize("t") -> triple_letter_score;
-bonus_deserialize("D") -> double_word_score;    bonus_deserialize("T") -> triple_word_score;
-bonus_deserialize("n") -> none.
-
-location_deserialize(LocString) ->
-    {RowStr, ColStr} = lists:split(2, LocString),
-    {list_to_integer(RowStr), list_to_integer(ColStr)}.

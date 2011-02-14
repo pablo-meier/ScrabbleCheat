@@ -50,8 +50,6 @@
          flip/1,
          verify/2,
          get_adjacents/2,
-         serialize/1,
-         deserialize/1,
          place_word/4,
          as_list/1,
          from_list/1]).
@@ -260,20 +258,6 @@ travel(ZoomTile, Direction, Gaddag, Board) ->
         false -> 
             make_followstruct(ZoomTile, Direction, Gaddag, Board, new_move())
     end.
-
-
-%% serialize :: Board -> String
-%%
-%% Serializes the board to a machine-parsable format.
-serialize(Board) ->
-    serialization:serialize_list(flatten(as_list(Board)), fun tile:serialize/1).
-
-
-%% deserialize :: String -> Board
-%%
-%% Turns a serialized string back into the board datatype.
-deserialize(BoardString) ->
-    from_list(serialization:deserialize_list(BoardString, fun tile:deserialize/1)).
 
 
 %% from_list :: [Tile] -> Board

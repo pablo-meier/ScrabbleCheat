@@ -47,9 +47,6 @@ test-server: compile compile-tests
 	$(ERL_START) true $(ERL_TEST_FLAGS) -run movesearch_test test $(ERL_END)
 	$(ERL_START) true $(ERL_TEST_FLAGS) -run followstruct_test test $(ERL_END)
 	$(ERL_START) true $(ERL_TEST_FLAGS) -run move_test test $(ERL_END)
-	$(ERL_START) true $(ERL_TEST_FLAGS) -run serialization_test test $(ERL_END)
-	$(ERL_START) true $(ERL_TEST_FLAGS) -run tile_test test $(ERL_END)
-	$(ERL_START) true $(ERL_TEST_FLAGS) -run gamestate_test test $(ERL_END)
 	rm -f $(BUILD)/gaddag.dict
 	$(ERL_START) true $(ERL_TEST_FLAGS) -run server_test test $(ERL_END)
 

@@ -19,6 +19,9 @@ SHORT-TERM:
         - Functionality/Test cases?
           - Include tests of exceptions!
         - Critical memory increase - Verification code or Thrift?  See ~/scratch/ScrabbleCheat for pre-Thrift version.
+                                   - Appears to be made terrible by verification.  
+                                     Naturally, only the part that requires the Master Gaddag. 
+                                     That code should be isolated, tested, optimized.
         - Remove crappy server, crappy client
         - Test, commit, merge, push!
 
