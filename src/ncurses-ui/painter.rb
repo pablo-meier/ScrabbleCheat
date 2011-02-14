@@ -63,7 +63,7 @@ class Painter
         Ncurses.nonl                    # Turn of line-ending processing
         Ncurses.stdscr.intrflush(false) # turn off flush-on-interrupt
         Ncurses.stdscr.keypad(true)     # turn on keypad mode
-        Ncurses.curs_set(0)             # Remove the actual cursor
+#        Ncurses.curs_set(1)             # Remove the actual cursor
 
         Ncurses.init_pair(1, COLOR_RED, COLOR_BLACK);
         Ncurses.init_pair(2, COLOR_YELLOW, COLOR_BLACK);
@@ -385,8 +385,8 @@ class Painter
                 {:state => :move, :window => menuwin[:window]}
             when "ai"
                 {:state => :ai, :window => menuwin[:window]}
-            end
         end
+    end
 
 
     def get_a_move(board, boardwin, presentation_win)
@@ -811,7 +811,6 @@ class Painter
         Ncurses.stdscr.move(Ncurses.LINES - 2, Ncurses.COLS - (COMMEMORATE_LINE.length + 2))
         Ncurses.stdscr.addstr(COMMEMORATE_LINE)
     end
-
 end
 
 

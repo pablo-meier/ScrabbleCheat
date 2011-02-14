@@ -18,12 +18,9 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-require 'serialization'
-
 
 # Datatype for the board.  Late-night Ruby means this is sloppy, the way
 # we like it.  Refactors to come, I'm sure.
-
 class Board
 
     attr_accessor :tiles
@@ -62,12 +59,35 @@ class Board
         :done
     end
 
+    # Returns a Thrift-friendly version of itself.  Since Thrift defines a board
+    # as simply a list of tiles, we'll just make a flat array of ourselves.
+    def to_list
+        retval = []
+        1.upto(@tiles.length - 1) do |row|
+            1.upto(@tiles[row].length - 1) do |col|
+                retval << @tiles[row][col]
+            end
+        end
+        retval
+    end
+
+
+    # Given a list of native tiles, makes a board!
+    def Board.from_list(thrift_board)
+        board = Board.new
+        0.upto(14) do |row|
+            0.upto(14) do |col|
+                board.tiles[row + 1][col + 1] = thrift_board[(row * 15) + col]
+            end
+        end
+        board
+    end
+
+
     # Object.dup or Object.clone provide shallow copies, which is 
     # great unless you want to modify @tiles... which is almost certainly
     # what you want to do.  This provides a real copy of the board.  
     def deep_copy
         Marshal.load(Marshal.dump(self))
     end
-
-
 end
