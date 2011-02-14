@@ -4,6 +4,8 @@ SHORT-TERM:
     - Allow for null moves/lost turns
     - Undo
     - Multiple clients no breakey. (Solved by Thrift?)
+    - Flash/AIR client?
+    - Deploy?
 
     - Use Thrift, instead of your crappy-ass homebrew serialization/deserialization scheme.
       It's a hack where you gave much more than it deserved.
@@ -22,7 +24,7 @@ SHORT-TERM:
                                    - Appears to be made terrible by verification.  
                                      Naturally, only the part that requires the Master Gaddag. 
                                      That code should be isolated, tested, optimized.
-        - Remove crappy server, crappy client
+        - Remove crappy server, crappy client DONE
         - Test, commit, merge, push!
 
     - Move selection (after generation, likely start out with naive high score).
@@ -47,7 +49,7 @@ SHORT-TERM:
 
 SERVER
     - Better, more rigorous testing.  Mostly in movesearches, and the most recent features (wildcards, 
-      serialization, dumping previous computation to disk).  Use abstractions!
+      dumping previous computation to disk).  Use abstractions!
     - Optimize, optimize, optimize.  Especially with wildcards.
         Immediate, obvious optimizations:
             -> Don't check candidate tiles on the right/bottom of an occupied tile
