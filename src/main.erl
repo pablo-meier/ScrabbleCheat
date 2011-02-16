@@ -93,8 +93,9 @@ start(Port) ->
     ets:insert(globals, {master_gaddag, Gaddag}),
     thrift_socket_server:start([{handler, Handler},
                                 {service, scrabbleCheat_thrift},
+                                {framed, true},
                                 {port, Port},
-                                {socket_opts, [{recv_timeout, 100000}]},
+                                {socket_opts, [{recv_timeout, 60000}]},
                                 {name, scrabbleCheat_server}]).
 
 
