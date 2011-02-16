@@ -83,6 +83,14 @@ Check out these git tags for particular milestones in the project.
   4 highest scoring moves given a rack.  Requires ncurses-ruby 
   package to use the client. 
 
+* WITH_THRIFT_V1 -> The GADDAG_WITH_CLIENT used a serialization scheme 
+  that I made up, and was brittle/insecure as a server.  I moved the
+  client/server to use Apache Thrift, which while stil a little buggy
+  (the server won't start unless manually started from the Erlang 
+  shell, -s and -run make it break) allows for better server behaviour,
+  as well as a much more maintainable service that's easy to add clients
+  for.
+
 ##################
 ### Branches
 
