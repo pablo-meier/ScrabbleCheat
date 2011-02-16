@@ -1,10 +1,10 @@
 # Build document for scrabble-cheat, Erlang implementation.
 #   Summer 2010, pablo.a.meier@gmail.com
 
-BUILDDIR = build
+BUILD = build
 
-BUILD_BEAM_DIR = $(BUILDDIR)/bin
-BUILD_TEST_DIR = $(BUILDDIR)/tests
+BUILD_BEAM_DIR = $(BUILD)/bin
+BUILD_TEST_DIR = $(BUILD)/tests
 
 TESTDIR = test
 
@@ -12,16 +12,21 @@ SRCDIR = src
 LIBDIR = lib
 ERLC = erlc
 
-ERLC_SRC_FLAGS = -v -o $(BUILD_BEAM_DIR) -pa $(SRCDIR)
-ERLC_TEST_FLAGS = -v -o $(BUILD_TEST_DIR) -pa $(SRCDIR) -pa $(LIBDIR) -pz $(TESTDIR)
+THRIFT_PATH = $(LIBDIR)/ScrabbleCheat.thrift
 
+ERL_THRIFT_INCLUDE = $(LIBDIR)/thrift-erl
+ERL_THRIFT_GEN = $(BUILD)/gen-erl
+ERL_THRIFT_BEAM_OUTPUT = $(BUILD)/thrift-beam
+ERL_THRIFT_INCLUDES = -I $(ERL_THRIFT_INCLUDE) -I $(ERL_THRIFT_GEN)
+ERL_THRIFT_COMPILE_FLAGS = $(ERL_THRIFT_INCLUDES) -o $(ERL_THRIFT_BEAM_OUTPUT) 
 
-ERL = erl
-ERL_INCLUDE_FLAGS = -pa $(BUILD_BEAM_DIR)
-ERL_TEST_FLAGS = -pa $(BUILD_TEST_DIR) 
-ERL_RUN_FLAGS = -noshell
+ERLC_SRC_FLAGS = -v -o $(BUILD_BEAM_DIR) $(ERL_THRIFT_INCLUDES) 
+ERLC_TEST_FLAGS = -v -o $(BUILD_TEST_DIR) $(ERL_THRIFT_INCLUDES)
+
+ERL_TEST_FLAGS = -noshell -pa $(BUILD_BEAM_DIR) -pa $(ERL_THRIFT_BEAM_OUTPUT) -pa $(BUILD_TEST_DIR)
 
 ERL_FLAGS = $(ERL_INCLUDE_FLAGS) $(ERL_RUN_FLAGS)
+ERL_START = erl +K true
 ERL_END = -run erlang halt
 ERL_RUN = $(ERL) $(ERL_FLAGS)
 
@@ -30,43 +35,45 @@ CLIENT_SRC=$(SRCDIR)/ncurses-ui
 CLIENT_TESTS=$(TESTDIR)/ncurses-ui
 
 
-test-client:
-	ruby -I $(CLIENT_SRC) -I $(CLIENT_TESTS) $(CLIENT_TESTS)/client_serializable_test.rb
-
 test: test-server test-client
 
+test-client:
+	echo "write tests for client!" #ruby -I $(CLIENT_SRC) -I $(CLIENT_TESTS) $(CLIENT_TESTS)/client_serializable_test.rb
+
 test-server: compile compile-tests
-	$(ERL) $(ERL_TEST_FLAGS) $(ERL_FLAGS) -run gaddag_test test $(ERL_END)
-	$(ERL) $(ERL_TEST_FLAGS) $(ERL_FLAGS) -run parser_test test $(ERL_END)
-	$(ERL) $(ERL_TEST_FLAGS) $(ERL_FLAGS) -run board_test test $(ERL_END)
-	$(ERL) $(ERL_TEST_FLAGS) $(ERL_FLAGS) -run movesearch_test test $(ERL_END)
-	$(ERL) $(ERL_TEST_FLAGS) $(ERL_FLAGS) -run followstruct_test test $(ERL_END)
-	$(ERL) $(ERL_TEST_FLAGS) $(ERL_FLAGS) -run move_test test $(ERL_END)
-	$(ERL) $(ERL_TEST_FLAGS) $(ERL_FLAGS) -run serialization_test test $(ERL_END)
-	$(ERL) $(ERL_TEST_FLAGS) $(ERL_FLAGS) -run tile_test test $(ERL_END)
-	$(ERL) $(ERL_TEST_FLAGS) $(ERL_FLAGS) -run gamestate_test test $(ERL_END)
+	$(ERL_START) true $(ERL_TEST_FLAGS) -run gaddag_test test $(ERL_END)
+	$(ERL_START) true $(ERL_TEST_FLAGS) -run parser_test test $(ERL_END)
+	$(ERL_START) true $(ERL_TEST_FLAGS) -run board_test test $(ERL_END)
+	$(ERL_START) true $(ERL_TEST_FLAGS) -run movesearch_test test $(ERL_END)
+	$(ERL_START) true $(ERL_TEST_FLAGS) -run followstruct_test test $(ERL_END)
+	$(ERL_START) true $(ERL_TEST_FLAGS) -run move_test test $(ERL_END)
+	rm -f $(BUILD)/gaddag.dict
+	$(ERL_START) true $(ERL_TEST_FLAGS) -run server_test test $(ERL_END)
 
-all: binary-gaddag test run
+all: compile-all test run
 
-run: compile
-	./start_server.sh
-	#$(ERL_RUN) -run main main 
-  
+compile-all: binary-gaddag thrift-classes compile compile-tests
+
 shell: compile
-	$(ERL) $(ERL_TEST_FLAGS) $(ERL_INCLUDE_FLAGS)
+	$(ERL_START) $(ERL_TEST_FLAGS) $(ERL_INCLUDE_FLAGS)
 
 binary-gaddag: compile
-	$(ERL_RUN) -run main make_binary_gaddag $(ERL_END)
+	$(ERL_START) -noshell -pa $(BUILD_BEAM_DIR) -run main make_binary_gaddag $(ERL_END)
 
-compile: prepare
+thrift-classes: prepare
+	thrift -o $(BUILD) --gen erl $(THRIFT_PATH)
+	thrift -o $(BUILD) --gen rb $(THRIFT_PATH)
+	$(ERLC) $(ERL_THRIFT_COMPILE_FLAGS) $(ERL_THRIFT_GEN)/*.erl
+
+compile: prepare thrift-classes
 	$(ERLC) $(ERLC_SRC_FLAGS) $(SRCDIR)/*.erl
 
-compile-tests: 
+compile-tests: compile
 	$(ERLC) $(ERLC_TEST_FLAGS) $(TESTDIR)/*.erl
 
 prepare:
-	test -d $(BUILDDIR) || mkdir -p $(BUILD_BEAM_DIR) $(BUILD_TEST_DIR)
+	test -d $(BUILD) || mkdir -p $(BUILD_BEAM_DIR) $(BUILD_TEST_DIR) $(ERL_THRIFT_BEAM_OUTPUT)
 
 clean:
-	test -d $(BUILDDIR) && rm -rf $(BUILDDIR)
+	test -d $(BUILD) && rm -rf $(BUILD)
 

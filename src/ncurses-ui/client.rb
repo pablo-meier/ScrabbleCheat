@@ -23,7 +23,6 @@ require 'painter.rb'
 
 require 'socket'
 include Socket::Constants
-PORT = 6655                     # Hard coding for now, will generalize later.
 
 
 # Handles state transitions for the client.  Uses Conversationalist for server
@@ -48,8 +47,7 @@ PORT = 6655                     # Hard coding for now, will generalize later.
 class Client
 
     def initialize
-        socket = TCPSocket.new("localhost", PORT)
-        @connection = Conversationalist.new(socket)
+        @connection = Conversationalist.new
         @painter = Painter.new
 
         @gamestates = []
@@ -65,7 +63,7 @@ class Client
             case response[:state]
                 when :new_game
                     names = response[:data]
-                    gamestate = @connection.create_new_game(names)
+                    gamestate = @connection.new_game(names)
                     self.add_gamestate(gamestate)
                     @curr_state = {:state => :action_choose, :data => gamestate}
                 when :play_move
@@ -76,7 +74,7 @@ class Client
                 when :get_moves
                     rack = response[:data]
                     this_gamestate = @gamestates[@gamestate_index]
-                    moves = @connection.get_scrabblecheat_moves(this_gamestate, rack)
+                    moves = @connection.get_scrabblecheat_suggestions(rack, this_gamestate[:board])
                     @curr_state = {:state => :move_choose, :data => {:gamestate => this_gamestate, :moves => moves}}
                 when :quit
                     @connection.quit

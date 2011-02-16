@@ -46,12 +46,27 @@ The Makefile has the following targets:
         The wordsearch uses a GADDAG from a pretty huge dictionary file, and
         this creates a binary representation ahead of time that the program can
         use rather than dynamically generate. 
+* thrift-classes ->
+        Builds the client and server communication code with Thrift.
 * clean -> 
         Removes all compilation bits.
 * compile -> 
         Builds the project and stores the .beam files into build/
 * compile-test -> 
         Builds the Unit tests.
+
+##################
+### Requirements
+
+ScrabbleCheat uses the following dependencies:
+
+* ncurses-ruby -> This is only if you intend on using my hacktacular client.
+
+* Thrift -> Apache Thrift is used to build language-agnostic web services 
+  automatically, and it's how my AI communicates with any client or
+  service who wants to use it to cheat.  See lib/ScrabbleCheat.thrift
+  for the specification.  We build the files dynamically, so you'll 
+  need Thrift installed to build the files that communicate with one another.
 
 ##################
 ### Milestones
@@ -75,11 +90,11 @@ git checkout <branchname> for your favorite.  Note that for a while (until
 Halloween 2010) virtually everything was done in master, like a n00b.
 
 * master -> contains the most recent 'stable' code.  In master, 'make run'
-            works, and the code doesn't have lame printlines or debugging
-            stuff in it.
+  works, and the code doesn't have lame printlines or debugging
+  stuff in it.
 
 * develop -> Mostly for feature integration, here we have a fair bit of that
-             debugging nonsense.  Where we merge to from feature branches.
+  debugging nonsense.  Where we merge to from feature branches.
 
 * anything else -> Usually a feature branch for something I'm working on.
 
@@ -92,5 +107,5 @@ machine.  Enjoy, and email about any questions, concerns!
 
 - Paul Meier
 02/15/2011
-pablo.a.meier@gmail.com  
+ablo.a.meier@gmail.com  
 www.morepaul.com

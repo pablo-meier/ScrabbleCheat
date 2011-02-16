@@ -48,11 +48,11 @@
          orthogonals/1,
          to_beginning/1,
          flip/1,
+         verify/2,
          get_adjacents/2,
-         serialize/1,
-         deserialize/1,
          place_word/4,
-         as_list/1]).
+         as_list/1,
+         from_list/1]).
 
 %% The actual board datatype.  Queried lots to generate moves.
 
@@ -260,21 +260,18 @@ travel(ZoomTile, Direction, Gaddag, Board) ->
     end.
 
 
-%% serialize :: Board -> String
+%% from_list :: [Tile] -> Board
 %%
-%% Serializes the board to a machine-parsable format.
-serialize(Board) ->
-    serialization:serialize_list(flatten(as_list(Board)), fun tile:serialize/1).
-
-
-%% deserialize :: String -> Board
-%%
-%% Turns a serialized string back into the board datatype.
-deserialize(BoardString) ->
-    BigList = serialization:deserialize_list(BoardString, fun tile:deserialize/1),
-    ListOfLists = recursive_split_lists(0, BigList, []),
-    ListOfArrays = lists:map(fun (X) -> array:fix(array:from_list(X)) end, ListOfLists),
-    array:fix(array:from_list(ListOfArrays)).
+%% Creates a board from a list of tiles.  Note that the list MUST be the correct size.
+from_list(BigList) ->
+    case length(BigList) of
+        ?BOARD_WIDTH * ?BOARD_HEIGHT ->    
+            ListOfLists = recursive_split_lists(0, BigList, []),
+            ListOfArrays = lists:map(fun (X) -> array:fix(array:from_list(X)) end, ListOfLists),
+            array:fix(array:from_list(ListOfArrays));
+        _Else ->
+            throw_badboard("Not the correct number of tiles in list to create a board.")
+    end.
 
 recursive_split_lists(?BOARD_HEIGHT, [], Accum) -> lists:reverse(Accum);
 recursive_split_lists(Num, Lst, Accum) -> 
@@ -298,5 +295,121 @@ print_key() ->
     io:format("~nKey (for any character 'p'):~n  *p* -> Triple Word!~n  ^p^ -> Double Word!~n  -p- -> Triple Letter!~n  _p_ -> Double Letter~n~n").
 
 
-%% A little silly, but DRY...
+%% make_array_indices :: Int * Int -> {Int, Int}
+%%
+%% A little silly, but DRY till we die.  Facilitates 1-based board
+%% indexing by creating the proper indices to the arrays that underlie the
+%% implementation.
 make_array_indices(Num1, Num2) -> {Num1 - 1, Num2 - 1}.
+
+
+%% verify :: Board * Gaddag -> ()
+%%
+%% Verifies that the parameter it has received is, in fact, a valid board.
+%% Criteria for validity are:
+%%   - Every non-empty tile is connected (no 'islands')
+%%   - Every move is valid.
+%% If the board is found to be invalid, we throw a badBoardException, defined
+%% in the ScrabbleCheat Thrift protocol.
+verify(Board, Master) ->
+    check_connectedness(Board),
+    check_valid_moves(Board, Master).
+
+%% BFS from any tile, ensure that each occupied tile on board is contained in the BFS.
+check_connectedness(Board) ->
+    Occupied = lists:filter(fun tile:is_occupied/1, lists:flatten(as_list(Board))),
+    case length(Occupied) of
+        0 -> ok;
+        _Else -> 
+            OccupiedSet = sets:from_list(Occupied),
+            EmptySet = sets:new(),
+            StartPoint = hd(Occupied),
+            Connected = bfs_from_tile(Board, [StartPoint], sets:new()),
+            case sets:subtract(OccupiedSet, Connected) of
+                EmptySet ->
+                    ok;
+                _False ->
+                    throw_badboard("Invalid board; some tiles are disconnected from game.")
+            end
+    end.
+
+bfs_from_tile(_, [], Visited) -> Visited;
+bfs_from_tile(Board, Accum, Visited) ->
+    Tile = hd(Accum),
+    Adjacents = lists:filter(fun tile:is_occupied/1, get_adjacents(Tile, Board)),
+    Newcomers = lists:filter(fun (X) -> not sets:is_element(X, Visited) end, Adjacents),
+    NewAccum = lists:append(Newcomers, tl(Accum)),
+    NewVisited = sets:add_element(Tile, Visited),
+    bfs_from_tile(Board, NewAccum, NewVisited).
+
+
+%% Go rightwards through every row, downwards through every col, make sure everything 
+%% makes sense.
+check_valid_moves(Board, Master) ->
+    Rows = as_list(Board),
+    Cols = make_cols_from_rows(Rows),
+    lists:foreach(fun (Seq) -> judge_sequence(Seq, Master) end, lists:append(Rows, Cols)).
+
+make_cols_from_rows(Rows) ->
+    RowsEmpty = lists:all(fun (X) -> X =:= [] end, Rows),
+    case RowsEmpty of
+        true -> [];
+        false -> 
+            NewCol = lists:flatten(lists:map(fun (X) -> hd(X) end, Rows)),
+            Rst = lists:map(fun tl/1, Rows),
+            [NewCol|make_cols_from_rows(Rst)]
+    end.
+
+judge_sequence([], _) -> ok;
+judge_sequence(Seq, Master) ->
+    [Fst|Rst] = Seq,
+    case tile:is_occupied(Fst) of
+        true -> 
+            PastSubsequence = subsequence_check(Seq, Master),
+            judge_sequence(PastSubsequence, Master);
+        false -> judge_sequence(Rst, Master)
+    end.
+
+subsequence_check([Fst|Rst], Gaddag) ->
+    Letter = tile:get_tile_letter(Fst),
+    HasBranch = gaddag:has_branch(Letter, Gaddag),
+    IsSingleton = case Rst =:= [] of
+                      true -> true;
+                      false ->
+                          [Nxt|_] = Rst,
+                          not tile:is_occupied(Nxt)
+                  end,
+    case {HasBranch, IsSingleton} of
+        {false, _} ->
+            throw_badboard("Error with the board: Row begins with invalid character.");
+        {true, false} ->
+            {branch, Further} = gaddag:get_branch(Letter, Gaddag),
+            {branch, Forwards} = gaddag:get_branch($&, Further),
+            go_forwards(Rst, Forwards);
+        {true, true} ->
+            Rst
+    end.
+
+go_forwards(Tiles, Gaddag) ->
+    Top = hd(Tiles),
+    case tile:is_occupied(Top) of
+       true ->
+            Letter = tile:get_tile_letter(Top),
+            case gaddag:has_branch(Letter, Gaddag) of
+                true -> 
+                    {branch, Further} = gaddag:get_branch(Letter, Gaddag),
+                    go_forwards(tl(Tiles), Further);
+                false ->
+                    throw_badboard("Invalid word found on board")
+            end;
+       false -> 
+           case gaddag:is_terminator(Gaddag) of
+               true -> Tiles;
+               false -> throw_badboard("Error with the board: Row or col ends with invalid word.")
+           end
+     end.
+
+
+throw_badboard(Str) ->
+    Encoded = list_to_binary(Str),
+    throw({badBoardException, Encoded}).

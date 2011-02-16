@@ -22,12 +22,10 @@
 
 -import(board_parser, [empty_board/0]).
 -import(lists, [concat/1, foldl/3, map/2]).
--import(serialization, [serialize_list/2, deserialize_list/2, split_with_delimeter/2]).
 
 -export([make_gamestate/4, 
          play_move/2,
-         serialize/1, 
-         deserialize/1, 
+         verify/1,
          get_gamestate_board/1,
          get_gamestate_scores/1,
          get_gamestate_turn/1,
@@ -47,9 +45,6 @@
 %% This factors heavily into the MVC separation:  most of the controller code
 %% (that on the Erlang side) will communicate to any View by serializing these
 %% objects and passing them around, and save their state correspondingly.
-%%
-%% Serialization will be to strings.  Each element will be separated by a pound
-%% character '#'.
 
 make_gamestate(Board, Scores, Turn, History) -> {gamestate, Board, Scores, Turn, History}.
 
@@ -119,50 +114,20 @@ update_score(NewScore, OldList, Turn) ->
               end, OldList).
 
 
-%% serialize :: Gamestate -> String
+%% verify :: Gamestate -> ()
 %%
-%% Turns the gamestate into a string we can pass through network connections.
-serialize({gamestate, Board, Scores, Turn, History}) ->
-    concat([board:serialize(Board), "#", serialize_list(Scores, fun serialize_score/1), 
-            "#", Turn, "#", serialize_list(History, fun serialize_history/1)]).
+%% Verifies the Gamestate, throws badGamestateException if it isn't up to snuff.
+verify(Gamestate) ->
+    try 
+        {gamestate, Board, _Scores, _Turn, _History} = Gamestate,
+        Gaddag = main:get_master_gaddag(),
+        board:verify(Board, Gaddag)
+    catch
+        throw:{badMatchException, _} -> throw_badGamestate("Error with gamestate representation.");
+        throw:{badBoardException, _} -> throw_badGamestate("Error with supplied board.")
+    end.
 
+throw_badGamestate(Msg) ->
+    Encoded = list_to_binary(Msg),
+    throw({badGamestateException, Encoded}).
 
-%% serialize_score :: {String, Int} -> String
-%%
-%% Store the player name and their score.  Will follow the convention of all tuples that
-%% dollar sign '$' separates members.
-serialize_score({String, Int}) ->
-    concat([String, "$", integer_to_list(Int)]).
-
-
-%% serialize_history :: {String, Move, Int} -> String
-%%
-%% As serialize score, we'll separate tuple items with "$"
-serialize_history({Player, Move, Score}) ->
-    concat([Player, "$", move:serialize(Move), "$", integer_to_list(Score)]).
-
-
-%% deserialize :: String -> Gamestate
-%%
-%% Turn the string back into a Gamestate.
-deserialize(GamestateString) ->
-    {BoardString, Rst1} = split_with_delimeter(GamestateString, $#),
-    {ScoreString, Rst2} = split_with_delimeter(Rst1, $#),
-    {TurnString, HistoryString} = split_with_delimeter(Rst2, $#),
-    make_gamestate(board:deserialize(BoardString), deserialize_list(ScoreString, fun deserialize_score/1), 
-                   TurnString, deserialize_history(HistoryString, [])).
-
-
-deserialize_score(ScoreString) ->
-    {Player, Score} = split_with_delimeter(ScoreString, $$),
-    {Player, list_to_integer(Score)}.
-
-
-deserialize_history([], Accum) -> lists:reverse(Accum);
-deserialize_history(HistoryString, Accum) ->
-    {PlayerName, Rst} = split_with_delimeter(HistoryString, $$),
-    {MoveString, ScoreWithHistory} = split_with_delimeter(Rst, $$),
-    {Score, RestOfHistory} = split_with_delimeter(ScoreWithHistory, $|),
-    HistoryEntry = {PlayerName, move:deserialize(MoveString), list_to_integer(Score)},
-    deserialize_history(RestOfHistory, [HistoryEntry|Accum]).
-    
