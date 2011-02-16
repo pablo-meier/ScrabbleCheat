@@ -2,7 +2,7 @@
 SHORT-TERM:
 
     - Allow for null moves/lost turns
-    - Undo
+    - Undo (should be handled by clients)
     - Multiple clients no breakey. (Solved by Thrift?)
     - Flash/AIR client?
     - Deploy?
