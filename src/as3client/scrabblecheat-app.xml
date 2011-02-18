@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<application xmlns="http://ns.adobe.com/air/application/2.5" minimumPatchLevel="0">
+
+	<id>com.morepaul.ScrabbleCheat</id>
+	<name>
+		<text xml:lang="en">ScrabbleCheat</text>
+	</name>
+        <versionNumber>0.0.3</versionNumber>
+        <versionLabel>Preparation A</versionLabel>
+	<filename>ScrabbleCheat</filename>
+	<description>
+		<text xml:lang="en">A client for the Scrabble cheating server.</text>
+	</description>
+	<copyright>Copyright Paul Meier, 2011</copyright>
+	<initialWindow>
+		<content>build/ScrabbleCheat.swf</content>
+		<title>Welcome to ScrabbleCheat!</title>
+		<systemChrome>standard</systemChrome>
+		<transparent>false</transparent>
+		<visible>true</visible>
+		<minimizable>true</minimizable>
+		<maximizable>true</maximizable>
+		<resizable>true</resizable>
+		<width>600</width>
+		<height>600</height>
+		<x>150</x>
+		<y>150</y>
+<!--		<minSize>300 300</minSize>
+		<maxSize>800 800</maxSize> -->
+	</initialWindow>
+<!--	<installFolder>Example Company/Example Application</installFolder>
+	<programMenuFolder>Example Company/Example Application</programMenuFolder> 
+	<icon>
+		<image16x16>icons/AIRApp_16.png</image16x16>
+		<image32x32>icons/AIRApp_32.png</image32x32>
+		<image48x48>icons/AIRApp_48.png</image48x48>
+		<image128x128>icons/AIRApp_128.png</image128x128>
+	</icon> -->
+	<customUpdateUI>false</customUpdateUI>
+	<allowBrowserInvocation>true</allowBrowserInvocation>
+</application>
