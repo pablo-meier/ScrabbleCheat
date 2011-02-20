@@ -1,0 +1,15 @@
+TW N  N  DL N  N  N  TW N  N  N  DL N  N  TW
+N  N  DW N  N  N  DL N  DL N  N  N  DW N  N 
+N  DW N  N  N  TL N  N  N  TL N  N  N  DW N
+DL N  N  N  DW N  N  N  N  N  DW N  N  N  DL
+N  N  N  DW N  N  N  N  N  N  N  DW N  N  N
+N  N  TL N  N  N  DL N  DL N  N  N  TL N  N
+N  DL N  N  N  DL N  N  N  DL N  N  N  DL N
+TW N  N  N  N  N  N  DW N  N  N  N  N  N  N
+N  DL N  N  N  DL N  N  N  DL N  N  N  DL N
+N  N  TL N  N  N  DL N  DL N  N  N  TL N  N
+N  N  N  DW N  N  N  N  N  N  N  DW N  N  N
+DL N  N  N  DW N  N  N  N  N  DW N  N  N  DL
+N  DW N  N  N  TL N  N  N  TL N  N  N  DW N
+N  N  DW N  N  N  DL N  DL N  N  N  DW N  N 
+TW N  N  DL N  N  N  TW N  N  N  DL N  N  TW
