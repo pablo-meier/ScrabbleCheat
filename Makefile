@@ -11,7 +11,17 @@ CURSES_CLIENT=$(CLIENTS)/curses
 
 
 
+test:
+	echo "run all the tests"
 
+make-curses-client:
+	echo "make the cureses client"
+
+make-flash-client:
+	echo "make the flash client"
+
+make-server:
+	echo "make the server"
 
 clean:
 	rm -rf $(BUILD_DIR)
