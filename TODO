@@ -1,10 +1,11 @@
 ------
 SHORT-TERM:
 
-    - Allow for null moves/lost turns
-    - Undo (should be handled by clients)
+    - FIX SERVER BUG.  Y U NO PLAY!?!??!
     - Flash/AIR client?
-    - Deploy?
+    - OTP/Dialyzer/Rebar builds?
+    - Allow for null moves/lost turns.  Add to Thrift file, add to code.
+    - Deploy?  Snap site that talks to the Erlang via Thrift, Snap provides the web presence?
 
     - Move selection (after generation, likely start out with naive high score).
 	- Optimize Wildcards/Movesearch.

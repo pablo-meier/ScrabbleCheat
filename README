@@ -25,42 +25,18 @@ Scrabble and games with similar rules (http://en.wikipedia.org/wiki/GADDAG).
 ScrabbleCheat has the following contents:
 
 * Makefile -> Builds the project, targets below.
-* src/ -> Contains the .erl source files, as well as a hacktacular Ruby client
-          I built for testing.  Use at your own risk.
+* code/ -> Contains the project code.  This is for the server (the 'brains,' in
+           Erlang) as well as the clients that communicate with it.
 * lib/ -> Contains any extraneous support, such as testing macros, dictionary 
           files, Thrift libraries, and the like.
-* test/ -> Contains unit tests for each of the modules, some rigorous, most not.
-* TODO -> Small lists of tasks for the project.  This is my PM, which I'm 
-          hoping to integrate with the GitHub API (issues).
-
-##################
-### Makefile
-
-The Makefile has the following targets:
-
-* test -> 
-        Compiles the project and runs the unit tests.
-* shell -> 
-        Compiles the project and loads the definitions into an Erlang shell.
-* binary-gaddag -> 
-        The wordsearch uses a GADDAG from a pretty huge dictionary file, and
-        this creates a binary representation ahead of time that the program can
-        use rather than dynamically generate. 
-* thrift-classes ->
-        Builds the client and server communication code with Thrift.
-* clean -> 
-        Removes all compilation bits.
-* compile -> 
-        Builds the project and stores the .beam files into build/
-* compile-test -> 
-        Builds the Unit tests.
+* TODO -> Small lists of tasks for the project.  This is my PM.
 
 ##################
 ### Requirements
 
 ScrabbleCheat uses the following dependencies:
 
-* ncurses-ruby -> This is only if you intend on using my hacktacular client.
+* ncurses-ruby -> This is only if you intend on using the Ruby terminal client.
 
 * Thrift -> Apache Thrift is used to build language-agnostic web services 
   automatically, and it's how my AI communicates with any client or
