@@ -4,8 +4,6 @@
 #
 # TODO: Convert to OTP + rebar
 
-BUILD = build
-
 BUILD_BEAM_DIR = $(BUILD)/bin
 BUILD_TEST_DIR = $(BUILD)/tests
 
@@ -46,12 +44,6 @@ test: compile compile-tests
 
 all: compile-all test run
 
-run: compile
-	echo "Run main:start() to start the server."
-	erl +K true -pa lib/thrift-erl/ebin -I build/gen-erl -pa build/thrift-beam -pa build/bin 
-
-
-compile-all: binary-gaddag thrift-classes compile compile-tests
 
 shell: compile
 	$(ERL_START) $(ERL_TEST_FLAGS) $(ERL_INCLUDE_FLAGS)
@@ -59,19 +51,25 @@ shell: compile
 binary-gaddag: compile
 	$(ERL_START) -noshell -pa $(BUILD_BEAM_DIR) -run main make_binary_gaddag $(ERL_END)
 
-thrift-classes: prepare
-	thrift -o $(BUILD) --gen erl $(THRIFT_PATH)
-	$(ERLC) $(ERL_THRIFT_COMPILE_FLAGS) $(ERL_THRIFT_GEN)/*.erl
 
-compile: prepare thrift-classes
-	$(ERLC) $(ERLC_SRC_FLAGS) $(SRCDIR)/*.erl
+thrift-generate: thrift-compile
+	mv gen-erl/*.hrl include/
+	mv gen-erl/*.beam ebin/
+	cp -R priv/thrift-erl/include/*.hrl include/
+	cp -R priv/thrift-erl/ebin/*.beam ebin/
+	rm -rf gen-erl
+
+thrift-compile: 
+	thrift -r --gen erl ~/Desktop/projects/ScrabbleCheat/lib/ScrabbleCheat.thrift
+	erlc -o gen-erl gen-erl/*.erl
+
+compile: thrift-generate
+	rebar compile
 
 compile-tests: compile
 	$(ERLC) $(ERLC_TEST_FLAGS) $(TESTDIR)/*.erl
 
-prepare:
-	test -d $(BUILD) || mkdir -p $(BUILD_BEAM_DIR) $(BUILD_TEST_DIR) $(ERL_THRIFT_BEAM_OUTPUT)
-
 clean:
-	test -d $(BUILD) && rm -rf $(BUILD)
-
+	rm -rf ebin/*.beam
+	rm -f include/thrift_*.hrl
+	rm -f include/scrabbleCheat_*.hrl

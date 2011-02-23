@@ -21,7 +21,6 @@
 -module(main).
 
 -import(movesearch, [get_best_move_function/1]).
--import(dict_parser, [parse/1, output_to_file/2]).
 -import(board, [print_board/1, place_move_on_board/2]).
 -import(string_utils, [format_string_for_gaddag/1]).
 -import(move, [score/2]).
@@ -29,7 +28,7 @@
 -import(board_parser, [new_board/0]).
 
 -define(DICT_FILE, "test/testdict.txt").
--define(LARGE_DICT_FILE, "lib/twl06.txt").
+-define(LARGE_DICT_FILE, "priv/twl06.txt").
 -define(DICT_BIN_PATH, "build/gaddag.dict").
 -define(WILDCARD, $*).
 -define(SMALLEST_ASCII_CHARACTER, 33).
@@ -61,7 +60,7 @@
 %% The program can be invoked to build the data structures and save them disk
 %% ahead of time.
 make_binary_gaddag() ->
-    output_to_file(?LARGE_DICT_FILE, ?DICT_BIN_PATH).
+    dict_parser:output_to_file(?LARGE_DICT_FILE, ?DICT_BIN_PATH).
 
 
 
@@ -85,7 +84,7 @@ start(Port) ->
                  {error, _} -> 
                     io:format("Gaddag file not found!  Using test dictionary in meantime.~n"),
                     io:format("run `make binary-gaddag` to generate the full dictionary.~n"),
-                    parse(?DICT_FILE)
+                    dict_parser:parse(?DICT_FILE)
              end,
     WordFunction = get_best_move_function(Gaddag),
     ets:new(globals, [set, protected, named_table, {keypos, 1}]), % {read_concurrency, true}]),
