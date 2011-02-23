@@ -3,21 +3,32 @@
 # Makefile for the AS3 AIR client for ScrabbleCheat.  Uses
 # Thrift to connect to the Erlang server!
 
-SRC=as
+SRC=src
 BUILD=build
+
+EXTERNAL_LIB=../../../lib
+
+PACKAGE_PATH=com/morepaul/ScrabbleCheat
+SRC_AS=$(SRC)/$(PACKAGE_PATH)
+
+BUILD_DUMP=$(BUILD)/gen-as3/$(PACKAGE_PATH)
 
 CONFIG=config.xml
 
 APP_XML=scrabblecheat-app.xml
 
-compile: prepare
-	mxmlc --load-config=$(CONFIG) $(SRC)/com/morepaul/ScrabbleCheat/*.as
+compile: compile-thrift
+	cp -R $(SRC_AS)/*.as $(BUILD_DUMP)
+	mxmlc --load-config=$(CONFIG) $(BUILD_DUMP)/ScrabbleCheatClientMain.as
+
+compile-thrift: prepare
+	thrift -r --gen as3 -o $(BUILD) $(EXTERNAL_LIB)/ScrabbleCheat.thrift
 
 run:
 	adl $(APP_XML)
 
 clean:
-	rm -rf $(BUILD)
+	[[ -d $(BUILD) ]] && rm -rf $(BUILD)
 
 prepare: 
-	test -d $(BUILD) || mkdir $(BUILD)
+	[[ -d $(BUILD) ]] || mkdir -p $(BUILD_DUMP)

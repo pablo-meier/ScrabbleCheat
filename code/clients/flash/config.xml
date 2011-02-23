@@ -1,15 +1,10 @@
 <?xml version="1.0"?>
 
-<!--
-    Taking the sample file, making it MINE.
--->
-
 <flex-config>
-
    <compiler>
 
       <source-path>
-         <path-element>as/</path-element>
+         <path-element>build/gen-as3/</path-element>
       </source-path>
 
       <accessible>true</accessible>
@@ -28,9 +23,13 @@
          <path-element>libs/air</path-element>
          <path-element>locale/{locale}</path-element>
       </library-path>
+
+      <include-libraries>
+        <library>libs/libthrift.swc</library>
+      </include-libraries>
      
       <namespaces>
-      <namespace>
+          <namespace>
             <uri>http://ns.adobe.com/mxml/2009</uri>
             <manifest>libs/mxml-2009-manifest.xml</manifest>
          </namespace>

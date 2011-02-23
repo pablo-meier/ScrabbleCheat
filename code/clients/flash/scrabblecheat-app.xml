@@ -5,8 +5,8 @@
 	<name>
 		<text xml:lang="en">ScrabbleCheat</text>
 	</name>
-        <versionNumber>0.0.3</versionNumber>
-        <versionLabel>Preparation A</versionLabel>
+    <versionNumber>0.0.3</versionNumber>
+    <versionLabel>Preparation A</versionLabel>
 	<filename>ScrabbleCheat</filename>
 	<description>
 		<text xml:lang="en">A client for the Scrabble cheating server.</text>
