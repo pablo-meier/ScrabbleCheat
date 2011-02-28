@@ -120,7 +120,7 @@ update_score(NewScore, OldList, Turn) ->
 verify(Gamestate) ->
     try 
         {gamestate, Board, _Scores, _Turn, _History} = Gamestate,
-        Gaddag = main:get_master_gaddag(),
+        Gaddag = scrabblecheat_main:get_master_gaddag(),
         board:verify(Board, Gaddag)
     catch
         throw:{badMatchException, _} -> throw_badGamestate("Error with gamestate representation.");

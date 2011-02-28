@@ -22,21 +22,15 @@
  [
   {description, "Server for the word game cheating software."},
   {vsn, "0.0.3"},
-  {mod, {app_callback, []}},
+  {mod, {scrabblecheat_app, []}},
   % All modules used by the application.
-  {modules, [app_callback, dict_parser, gamestate, movesearch, thrift_helper,
-             board, followstruct, main, string_utils, tile, board_parser, 
-             gaddag, move, thrift_base64_transport, thrift_binary_protocol, 
-             thrift_buffered_transport, thrift_client, thrift_client_util, 
-             thrift_disk_log_transport, thrift_file_transport, 
-             thrift_framed_transport, thrift_http_transport, 
-             thrift_memory_buffer, thrift_processor, thrift_protocol, 
-             thrift_server, thrift_service, thrift_socket_server, thrift_socket_transport, 
-             thrift_transport, scrabbleCheat_thrift, scrabbleCheat_types, 
-             thrift_transport_state_test]},
+  {modules, [scrabblecheat_app, scrabblecheat_sup, scrabblecheat_main, 
+             dict_parser, gamestate, movesearch, thrift_helper, board, 
+             followstruct, string_utils, tile, board_parser, gaddag, move,
+             scrabbleCheat_thrift, scrabbleCheat_types]},
 
   % All of the registered names the application uses. This can be ignored.
-  {registered, []},
+  {registered, [scrabblecheat_sup]},
 
   % Applications that are to be started prior to this one. This can be ignored
   % leave it alone unless you understand it well and let the .rel files in

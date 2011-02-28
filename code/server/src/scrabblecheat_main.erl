@@ -18,7 +18,7 @@
 %% OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 %% THE SOFTWARE.
 
--module(main).
+-module(scrabblecheat_main).
 
 -import(movesearch, [get_best_move_function/1]).
 -import(board, [print_board/1, place_move_on_board/2]).
@@ -42,8 +42,8 @@
 -include("scrabbleCheat_thrift.hrl").
 
 
--export([start/0,
-        start/1,
+-export([start_link/0,
+         start_link/1,
         stop/1,
         handle_function/2,
         new_game/1,
@@ -68,8 +68,8 @@ make_binary_gaddag() ->
 %% start :: () -> ()
 %%
 %% Starts a new ScrabbleCheat server on the default port.
-start() ->
-    start(?PORT).
+start_link() ->
+    start_link(?PORT).
 
 
 %% start :: Int -> ()
@@ -77,7 +77,7 @@ start() ->
 %% Starts a new ScrabbleCheat server on the parametrized port.  Follows the 
 %% example of the Mighty Mighty Todd Lipcon on his Thrift tutorial.  Todd 
 %% Lipcon is a Boss, if you didn't know.
-start(Port) ->
+start_link(Port) ->
     Handler = ?MODULE,
     Gaddag = case file:read_file_info(?DICT_BIN_PATH) of
                  {ok, _} -> dict_parser:read_from_binary(?DICT_BIN_PATH);
@@ -115,6 +115,10 @@ get_master_gaddag() ->
     Gaddag.
 
 
+
+%% EXTERNAL INTERFACE
+
+
 %% stop :: (or Name Pid) -> ()
 %%
 %% Stops the server named by the parameter, or its Pid.
@@ -122,13 +126,12 @@ stop(Server) ->
     ets:delete(globals),
     thrift_socket_server:stop(Server).
 
-
+%% THRIFT INTERFACE 
 handle_function(Function, Args) when is_atom(Function), is_tuple(Args) ->
     case apply(?MODULE, Function, tuple_to_list(Args)) of
         ok -> ok;
         Reply -> {reply, Reply}
     end.
-
 
 debug(Format, Data) ->
     error_logger:info_msg(Format, Data).

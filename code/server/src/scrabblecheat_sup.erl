@@ -19,16 +19,25 @@
 %% THE SOFTWARE.
 
 
-%% General application callback module for OTP compliance.  We'll see if this
-%% is even necessary.
+%% MOAR OTP COMPLIANCE!
+-module(scrabblecheat_sup).
+-behaviour(supervisor).
 
--module(app_callback).
--behaviour(application).
 
--export([start/2, stop/1]).
+%% API
+-export([start_link/0]).
 
-start(_Type, _Args) ->
-    main:start().
+%% Supervisor callbacks.
+-export([init/1]).
 
-stop(_State) ->
-    ok.
+-define(SERVER, ?MODULE).
+
+
+start_link() ->
+    supervisor:start_link({local, ?SERVER}, ?MODULE, []).
+
+init([]) ->
+    Children = {scrabblecheat_main, {scrabblecheat_main, start_link, []},
+                permanent, 2000, worker, [scrabblecheat_main]},
+    RestartStrategy = {one_for_one, 0, 1},
+    {ok, {RestartStrategy, [Children]}}.

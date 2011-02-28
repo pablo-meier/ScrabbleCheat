@@ -32,31 +32,18 @@ ERL_END = -run erlang halt
 ERL_RUN = $(ERL) $(ERL_FLAGS)
 
 
-test: compile compile-tests
-	$(ERL_START) true $(ERL_TEST_FLAGS) -run gaddag_test test $(ERL_END)
-	$(ERL_START) true $(ERL_TEST_FLAGS) -run parser_test test $(ERL_END)
-	$(ERL_START) true $(ERL_TEST_FLAGS) -run board_test test $(ERL_END)
-	$(ERL_START) true $(ERL_TEST_FLAGS) -run movesearch_test test $(ERL_END)
-	$(ERL_START) true $(ERL_TEST_FLAGS) -run followstruct_test test $(ERL_END)
-	$(ERL_START) true $(ERL_TEST_FLAGS) -run move_test test $(ERL_END)
-	rm -f $(BUILD)/gaddag.dict
-	$(ERL_START) true $(ERL_TEST_FLAGS) -run server_test test $(ERL_END)
 
-all: compile-all test run
-
-
-shell: compile
-	$(ERL_START) $(ERL_TEST_FLAGS) $(ERL_INCLUDE_FLAGS)
+run: compile
+	erl -pa ebin/ -pa priv/thrift-erl/ebin/
 
 binary-gaddag: compile
 	$(ERL_START) -noshell -pa $(BUILD_BEAM_DIR) -run main make_binary_gaddag $(ERL_END)
-
 
 thrift-generate: thrift-compile
 	mv gen-erl/*.hrl include/
 	mv gen-erl/*.beam ebin/
 	cp -R priv/thrift-erl/include/*.hrl include/
-	cp -R priv/thrift-erl/ebin/*.beam ebin/
+	# cp -R priv/thrift-erl/ebin/*.beam ebin/
 	rm -rf gen-erl
 
 thrift-compile: 
@@ -73,3 +60,24 @@ clean:
 	rm -rf ebin/*.beam
 	rm -f include/thrift_*.hrl
 	rm -f include/scrabbleCheat_*.hrl
+
+
+test: compile compile-tests
+	$(ERL_START) true $(ERL_TEST_FLAGS) -run gaddag_test test $(ERL_END)
+	$(ERL_START) true $(ERL_TEST_FLAGS) -run parser_test test $(ERL_END)
+	$(ERL_START) true $(ERL_TEST_FLAGS) -run board_test test $(ERL_END)
+	$(ERL_START) true $(ERL_TEST_FLAGS) -run movesearch_test test $(ERL_END)
+	$(ERL_START) true $(ERL_TEST_FLAGS) -run followstruct_test test $(ERL_END)
+	$(ERL_START) true $(ERL_TEST_FLAGS) -run move_test test $(ERL_END)
+	rm -f $(BUILD)/gaddag.dict
+	$(ERL_START) true $(ERL_TEST_FLAGS) -run server_test test $(ERL_END)
+
+all: compile-all test run
+
+
+shell: compile
+	$(ERL_START) $(ERL_TEST_FLAGS) $(ERL_INCLUDE_FLAGS)
+
+
+
+

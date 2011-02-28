@@ -230,7 +230,7 @@ verify(Move, Board) ->
         _Else ->
             WithMove = board:place_move_on_board(Move, Board),
             try
-                Gaddag = main:get_master_gaddag(),
+                Gaddag = scrabblecheat_main:get_master_gaddag(),
                 board:verify(WithMove, Gaddag)
             catch
                 {badBoardException, _} -> 
