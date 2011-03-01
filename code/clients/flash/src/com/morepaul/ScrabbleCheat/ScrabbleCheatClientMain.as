@@ -39,7 +39,7 @@ package com.morepaul.ScrabbleCheat
 
         private var _board:Board;
 
-        public function ScrabbleCheat():void
+        public function ScrabbleCheatClientMain():void
         {
             _board = new Board();
             _board.toThrift();

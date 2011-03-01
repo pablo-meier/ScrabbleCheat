@@ -23,27 +23,29 @@
 package com.morepaul.ScrabbleCheat 
 {
 
+    import com.morepaul.ScrabbleCheat.Tile;
+
     /**
      * Basic datatype to represent the board.  As in all ScrabbleCheat 
      * representations, the board is a 1-indexed row-major 2D matrix.
      */
     public class Board {
         
-        private var _tiles:Array;
+        private var m_tiles:Array;
 
-        public static const BOARD_HEIGHT:uint = 15;
-        public static const BOARD_WIDTH:uint = 15;
+        public static const BOARD_HEIGHT:int = 15;
+        public static const BOARD_WIDTH:int = 15;
 
         /**
          * Creates an empty board.
          */
         public function Board():void 
         {
-            _tiles = new Array(BOARD_HEIGHT);
-            for (var i:uint = 0; i < BOARD_HEIGHT; ++i)
+            m_tiles = new Array(BOARD_HEIGHT);
+            for (var i:int = 0; i < m_tiles.length; ++i)
             {
-                _tiles[i] = new Array(BOARD_WIDTH);
-                for (var j:uint = 0; i < BOARD_WIDTH; ++i) 
+                m_tiles[i] = new Array(BOARD_WIDTH);
+                for (var j:int = 0; j < m_tiles[i].length; ++j) 
                 {
                     var tile:Tile = new Tile();
                     tile.row = i + 1;
@@ -51,7 +53,8 @@ package com.morepaul.ScrabbleCheat
                     tile.bonus = Bonus.NONE;
                     tile.letter = "";
                     tile.type = LetterType.EMPTY;
-                    _tiles[i][j] = tile;
+
+                    m_tiles[i][j] = tile;
                 }
             }
         }
@@ -63,9 +66,9 @@ package com.morepaul.ScrabbleCheat
         public function toThrift():Array
         {
             var returnArray:Array = new Array(BOARD_HEIGHT * BOARD_WIDTH);
-            for (var i:uint = 1; i <= BOARD_HEIGHT; ++i)
+            for (var i:int = 1; i <= BOARD_HEIGHT; ++i)
             {
-                for (var j:uint = 1; i <= BOARD_WIDTH; ++j)
+                for (var j:int = 1; j <= BOARD_WIDTH; ++j)
                 {
                     var arrIndex:uint = (i - 1) + (j - 1);
                     returnArray[arrIndex] = this.getTile(i,j);
@@ -76,12 +79,13 @@ package com.morepaul.ScrabbleCheat
         }
 
 
-        public function getTile(row:uint, col:uint):Tile
+        public function getTile(row:int, col:int):Tile
         {
-            if (row > 0 && row <= BOARD_HEIGHT && col > 0 && col <=BOARD_WIDTH)
-                return _tiles[row - 1][col - 1];
+            if (row > 0 && row <= BOARD_HEIGHT && col > 0 && col <= BOARD_WIDTH)
+                return m_tiles[row - 1][col - 1];
 
-            else throw new InvalidAccessException("BOARD: getTile: Trying to access a tile out of bounds.");
+            else throw new InvalidAccessException("BOARD: getTile: Trying to access a tile out of bounds: row = " +
+                                                   row + ", col = " + col);
         }
     }
 }
