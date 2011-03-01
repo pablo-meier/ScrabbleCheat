@@ -27,9 +27,9 @@
 -import(lists, [reverse/1,foreach/2, keysort/2, sort/2, map/2]).
 -import(board_parser, [new_board/0]).
 
--define(DICT_FILE, "test/testdict.txt").
+-define(DICT_FILE, "../test/testdict.txt").
 -define(LARGE_DICT_FILE, "priv/twl06.txt").
--define(DICT_BIN_PATH, "build/gaddag.dict").
+-define(DICT_BIN_PATH, "ebin/gaddag.dict").
 -define(WILDCARD, $*).
 -define(SMALLEST_ASCII_CHARACTER, 33).
 -define(LARGEST_ASCII_CHARACTER, 126).
@@ -43,7 +43,7 @@
 
 
 -export([start_link/0,
-         start_link/1,
+        start_link/1,
         stop/1,
         handle_function/2,
         new_game/1,
@@ -51,7 +51,6 @@
         get_scrabblecheat_suggestions/2,
         quit/0,
         get_master_gaddag/0,
-
         make_binary_gaddag/0]).
 
 
@@ -143,6 +142,7 @@ debug(Format, Data) ->
 %% Throws BadNamelistException if the list is empty, or the player's names are
 %% too long.
 new_game(Playerlist) ->
+    io:format(user, "Entered New Game", []),
     debug("New Game for ~p~n", Playerlist),
     Stringlist = lists:map(fun binary_to_list/1, Playerlist),
     validate_namelist(Stringlist),

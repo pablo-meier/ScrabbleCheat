@@ -23,7 +23,11 @@
 
 -import(dict_parser, [parse/1]).
 -import(gaddag, [naive_path_search/2, has_word/2]).
--define(TEST_FILE, "test/testdict.txt").
+
+%% Rebar runs Eunit tests from a .eunit directory;  cd out, maybe
+%% later find a way to more cleanly set $PROJECT_HOME or some such
+%% var.
+-define(TEST_FILE, "../test/testdict.txt").
 
 
 parse_file_test() ->

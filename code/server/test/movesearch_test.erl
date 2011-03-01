@@ -21,7 +21,10 @@
 -module(movesearch_test).
 -include_lib("eunit/include/eunit.hrl").
 
--define(TESTDICT, "test/testdict.txt").
+%% Rebar runs Eunit tests from a .eunit directory;  cd out, maybe
+%% later find a way to more cleanly set $PROJECT_HOME or some such
+%% var.
+-define(TESTDICT, "../test/testdict.txt").
 
 -import(board_parser, [new_board/0]).
 -import(board, [place_word/4, get_tile/3]).

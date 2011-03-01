@@ -81,6 +81,7 @@ create_tables() ->
 %%--------------------------------------------------------------------
 start_all() ->
     application:load(thrift),
+    application:start(thrift),
     [application:start(scrabblecheat)].
 
 

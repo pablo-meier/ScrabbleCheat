@@ -23,12 +23,12 @@
 
 -include("scrabbleCheat_thrift.hrl").
 
--import(main, [start/1, 
-               stop/1, 
-               new_game/1,
-               play_move/2,
-               get_scrabblecheat_suggestions/2,
-               quit/0]).
+-import(scrabblecheat_main, [start_link/1, 
+                             stop/1, 
+                             new_game/1,
+                             play_move/2,
+                             get_scrabblecheat_suggestions/2,
+                             quit/0]).
 
 -define(PORT, 8888).
 -define(LOCALHOST, "127.0.0.1").
@@ -41,7 +41,7 @@
 %% In this set of tests, setup and teardown will start new instances of the server,
 %% close the server, and create a new client to test calls with.
 setup() ->
-    Server = main:start(?PORT),
+    Server = scrabblecheat_main:start_link(?PORT),
     Client = thrift_client_util:new(?LOCALHOST, ?PORT, scrabbleCheat_thrift, []),
     case Server of 
         {ok, ServerName} -> 

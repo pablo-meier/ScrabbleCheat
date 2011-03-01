@@ -37,10 +37,14 @@
 						get_followstruct_gaddag/1,
 						get_followstruct_board/1]).
 
+%% Rebar runs Eunit tests from a .eunit directory;  cd out, maybe
+%% later find a way to more cleanly set $PROJECT_HOME or some such
+%% var.
+-define(TESTDICT, "../test/testdict.txt").
 
 flip_horiz_test() ->
 	Board = place_word("ABLE", right, {7,7}, new_board()),
-	Gaddag = get_branch_from_string("ELBA", parse("test/testdict.txt")),
+	Gaddag = get_branch_from_string("ELBA", parse(?TESTDICT)),
 	Tile = get_tile(7,6, Board),
 	Followstruct = make_followstruct(Tile, left, Gaddag, Board, new_move()),
 	Flipped = flip_followstruct(Followstruct, get_tile(7, 10, Board)),
@@ -55,7 +59,7 @@ flip_horiz_test() ->
 
 flip_vert_test() ->
 	Board = place_word("TAR", down, {7,7}, new_board()),
-	Gaddag = get_branch_from_string("RAT", parse("test/testdict.txt")),
+	Gaddag = get_branch_from_string("RAT", parse(?TESTDICT)),
 	Tile = get_tile(6,7, Board),
 	Followstruct = make_followstruct(Tile, up, Gaddag, Board, new_move()),
 	Flipped = flip_followstruct(Followstruct, get_tile(9, 7, Board)),
@@ -70,7 +74,7 @@ flip_vert_test() ->
 
 flip_south_border_test() ->
 	Board = place_word("TANK", down, {12,1}, new_board()),
-	Gaddag = get_branch_from_string("KNAT", parse("test/testdict.txt")),
+	Gaddag = get_branch_from_string("KNAT", parse(?TESTDICT)),
 	Tile = get_tile(11,1, Board),
 	Followstruct = make_followstruct(Tile, up, Gaddag, Board, new_move()),
 	?assertException(throw, try_to_flip_past_board_edge, flip_followstruct(Followstruct, get_tile(15, 1, Board))).
@@ -78,7 +82,7 @@ flip_south_border_test() ->
 
 next_test() ->
 	Board = place_word("ABLE", right, {7,7}, new_board()),
-	Gaddag = get_branch_from_string("ELBA", parse("test/testdict.txt")),
+	Gaddag = get_branch_from_string("ELBA", parse(?TESTDICT)),
 	Tile = get_tile(7,6, Board),
 	Followstruct = make_followstruct(Tile, left, Gaddag, Board, new_move()),
 	{success, Moved, _} = next(Followstruct, $T, Gaddag),
