@@ -53,7 +53,7 @@ setup() ->
     end.
 
 teardown(ServerName) ->
-    main:stop(ServerName).
+    scrabblecheat_main:stop(ServerName).
 
 
 
