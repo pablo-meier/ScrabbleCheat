@@ -21,27 +21,17 @@
  */
 
 
-/**
- * Top-level package, and main window the of the application.
- */
-package com.morepaul.ScrabbleCheat 
+
+package com.morepaul.ScrabbleCheat
 {
 
     import flash.display.Sprite;
 
-    import flash.display.Shape; 
-
-    public class ScrabbleCheatClientMain extends Sprite 
+    /**
+     * Interface for all elements that make it onto the main application Sprite.
+     */
+    public interface Drawable
     {
-
-        private static const BG_COLOR:uint = 0x666666;
-
-        private var m_board:Board;
-
-        public function ScrabbleCheatClientMain():void
-        {
-            m_board = new Board();
-            m_board.draw(this);
-        }
+        function draw(canvas:Sprite):void;
     }
 }

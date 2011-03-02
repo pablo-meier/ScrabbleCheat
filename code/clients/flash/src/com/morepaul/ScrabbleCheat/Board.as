@@ -23,13 +23,14 @@
 package com.morepaul.ScrabbleCheat 
 {
 
-    import com.morepaul.ScrabbleCheat.Tile;
+    import flash.display.Sprite;
 
     /**
      * Basic datatype to represent the board.  As in all ScrabbleCheat 
      * representations, the board is a 1-indexed row-major 2D matrix.
      */
-    public class Board {
+    public class Board implements Drawable
+    {
         
         private var m_tiles:Array;
 
@@ -47,7 +48,7 @@ package com.morepaul.ScrabbleCheat
                 m_tiles[i] = new Array(BOARD_WIDTH);
                 for (var j:int = 0; j < m_tiles[i].length; ++j) 
                 {
-                    var tile:Tile = new Tile();
+                    var tile:Tile = new DrawableTile();
                     tile.row = i + 1;
                     tile.col = j + 1;
                     tile.bonus = Bonus.NONE;
@@ -79,13 +80,27 @@ package com.morepaul.ScrabbleCheat
         }
 
 
-        public function getTile(row:int, col:int):Tile
+        public function getTile(row:int, col:int):DrawableTile
         {
             if (row > 0 && row <= BOARD_HEIGHT && col > 0 && col <= BOARD_WIDTH)
                 return m_tiles[row - 1][col - 1];
 
             else throw new InvalidAccessException("BOARD: getTile: Trying to access a tile out of bounds: row = " +
                                                    row + ", col = " + col);
+        }
+
+
+        public function draw(canvas:Sprite):void
+        {
+            for (var i:int = 1; i <= BOARD_HEIGHT; ++i)
+            {
+                var row:Array = m_tiles[i];
+                for (var j:int = 1; j <= BOARD_WIDTH; ++j)
+                {
+                    var tile:DrawableTile = this.getTile(i, j);
+                    tile.draw(canvas);
+                }
+            }
         }
     }
 }
