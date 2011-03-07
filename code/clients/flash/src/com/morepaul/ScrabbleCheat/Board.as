@@ -33,15 +33,19 @@ package com.morepaul.ScrabbleCheat
     {
         
         private var m_tiles:Array;
+        private var m_frozen:Boolean;
 
         public static const BOARD_HEIGHT:int = 15;
         public static const BOARD_WIDTH:int = 15;
+
 
         /**
          * Creates an empty board.
          */
         public function Board():void 
         {
+            m_frozen = false;
+
             m_tiles = new Array(BOARD_HEIGHT);
             for (var i:int = 0; i < m_tiles.length; ++i)
             {
@@ -72,11 +76,33 @@ package com.morepaul.ScrabbleCheat
                 for (var j:int = 1; j <= BOARD_WIDTH; ++j)
                 {
                     var arrIndex:uint = (i - 1) + (j - 1);
-                    returnArray[arrIndex] = this.getTile(i,j);
+                    returnArray[arrIndex] = this.getTile(i,j) as Tile;
                 }
             }
 
             return returnArray;
+        }
+
+
+        /**
+         * Constructs a board from the bare Thrift array of plain tiles.
+         */
+        public static function fromThrift(arr:Array):Board
+        {
+            var retBoard:Board = new Board();
+            for (var i:int = 0; i < BOARD_HEIGHT; ++i)
+            {
+                for (var j:int = 0; j < BOARD_WIDTH; ++j)
+                {
+                    var index:int = (i * BOARD_HEIGHT) + j;
+                    var dTile:DrawableTile = arr[index] as DrawableTile;
+
+                    retBoard.setTile( i + 1, j + 1, dTile);
+                }
+            }
+            retBoard.freeze();
+
+            return retBoard;
         }
 
 
@@ -87,6 +113,26 @@ package com.morepaul.ScrabbleCheat
 
             else throw new InvalidAccessException("BOARD: getTile: Trying to access a tile out of bounds: row = " +
                                                    row + ", col = " + col);
+        }
+
+
+        public function setTile(row:int, col:int, tile:Tile):void
+        {
+            if ( this.isFrozen() )
+            {
+                m_tiles[row - 1][col - 1] = tile;
+            }
+        }
+
+
+        private function isFrozen():Boolean
+        {
+            return m_frozen;
+        }
+
+        private function freeze():void
+        {
+            m_frozen = true;
         }
 
 

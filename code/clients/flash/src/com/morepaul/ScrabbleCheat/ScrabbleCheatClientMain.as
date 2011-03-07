@@ -29,7 +29,7 @@ package com.morepaul.ScrabbleCheat
 
     import flash.display.Sprite;
 
-    import flash.display.Shape; 
+    import flash.text.TextField;
 
     public class ScrabbleCheatClientMain extends Sprite 
     {
@@ -37,11 +37,39 @@ package com.morepaul.ScrabbleCheat
         private static const BG_COLOR:uint = 0x666666;
 
         private var m_board:Board;
+        private var m_connection:ScrabbleCheat;
+
+
+        private var m_debug:TextField;
 
         public function ScrabbleCheatClientMain():void
         {
-            m_board = new Board();
+            m_connection = new ThriftLayer();
+
+            var playerList:Array = ["Paul", "Sam"];
+            m_connection.new_game(playerList, onNewGameFailure, onNewGameSuccess);
+
+
+            m_debug = new TextField();
+            m_debug.x = (stage.stageWidth / 2) - (m_debug.width / 2);
+            m_debug.y = (stage.stageHeight / 2) - (m_debug.height / 2) + 200;
+            m_debug.text = "Started up.";
+            this.addChild(m_debug);
+        }
+
+
+        private function onNewGameSuccess(fresh:Gamestate):void
+        {
+            m_board = Board.fromThrift(fresh.board);
+
             m_board.draw(this);
+            m_debug.text = "Connection Successful!";
+        }
+
+
+        private function onNewGameFailure(err:String):void
+        {
+            m_debug.text = "Connection Failed! Msg: " + err;
         }
     }
 }

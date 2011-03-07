@@ -25,19 +25,18 @@ package com.morepaul.ScrabbleCheat
 
     import flash.net.URLRequest;
 
-    import org.apache.thrift.*;
-    import org.apache.thrift.meta_data.*;
-    import org.apache.thrift.protocol.*;
+    import org.apache.thrift.protocol.TBinaryProtocol;
+    import org.apache.thrift.transport.TBasicClient;
 
     public class ThriftLayer extends ScrabbleCheatImpl implements ScrabbleCheat
     {
 
-        private static const ADDR_PORT:String = "http://127.0.0.1:8888/";
+//        private static const ADDR_PORT:String = "http://127.0.0.1:8888/";
 
         public function ThriftLayer():void
         {
-            var request:URLRequest = new URLRequest(ADDR_PORT);
-            var transport:THttpClient = new THttpClient(URLRequest);
+//            var request:URLRequest = new URLRequest(ADDR_PORT);
+            var transport:TBasicClient = new TBasicClient("127.0.0.1", 8888);
             var protocol:TBinaryProtocol = new TBinaryProtocol(transport);
             super(protocol);
         }
