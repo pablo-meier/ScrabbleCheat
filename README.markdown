@@ -1,8 +1,6 @@
-ScrabbleCheat
-=============
+# ScrabbleCheat #
 
-Revenge of the Verbally Challenged
-----------------------------------
+## Revenge of the Verbally Challenged ##
 
 ScrabbleCheat is a tool I'm developing to finally beat my girlfriend in 
 Scrabble.  Developing it in Erlang, mostly for fun.  Use it yourself, or explore
@@ -15,12 +13,12 @@ WORDSEARCH, you will see this!  Run 'make run' from that commit and you get a
 simple trie-based search to generate words from your rack of tiles.
 
 This was eschewed in favor of a GADDAG-based approach, such as the one used in
-Quackle (http://people.csail.mit.edu/jasonkb/quackle/).  A GADDAG, for those who
+[Quackle](http://people.csail.mit.edu/jasonkb/quackle/).  A 
+[GADDAG](http://en.wikipedia.org/wiki/GADDAG), for those who
 don't know, is a perverted trie that is fat and fast, designed specifically for
-Scrabble and games with similar rules (http://en.wikipedia.org/wiki/GADDAG).
+Scrabble and games with similar rules.
 
-##################
-### Contents
+## Contents ##
 
 ScrabbleCheat has the following contents:
 
@@ -31,12 +29,9 @@ ScrabbleCheat has the following contents:
           files, Thrift libraries, and the like.
 * TODO -> Small lists of tasks for the project.  This is my PM.
 
-##################
-### Requirements
+## Requirements ##
 
-ScrabbleCheat uses the following dependencies:
-
-* ncurses-ruby -> This is only if you intend on using the Ruby terminal client.
+ScrabbleCheat and it's various components have a ton.
 
 * Thrift -> Apache Thrift is used to build language-agnostic web services 
   automatically, and it's how my AI communicates with any client or
@@ -44,8 +39,7 @@ ScrabbleCheat uses the following dependencies:
   for the specification.  We build the files dynamically, so you'll 
   need Thrift installed to build the files that communicate with one another.
 
-##################
-### Milestones
+## Milestones ##
 
 Check out these git tags for particular milestones in the project.
 
@@ -67,24 +61,8 @@ Check out these git tags for particular milestones in the project.
   as well as a much more maintainable service that's easy to add clients
   for.
 
-##################
-### Branches
+----
 
-git checkout <branchname> for your favorite.  Note that for a while (until
-Halloween 2010) virtually everything was done in master, like a n00b.
-
-* master -> contains the most recent 'stable' code.  In master, 'make run'
-  works, and the code doesn't have lame printlines or debugging
-  stuff in it.
-
-* develop -> Mostly for feature integration, here we have a fair bit of that
-  debugging nonsense.  Where we merge to from feature branches.
-
-* anything else -> Usually a feature branch for something I'm working on.
-
-
-
-########################################################################
 For now this is just loose code that will hopefully piece together into actual 
 usable software; in the meantime, I'm putting it here as well as my local 
 machine.  Enjoy, and email about any questions, concerns!
