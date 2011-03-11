@@ -8,9 +8,10 @@ the code!
 
 Originally development was considered in phases: generate words from your rack,
 then place the words on the board.  This was using a DAWG algorithm most popular
-in other Scrabble AIs such as Maven.  If you checkout the repo at tag 
-WORDSEARCH, you will see this!  Run 'make run' from that commit and you get a 
-simple trie-based search to generate words from your rack of tiles.
+in other Scrabble AIs such as 
+[Maven](http://en.wikipedia.org/wiki/Maven_(Scrabble)).  If you checkout the 
+repo at tag WORDSEARCH, you will see this!  Run 'make run' from that commit and 
+you get a simple trie-based search to generate words from your rack of tiles.
 
 This was eschewed in favor of a GADDAG-based approach, such as the one used in
 [Quackle](http://people.csail.mit.edu/jasonkb/quackle/).  A 
@@ -22,22 +23,45 @@ Scrabble and games with similar rules.
 
 ScrabbleCheat has the following contents:
 
-* Makefile -> Builds the project, targets below.
-* code/ -> Contains the project code.  This is for the server (the 'brains,' in
-           Erlang) as well as the clients that communicate with it.
-* lib/ -> Contains any extraneous support, such as testing macros, dictionary 
-          files, Thrift libraries, and the like.
-* TODO -> Small lists of tasks for the project.  This is my PM.
+* `Makefile`. Builds the project, targets below.
+* `code/`. Contains the project code.  This is for the server (the 'brains,' in
+  Erlang) as well as the clients that communicate with it.  Each is a 
+  sub-project, and contains their own build/testing logic as appropriate.
+* `lib/`. Contains any extraneous support, such as testing macros, dictionary 
+  files, Thrift libraries, and the like.
+* `TODO`. Small lists of tasks for the project.  This is my PM.
 
 ## Requirements ##
 
-ScrabbleCheat and it's various components have a ton.
+ScrabbleCheat and it's various components have a ton.  The subprojects have 
+their own, here are the ones I know off the top of my head:
+
+### Global ###
 
 * Thrift -> Apache Thrift is used to build language-agnostic web services 
   automatically, and it's how my AI communicates with any client or
-  service who wants to use it to cheat.  See lib/ScrabbleCheat.thrift
-  for the specification.  We build the files dynamically, so you'll 
+  service who wants to use it to cheat. See lib/ScrabbleCheat.thrift
+  for the specification. We build the files dynamically, so you'll 
   need Thrift installed to build the files that communicate with one another.
+* Make -> I'm using the GNU version that came with Mac OS X.  Even if we're 
+  using other build utilities, Make is a pretty simple no-nonsense way to 
+  automate it all.
+
+### Server ###
+
+* Erlang VM, naturally.
+* [Rebar](https://github.com/basho/rebar) for builds and tests.
+
+### Curses Client ###
+
+* [Ncurses](http://www.gnu.org/software/ncurses/).
+* [Ncurses-ruby](https://github.com/eclubb/ncurses-ruby) (Note that the linked
+  implementation has issues on Mac, see [this
+  gem](http://rubygems.org/gems/snowleopard-ncurses) for a solution.
+
+### Adobe AIR Client ###
+
+* Ensure you have the Flex SDK tools in your PATH (adt, adl, etc.).
 
 ## Milestones ##
 

@@ -18,12 +18,12 @@ CONFIG=config.xml
 APP_XML=scrabblecheat-app.xml
 
 
-run: compile
-	adl $(APP_XML)
-
 compile: compile-thrift
 	cp -R $(SRC_AS)/*.as $(BUILD_DUMP)
 	mxmlc --load-config=$(CONFIG) $(BUILD_DUMP)/ScrabbleCheatClientMain.as
+
+run: compile
+	adl $(APP_XML)
 
 compile-thrift: prepare
 	thrift -r --gen as3 -o $(BUILD) $(EXTERNAL_LIB)/ScrabbleCheat.thrift

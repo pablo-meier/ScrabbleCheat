@@ -11,19 +11,41 @@ CURSES_CLIENT=$(CLIENTS)/curses
 
 
 
-test:
-	echo "run all the tests"
+
+test-and-build: build test
+
+test: test-server
+	
+build: make-server make-curses-client make-flash-client
+
+
+make-server: prepare build-server
+	cp -R $(SERVER)/ebin $(BUILD_DIR)
+
+test-server: build-server
+	cd $(SERVER); $(MAKE) test; cd -
+
+build-server: build-server
+	cd $(SERVER); $(MAKE) compile; cd -
+
+
 
 make-curses-client:
-	echo "make the cureses client"
+	cd $(CURSES_CLIENT); $(MAKE); cd -
+
+
+
 
 make-flash-client:
-	echo "make the flash client"
+	cd $(FLASH_CLIENT); $(MAKE); cd -
 
-make-server:
-	echo "make the server"
+
+
 
 clean:
+	cd $(SERVER); $(MAKE) clean; cd -
+	cd $(CURSES_CLIENT); $(MAKE) clean; cd -
+	cd $(FLASH_CLIENT); $(MAKE) clean; cd -
 	rm -rf $(BUILD_DIR)
 
 prepare: 

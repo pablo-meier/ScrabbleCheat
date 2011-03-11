@@ -28,8 +28,9 @@ package com.morepaul.ScrabbleCheat
 {
 
     import flash.display.Sprite;
-
     import flash.text.TextField;
+
+    import org.apache.thrift.TError;
 
     public class ScrabbleCheatClientMain extends Sprite 
     {
@@ -47,14 +48,14 @@ package com.morepaul.ScrabbleCheat
             m_connection = new ThriftLayer();
 
             var playerList:Array = ["Paul", "Sam"];
-            m_connection.new_game(playerList, onNewGameFailure, onNewGameSuccess);
-
-
             m_debug = new TextField();
+            m_debug.width = 500;
             m_debug.x = (stage.stageWidth / 2) - (m_debug.width / 2);
             m_debug.y = (stage.stageHeight / 2) - (m_debug.height / 2) + 200;
             m_debug.text = "Started up.";
             this.addChild(m_debug);
+
+            m_connection.new_game(playerList, onNewGameFailure, onNewGameSuccess);
         }
 
 
@@ -67,9 +68,9 @@ package com.morepaul.ScrabbleCheat
         }
 
 
-        private function onNewGameFailure(err:String):void
+        private function onNewGameFailure(err:TError):void
         {
-            m_debug.text = "Connection Failed! Msg: " + err;
+            m_debug.text = "Connection Failed! Msg: " + err.message;
         }
     }
 }

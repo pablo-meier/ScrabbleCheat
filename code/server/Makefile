@@ -17,15 +17,15 @@ test: compile
 all: compile-all test run
 
 run: compile
-	erl -pa ebin/ -pa priv/thrift-erl/ebin/ 
+	erl -pa ebin/ -pa lib/thrift-erl/ebin/ 
 
 shell: compile
-	erl -pa ebin/ -pa priv/thrift-erl/ebin/
+	erl -pa ebin/ -pa lib/thrift-erl/ebin/
 
 thrift-generate: thrift-compile
 	mv gen-erl/*.hrl include/
 	mv gen-erl/*.beam ebin/
-	cp -R priv/thrift-erl/include/*.hrl include/
+	cp -R lib/thrift-erl/include/*.hrl include/
 	rm -rf gen-erl
 
 thrift-compile: 

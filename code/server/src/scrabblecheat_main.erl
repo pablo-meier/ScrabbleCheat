@@ -83,7 +83,10 @@ start_link(Port) ->
                  {error, _} -> 
                     io:format("Gaddag file not found!  Using test dictionary in meantime.~n"),
                     io:format("run `make binary-gaddag` to generate the full dictionary.~n"),
-                    dict_parser:parse(?DICT_FILE)
+                    case file:read_file_info(?DICT_FILE) of
+                        {ok, _} -> dict_parser:parse(?DICT_FILE);
+                        {error, _} -> dict_parser:parse("test/testdict.txt")
+                    end
              end,
     WordFunction = get_best_move_function(Gaddag),
     ets:new(globals, [set, protected, named_table, {keypos, 1}]), % {read_concurrency, true}]),
