@@ -4,23 +4,31 @@
 #
 # TODO: Convert to OTP + rebar
 
-
-
 THRIFT_PATH = ../../lib/ScrabbleCheat.thrift
-ERL_END = -run erlang halt
-
-
+THRIFT_APP=lib/thrift_erl
+RELEASE_DIR=rel
 
 test: compile 
 	rebar eunit
 
-all: compile-all test run
+release: binary-gaddag compile
+	rm -rf $(RELEASE_DIR)
+	mkdir $(RELEASE_DIR)
+	cd $(RELEASE_DIR) && rebar create-node appid="scrabblecheat"
+	chmod +x $(RELEASE_DIR)/files/erl
+	chmod +x $(RELEASE_DIR)/files/nodetool
+	mv $(RELEASE_DIR)/files/mynode $(RELEASE_DIR)/files/scrabblecheat
+	chmod +x $(RELEASE_DIR)/files/scrabblecheat
+	cp -f priv/default_release.config $(RELEASE_DIR)/reltool.config
+	rebar generate
+	
+all: test run
 
 run: compile
-	erl -pa ebin/ -pa lib/thrift-erl/ebin/ 
+	erl -pa ebin/ -pa $(THRIFT_APP)/ebin/ 
 
 shell: compile
-	erl -pa ebin/ -pa lib/thrift-erl/ebin/
+	erl -pa ebin/ -pa $(THRIFT_APP)/ebin/
 
 thrift-generate: thrift-compile
 	mv gen-erl/*.hrl include/
@@ -36,12 +44,10 @@ compile: thrift-generate
 	rebar compile
 
 binary-gaddag: compile
-	erl -noshell -pa ebin/ -s scrabblecheat_main make_binary_gaddag $(ERL_END)
+	erl -noshell -pa ebin/ -s scrabblecheat_main make_binary_gaddag  -run erlang halt
 
 clean:
-	rebar clean
-	rm -f include/thrift_*.hrl
-	rm -f include/scrabbleCheat_*.hrl
-	rm -f ebin/gaddag.dict 
-
+	rebar clean || 0
+	rm -f include/thrift_*.hrl include/scrabbleCheat_*.hrl ebin/gaddag.dict 
+	rm -rf $(RELEASE_DIR)
 
