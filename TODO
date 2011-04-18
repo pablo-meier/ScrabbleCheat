@@ -1,9 +1,12 @@
 ------
 SHORT-TERM:
 
-    - FIX SERVER BUG.  Y U NO PLAY!?!??!
-    - Flash/AIR client?
     - OTP/Dialyzer/Rebar builds?
+        - Top level 'make server'
+    - Flash/AIR client?
+        - Mochiweb for erl HTTP thrift server, we hope?
+        - Basic client for AS3 not working excellently...
+
     - Allow for null moves/lost turns.  Add to Thrift file, add to code.
     - Deploy?  Snap site that talks to the Erlang via Thrift, Snap provides the web presence?
 
@@ -14,6 +17,7 @@ SHORT-TERM:
 	    - Only check half as many candidates by looking for border cases.
     - Integrate the bug list/this file with the Github issue tracker, API?
 
+    - Refactor the actual movesearch into a sub-application?  Let VM handle threading?
 
 SERVER
     - Better, more rigorous testing.  Mostly in movesearches, and the most recent features (wildcards, 
@@ -43,7 +47,8 @@ SERVER
     - I might be missing something. grep TODO and FIXME in the source to find something to do!
 
 
-CLIENT
+CURSES CLIENT
+    - Rewrite in C?  Ruby-ncurses is crap, giving me memory corruption.
     - Undo/back.
     - Allow a turn to pass/skip.
     - Allow save/resume games.

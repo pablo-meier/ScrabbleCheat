@@ -13,11 +13,9 @@ test: compile
 
 release: binary-gaddag compile
 	rm -rf $(RELEASE_DIR)
-	mkdir $(RELEASE_DIR)
-	cd $(RELEASE_DIR) && rebar create-node appid="scrabblecheat"
+	mkdir $(RELEASE_DIR) && cd $(RELEASE_DIR) && rebar create-node nodeid="scrabblecheat" && cd -
 	chmod +x $(RELEASE_DIR)/files/erl
 	chmod +x $(RELEASE_DIR)/files/nodetool
-	mv $(RELEASE_DIR)/files/mynode $(RELEASE_DIR)/files/scrabblecheat
 	chmod +x $(RELEASE_DIR)/files/scrabblecheat
 	cp -f priv/default_release.config $(RELEASE_DIR)/reltool.config
 	rebar generate

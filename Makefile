@@ -20,7 +20,7 @@ build: make-server make-curses-client make-flash-client
 
 
 make-server: prepare build-server
-	cp -R $(SERVER)/ebin $(BUILD_DIR)
+	cp -R $(SERVER)/rel/scrabblecheat $(BUILD_DIR)/scrabblecheat_server
 
 test-server: build-server
 	cd $(SERVER); $(MAKE) test; cd -
