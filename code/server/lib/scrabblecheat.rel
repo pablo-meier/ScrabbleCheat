@@ -1,8 +1,0 @@
-{release,
- {"Scrabblecheat", "0.1.0"},
- {erts, "5.8"},
- [{kernel, "2.14"},
-  {stdlib, "1.17"},
-  {thrift, "0.7.0-dev"},
-  {scrabblecheat, "0.0.3"}
- ]}.

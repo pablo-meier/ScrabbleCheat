@@ -5,7 +5,7 @@
 # TODO: Convert to OTP + rebar
 
 THRIFT_PATH = ../../lib/ScrabbleCheat.thrift
-THRIFT_APP=lib/thrift_erl
+THRIFT_APP=lib/thrift
 RELEASE_DIR=rel
 
 test: compile 
@@ -31,7 +31,7 @@ shell: compile
 thrift-generate: thrift-compile
 	mv gen-erl/*.hrl include/
 	mv gen-erl/*.beam ebin/
-	cp -R lib/thrift-erl/include/*.hrl include/
+	cp -R $(THRIFT_APP)/include/*.hrl include/
 	rm -rf gen-erl
 
 thrift-compile: 
