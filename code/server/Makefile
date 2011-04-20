@@ -12,6 +12,7 @@ RELEASE_DIR=rel
 SC_APP=lib/scrabblecheat
 SC_REL_EBIN=$(SC_APP)/ebin
 SC_REL_INCLUDE=$(SC_APP)/include
+SC_REL_PRIV=$(SC_APP)/priv
 
 
 test: compile 
@@ -24,9 +25,10 @@ release: binary-gaddag compile
 	chmod +x $(RELEASE_DIR)/files/nodetool
 	chmod +x $(RELEASE_DIR)/files/scrabblecheat
 	cp -f priv/default_release.config $(RELEASE_DIR)/reltool.config
-	mkdir -p $(SC_REL_EBIN) $(SC_REL_INCLUDE)
+	mkdir -p $(SC_REL_EBIN) $(SC_REL_INCLUDE) $(SC_REL_PRIV)
 	cp -R ebin/* $(SC_REL_EBIN)
 	cp -R include/* $(SC_REL_INCLUDE)
+	cp -R priv/* $(SC_REL_PRIV)
 	rebar generate
 	
 all: test run
@@ -58,4 +60,5 @@ clean:
 	rm -f include/thrift_*.hrl include/scrabbleCheat_*.hrl ebin/gaddag.dict 
 	rm -rf $(RELEASE_DIR)
 	rm -rf $(SC_APP)
+	rm -f priv/gaddag.dict
 

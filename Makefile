@@ -19,14 +19,14 @@ test: test-server
 build: make-server make-curses-client make-flash-client
 
 
-make-server: prepare build-server
+server: prepare build-server
 	cp -R $(SERVER)/rel/scrabblecheat $(BUILD_DIR)/scrabblecheat_server
 
 test-server: build-server
 	cd $(SERVER); $(MAKE) test; cd -
 
 build-server: build-server
-	cd $(SERVER); $(MAKE) compile; cd -
+	cd $(SERVER); $(MAKE) release; cd -
 
 
 

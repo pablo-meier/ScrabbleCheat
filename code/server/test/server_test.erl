@@ -24,7 +24,7 @@
 -include("scrabbleCheat_thrift.hrl").
 
 -import(scrabblecheat_main, [start_link/1, 
-                             stop/1, 
+                             stop/1,
                              new_game/1,
                              play_move/2,
                              get_scrabblecheat_suggestions/2,

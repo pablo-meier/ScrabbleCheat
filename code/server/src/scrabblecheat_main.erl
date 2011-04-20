@@ -29,7 +29,7 @@
 
 -define(DICT_FILE, "../test/testdict.txt").
 -define(LARGE_DICT_FILE, "priv/twl06.txt").
--define(DICT_BIN_PATH, "ebin/gaddag.dict").
+-define(DICT_BIN_PATH, "priv/gaddag.dict").
 -define(WILDCARD, $*).
 -define(SMALLEST_ASCII_CHARACTER, 33).
 -define(LARGEST_ASCII_CHARACTER, 126).
@@ -71,33 +71,46 @@ start_link() ->
     start_link(?PORT).
 
 
+
 %% start :: Int -> ()
 %%
 %% Starts a new ScrabbleCheat server on the parametrized port.  Follows the 
 %% example of the Mighty Mighty Todd Lipcon on his Thrift tutorial.  Todd 
 %% Lipcon is a Boss, if you didn't know.
 start_link(Port) ->
-    io:format(user, "LOLOLOL WE ARE HERE~n", []),
-    Handler = ?MODULE,
-    Gaddag = case file:read_file_info(?DICT_BIN_PATH) of
-                 {ok, _} -> dict_parser:read_from_binary(?DICT_BIN_PATH);
-                 {error, _} -> 
-                    io:format("Gaddag file not found!  Using test dictionary in meantime.~n"),
-                    io:format("run `make binary-gaddag` to generate the full dictionary.~n"),
-                    case file:read_file_info(?DICT_FILE) of
-                        {ok, _} -> dict_parser:parse(?DICT_FILE);
-                        {error, _} -> dict_parser:parse("test/testdict.txt")
-                    end
-             end,
+    io:format(user, "Scrabblecheat Server starting...~n", []),
+    Gaddag = get_or_make_gaddag(),
     WordFunction = get_best_move_function(Gaddag),
     ets:new(globals, [set, protected, named_table, {keypos, 1}]), % {read_concurrency, true}]),
     ets:insert(globals, {search_function, WordFunction}),
     ets:insert(globals, {master_gaddag, Gaddag}),
+    Handler = ?MODULE,
     thrift_socket_server:start([{handler, Handler},
                                 {service, scrabbleCheat_thrift},
                                 {port, Port},
                                 {socket_opts, [{recv_timeout, 100000}]},
                                 {name, scrabbleCheat_server}]).
+
+
+%% get_or_make_gaddag :: () -> Gaddag
+%%
+%% Searches a few predefined paths for files to produce a dictionary Gaddag at
+%% boot time.  Either finds a predefined binary one, or produces one.
+get_or_make_gaddag() ->
+    PrivDir = code:priv_dir(scrabblecheat),
+    Path = string:concat(PrivDir, "/gaddag.dict"),
+    case file:read_file_info(Path) of
+        {ok, _} -> 
+            io:format("Parsing the dictionary, this could be a while...~n"),
+            dict_parser:read_from_binary(Path);
+        {error, _} -> 
+            io:format("Gaddag file not found!  Using test dictionary in meantime.~n"),
+            io:format("run `make binary-gaddag` to generate the full dictionary.~n"),
+            case file:read_file_info(?DICT_FILE) of
+                {ok, _} -> dict_parser:parse(?DICT_FILE);
+                {error, _} -> dict_parser:parse("test/testdict.txt")
+            end
+        end.
 
 
 %% get_search_function :: () -> (Board * Rack -> [Move])
@@ -115,7 +128,6 @@ get_search_function() ->
 get_master_gaddag() ->
     [{master_gaddag, Gaddag}] = ets:lookup(globals, master_gaddag),
     Gaddag.
-
 
 
 %% EXTERNAL INTERFACE
