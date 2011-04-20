@@ -8,6 +8,12 @@ THRIFT_PATH = ../../lib/ScrabbleCheat.thrift
 THRIFT_APP=lib/thrift
 RELEASE_DIR=rel
 
+# Silly silly silly shit to generate a release, but we do what works...
+SC_APP=lib/scrabblecheat
+SC_REL_EBIN=$(SC_APP)/ebin
+SC_REL_INCLUDE=$(SC_APP)/include
+
+
 test: compile 
 	rebar eunit
 
@@ -18,6 +24,9 @@ release: binary-gaddag compile
 	chmod +x $(RELEASE_DIR)/files/nodetool
 	chmod +x $(RELEASE_DIR)/files/scrabblecheat
 	cp -f priv/default_release.config $(RELEASE_DIR)/reltool.config
+	mkdir -p $(SC_REL_EBIN) $(SC_REL_INCLUDE)
+	cp -R ebin/* $(SC_REL_EBIN)
+	cp -R include/* $(SC_REL_INCLUDE)
 	rebar generate
 	
 all: test run
@@ -48,4 +57,5 @@ clean:
 	rebar clean || 0
 	rm -f include/thrift_*.hrl include/scrabbleCheat_*.hrl ebin/gaddag.dict 
 	rm -rf $(RELEASE_DIR)
+	rm -rf $(SC_APP)
 

@@ -77,6 +77,7 @@ start_link() ->
 %% example of the Mighty Mighty Todd Lipcon on his Thrift tutorial.  Todd 
 %% Lipcon is a Boss, if you didn't know.
 start_link(Port) ->
+    io:format(user, "LOLOLOL WE ARE HERE~n", []),
     Handler = ?MODULE,
     Gaddag = case file:read_file_info(?DICT_BIN_PATH) of
                  {ok, _} -> dict_parser:read_from_binary(?DICT_BIN_PATH);
