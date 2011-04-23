@@ -40,6 +40,7 @@ shell: compile
 	erl -pa ebin/ -pa $(THRIFT_APP)/ebin/
 
 thrift-generate: thrift-compile
+	[[ -d include ]] || mkdir include
 	mv gen-erl/*.hrl include/
 	mv gen-erl/*.beam ebin/
 	cp -R $(THRIFT_APP)/include/*.hrl include/
