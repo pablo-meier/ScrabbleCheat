@@ -26,7 +26,7 @@
 %% var.
 -define(TESTDICT, "../test/testdict.txt").
 
--import(board_parser, [new_board/0]).
+-import(game_parser, [new_board/0]).
 -import(board, [place_word/4, get_tile/3]).
 -import(gaddag, [empty_gaddag/0, get_branch_from_string/2]).
 -import(tile, [get_tile_location/1, new_tile/4]).

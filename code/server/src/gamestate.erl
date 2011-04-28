@@ -20,7 +20,6 @@
 
 -module(gamestate).
 
--import(board_parser, [empty_board/0]).
 -import(lists, [concat/1, foldl/3, map/2]).
 
 -export([make_gamestate/4, 
@@ -59,7 +58,7 @@ get_gamestate_history({gamestate, _, _, _, History}) -> History.
 %% Creates a gamestate for a new game, where the players are indicated by the parameter.
 fresh_gamestate(Players) ->
     [First|_] = Players,
-    make_gamestate(board_parser:new_board(), map(fun (X) -> {X, 0} end, Players), First, []).
+    make_gamestate(game_parser:new_board(), map(fun (X) -> {X, 0} end, Players), First, []).
 
 
 %% play_move :: Gamestate * Move -> Gamestate

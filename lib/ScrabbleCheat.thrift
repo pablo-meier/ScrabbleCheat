@@ -61,6 +61,12 @@ struct Turn {
     2: string player,
 }
 
+struct Gameinfo {
+    1: string name,
+    2: map<string, byte> letter_distribution,
+    3: map<string, byte> score_distribution,
+}
+
 
 /**
  * The primary data structure.  This allows the server to do any of its operations, and a client to
@@ -72,6 +78,7 @@ struct Gamestate {
     3: string player_turn,
     4: list<string> turn_order,
     5: list<Turn> history,
+    6: Gameinfo game,
 }
 
 

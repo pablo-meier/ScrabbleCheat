@@ -21,7 +21,7 @@
 -module(board_test).
 -include_lib("eunit/include/eunit.hrl").
 
--import(board_parser, [new_board/0]).
+-import(game_parser, [new_board/0]).
 -import(board, [place_letter_on_board/5,
 				place_bonus_on_board/4,
 				place_word/4,

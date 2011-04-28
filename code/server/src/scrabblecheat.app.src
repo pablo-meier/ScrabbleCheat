@@ -26,7 +26,7 @@
   % All modules used by the application.
   {modules, [scrabblecheat_app, scrabblecheat_sup, scrabblecheat_main, 
              dict_parser, gamestate, movesearch, thrift_helper, board, 
-             followstruct, string_utils, tile, board_parser, gaddag, move,
+             followstruct, string_utils, tile, game_parser, gaddag, move,
              scrabbleCheat_thrift, scrabbleCheat_types]},
 
   % All of the registered names the application uses. This can be ignored.

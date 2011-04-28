@@ -21,7 +21,7 @@
 -module(followstruct_test).
 -include_lib("eunit/include/eunit.hrl").
 
--import(board_parser, [new_board/0]).
+-import(game_parser, [new_board/0]).
 -import(board, [get_tile/3, place_word/4]).
 			
 -import(move, [new_move/0]).

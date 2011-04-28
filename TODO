@@ -2,7 +2,6 @@
 SHORT-TERM:
 
     - OTP/Dialyzer/Rebar builds?
-        - Top level 'make server' - DONE
         - Long-pole: Clean up release builds.  Includes lots of std library we don't need.
         - Long-pole: Testing of server not working with OTP stuff.  More hours into testing
                      harness and tests.
@@ -11,14 +10,11 @@ SHORT-TERM:
         - Mochiweb for erl HTTP thrift server, we hope?
         - Basic client for AS3 not working excellently...
 
+    - Command line client:  Every app should have a CLI.  Also good for automation...
+
     - Allow for null moves/lost turns.  Add to Thrift file, add to code.
     - Deploy?  Snap site that talks to the Erlang via Thrift, Snap provides the web presence?
 
-    - Move selection (after generation, likely start out with naive high score).
-	- Optimize Wildcards/Movesearch.
-	    - PROFILE DAT
-	    - nlogn duplication removal (currently n^2).
-	    - Only check half as many candidates by looking for border cases.
     - Integrate the bug list/this file with the Github issue tracker, API?
 
     ****************************************************************************************

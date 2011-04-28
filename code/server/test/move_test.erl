@@ -28,7 +28,7 @@
 
 -import(lists, [foldl/3]).
 -import(board, [place_word/4]).
--import(board_parser, [new_board/0]).
+-import(game_parser, [new_board/0]).
 
 duplicate_move_1_test() ->
 	Move1 = {move, [{{character, 67}, none, {6,7}},

@@ -25,7 +25,6 @@
 -import(string_utils, [format_string_for_gaddag/1]).
 -import(move, [score/2]).
 -import(lists, [reverse/1,foreach/2, keysort/2, sort/2, map/2]).
--import(board_parser, [new_board/0]).
 
 -define(DICT_FILE, "../test/testdict.txt").
 -define(LARGE_DICT_FILE, "priv/twl06.txt").

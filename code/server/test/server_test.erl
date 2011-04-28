@@ -175,7 +175,7 @@ bad_board_test() ->
     Rack = <<"ZYGOTE">>,
 
     % wrong no of tiles
-    NewCleanBoard = board_parser:new_board(),
+    NewCleanBoard = game_parser:new_board(),
 
     Thunk1 = fun() ->
                  WrongNumber = board:from_list(lists:map(fun (X) -> tl(X) end, board:as_list(NewCleanBoard))),
