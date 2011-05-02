@@ -24,14 +24,14 @@
          parse_game_body/1,
          new_board/0]).
 
--record(gameinfo, {board, letterdist, scoredist, racksize}).
+-include("gameinfo.hrl").
 
 -import(board, [place_bonus_on_board/4]).
 
 -define(BOARD_LENGTH, 15).
 -define(BOARD_HEIGHT, ?BOARD_LENGTH).
 
--define(MAPPING_PATTERN, "^(.) - (\\d+)").
+-define(MAPPING_PATTERN, "^(.+)\\s*-\\s*(\\d+)").
 
 -define(TRIPLE_WORD_SCORE, "TW").
 -define(DOUBLE_WORD_SCORE, "DW").
@@ -61,10 +61,14 @@ parse_game_body(GameInfoDir) ->
     LetterDist = parse_mapping(GameInfoDir ++ "letterdist.txt", MapPattern),
     ScoreDist = parse_mapping(GameInfoDir ++ "points.txt", MapPattern),
     RackSize = parse_number_in_file(GameInfoDir ++ "rack_size.txt"),
+    BingoBonuses = parse_bonuses(GameInfoDir ++ "bingo_bonuses.txt", MapPattern),
+    Dicts = parse_dicts(GameInfoDir ++ "allowed_dicts.txt"),
     #gameinfo{board = Board, 
               letterdist = LetterDist, 
               scoredist = ScoreDist, 
-              racksize = RackSize}.
+              racksize = RackSize,
+              bingo_bonuses = BingoBonuses,
+              allowed_dicts = Dicts}.
 
 
 parse_number_in_file(Filename) ->
@@ -111,15 +115,38 @@ string_to_bonus(?DOUBLE_LETTER_SCORE) -> double_letter_score.
 
 %% Parses a file of the form Char - Value into a dict.
 parse_mapping(Filename, MapPattern) ->
+    parse_mapping_common(Filename, MapPattern, fun (X) -> X end, fun list_to_integer/1).
+
+
+%% Very similar to parse_mapping, but we accept a number on the left-hand side rather than
+%% a char..
+parse_bonuses(Filename, MapPattern) ->
+    parse_mapping_common(Filename, MapPattern, fun list_to_integer/1, fun list_to_integer/1).
+
+
+%% what all mapping parsers use.
+parse_mapping_common(Filename, MapPattern, TransformKey, TransformValue) ->
     Lines = split_into_lines(Filename),
     Mapped = lists:map(fun (Line) ->
                            {match, Matches} = re:run(Line, MapPattern, [{capture, all_but_first, list}]),
-                           Key = hd(Matches),
-                           Value = list_to_integer(hd(tl(Matches))),
+                           LHS = string:strip(hd(Matches)),
+                           RHS = string:strip(hd(tl(Matches))),
+
+                           Key = TransformKey(LHS),
+                           Value = TransformValue(RHS),
                            {Key, Value}
                         end, Lines),
     Empty = dict:new(),
     lists:foldl(fun ({Key,Value},Dict) -> dict:store(Key,Value,Dict) end, Empty, Mapped).
+
+
+%% parse_dicts :: String -> [atom()]
+%%
+%% Each atom() in the result can only be one that refers to a proper 
+%% dictionary, such as 'twl06', 'sowpods', or 'zynga'.
+parse_dicts(Filename) ->
+    Lines = split_into_lines(Filename),
+    lists:map(fun list_to_atom/1, Lines).
 
 
 split_into_lines(Filename) ->

@@ -19,12 +19,10 @@
 %% THE SOFTWARE.
 
 -module(game_parser_test).
+-include("gameinfo.hrl").
 -include_lib("eunit/include/eunit.hrl").
 
 -import(game_parser, [parse_game_body/1]).
-
--record(gameinfo, {board, letterdist, scoredist, racksize}).
-
 
 -define(SCRABBLE_LETTER_DIST, make_dict([{"E",12},{"F",2},{"L",4},{"H",2},{"T",6},{"A",9}])).
 -define(LEXULOUS_LETTER_DIST, make_dict([{"E",12},{"F",2},{"L",4},{"H",2},{"T",6},{"A",9}])).

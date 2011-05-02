@@ -27,7 +27,7 @@
 -import(lists, [reverse/1,foreach/2, keysort/2, sort/2, map/2]).
 
 -define(DICT_FILE, "../test/testdict.txt").
--define(LARGE_DICT_FILE, "priv/twl06.txt").
+-define(LARGE_DICT_FILE, "priv/dicts/twl06.txt").
 -define(DICT_BIN_PATH, "priv/gaddag.dict").
 -define(WILDCARD, $*).
 -define(SMALLEST_ASCII_CHARACTER, 33).
@@ -46,6 +46,7 @@
         stop/1,
         handle_function/2,
         new_game/1,
+        game_info/1,
         play_move/2,
         get_scrabblecheat_suggestions/2,
         quit/0,
@@ -199,6 +200,19 @@ validate_length(Name) ->
             throw(#badNamelistException{reprimand=Message});
         true -> ok
     end.
+
+
+
+%% game_info :: gamename() -> GameInfo
+%%
+%% where gamename() :: scrabble | words_with_friends | lexulous
+%%
+%% A client may want to receive information about a game, such as the letter 
+%% distribution, or what its blank board looks like.  We give that data back 
+%% as a structure.
+game_info(GameName) ->
+    ok.
+
 
 %% play_move :: [ThriftTile] * ThriftGamestate -> ThriftGamestate
 %%

@@ -1,8 +1,9 @@
 
 
 /**
- * Thrift specification for the Client/Server of ScrabbleCheat.  We send Gamestates, which
- * contain everything needed for the game at a given point in time.
+ * Thrift specification for the Client/Server of ScrabbleCheat.  We send 
+ * Gamestates, which contain everything needed for the game at a given point 
+ * in time.
  */
 
 namespace erl ScrabbleCheat
@@ -34,6 +35,16 @@ enum Bonus {
 
 
 /**
+ * Represents a game the server can 'play'
+ */
+enum GameName {
+    SCRABBLE,
+    WORDS_WITH_FRIENDS,
+    LEXULOUS
+}
+
+
+/**
  * Basic datatype for a tile on the board.  'row' and 'col' are 1-indexed.
  * If the tile is empty the string is empty and LetterType is EMPTY.
  */
@@ -61,16 +72,20 @@ struct Turn {
     2: string player,
 }
 
-struct Gameinfo {
+struct GameInfo {
     1: string name,
-    2: map<string, byte> letter_distribution,
-    3: map<string, byte> score_distribution,
+    2: byte rack_size
+    3: i32 bingo_bonus,
+    4: map<string, byte> letter_distribution,
+    5: map<string, byte> score_distribution,
+    6: list<string> allowed_dictionaries,
+    7: Board board_template
 }
 
 
 /**
- * The primary data structure.  This allows the server to do any of its operations, and a client to
- * display the game as needed to the client.
+ * The primary data structure.  This allows the server to do any of its 
+ * operations, and a client to display the game as needed to the client.
  */
 struct Gamestate {
     1: Board board,
@@ -78,19 +93,21 @@ struct Gamestate {
     3: string player_turn,
     4: list<string> turn_order,
     5: list<Turn> history,
-    6: Gameinfo game,
+    6: string game_name
 }
 
 
 /**
- * Called when a client asks for moves with a bad rack -- empty, containing bad characters, too many chars, etc.
+ * Called when a client asks for moves with a bad rack -- empty, containing 
+ * bad characters, too many chars, etc.
  */ 
 exception BadRackException {
     1: string reprimand,
 }
 
 /**
- * Called when a client asks for moves with a bad board -- Invalid state, wrong size, etc.
+ * Called when a client asks for moves with a bad board -- Invalid state, wrong 
+ * size, etc.
  */
 exception BadBoardException {
     1: string reprimand,
@@ -103,10 +120,18 @@ exception BadNamelistException { 1: string reprimand, }
 service ScrabbleCheat {
 
     /**
-     * Initiates a new game with the server.  This creates a new empty gamestate with the specified players.
+     * Initiates a new game with the server.  This creates a new empty gamestate
+     * with the specified players.
      */
-    Gamestate new_game(1: list<string> players)
+    Gamestate new_game(1: list<string> players, 2: GameName game_name)
                 throws(1: BadNamelistException boo),
+
+
+    /**
+     * Returns the game info given the game's name. Game info entails things 
+     * like the letter distribution
+     */
+    GameInfo game_info(1: GameName game_name),
 
 
     /**
@@ -115,12 +140,18 @@ service ScrabbleCheat {
     Gamestate play_move(1: list<Tile> tiles, 2: Gamestate gamestate)
                  throws(1: BadMoveException boo, 2: BadGamestateException urns),
 
+    /**
+     * Allows a player to "pass" on their turn, if they can't/won't make a move.
+     */
+    Gamestate pass_turn(1: Gamestate gamestate)
+                 throws(1: BadGamestateException msg),
 
     /**
      * The good stuff.  Get a list of moves given a rack and a board.
      */
     list<Move> get_scrabblecheat_suggestions(1: string rack, 2: Board board) 
-                                     throws (1: BadRackException boo, 2: BadBoardException urns),
+                                     throws (1: BadRackException boo, 
+                                             2: BadBoardException urns),
 
     /**
      * Tells the server we're done here.

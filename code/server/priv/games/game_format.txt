@@ -1,0 +1,77 @@
+GAME DIRECTORIES
+================
+
+In adding support for games other than Scrabble, each game has its quirks
+represented by a common file structure.  For a game to be valid, it requires the
+following files with the appropriate specified structure:
+
+-----------------
+allowed_dicts.txt ->
+    This is a list of dictionaries the game allows, one per line.  Dictionaries
+are either:
+
+    * twl06   -> Standard TWL Scrabble Dictionary.
+    * sowpods -> The International Dictionary.
+    * zynga   -> The one Zynga invented for Words With Friends.
+
+
+---------------
+bingo_bonuses.txt ->
+    Every game has a different way of rewarding players who use most/all of the
+tiles on their rack.  Scrabble has a 7-tile rack, and if you use all 7, you get
+an extra 50 points!
+
+    Leave it to the pirates of Lexulous to complicate things. To avoid copyright
+infringement, they modified the rules of their derivative game, giving players a
+rack of 8. Now you have to types of bonuses: one for playing 7 tiles, and
+another for playing all 8. For this reason, rather than being a number, you
+specify the bonuses as a mapping, such as:
+
+7 - 50
+8 - 100
+
+    Meaning, if you put 7 tiles down, you get a bonus 50 points.  If you drop 8,
+you get a bonus of 100.
+
+-----------------
+board.txt ->
+    This is a template board for the game.  The tiles are specified as follows:
+
+    * N -> Normal
+    * TL -> Triple Letter Score
+    * DL -> Double Letter Score
+    * TW -> Triple Word Score
+    * DW -> Double Word Score.
+
+-----------------
+letterdist.txt
+    All these games have different distributions of letters: some have 3 H
+tiles, some have 4. Just list each letter with how many of that tile exist, such
+as
+
+A - 7
+B - 2
+C - 3
+...
+Y - 2
+Z - 1
+* - 2
+
+    Remember the *!  That's your wildcard.
+
+-----------------
+points.txt
+    Like letterdist, each game assigns a separate mapping of letter to points.
+Same format (in this case, A is worth 1 point, B is worth 3...)
+
+A - 1
+B - 3
+...
+Z - 10
+* - 0
+
+
+-----------------
+rack_size.txt
+    Just a number.  This is the max number of tiles in your rack.
+

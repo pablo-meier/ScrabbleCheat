@@ -22,6 +22,10 @@
 
 -import(lists, [concat/1, foldl/3, map/2]).
 
+-include("gameinfo.hrl").
+
+-record(gamestate, {board, scores, turn, history, game}).
+
 -export([make_gamestate/4, 
          play_move/2,
          verify/1,
@@ -29,7 +33,9 @@
          get_gamestate_scores/1,
          get_gamestate_turn/1,
          get_gamestate_history/1,
-         fresh_gamestate/1]).
+         get_gamestate_game/1,
+         fresh_gamestate/1,
+         fresh_gamestate/2]).
 
 %% A gamestate is the current state of the game between some players.  It's 
 %% one of the things the server and clients pass around to each other when 
@@ -40,32 +46,51 @@
 %%   -  The players' scores. :: [{String, Int}]
 %%   -  A player whose turn it is :: String
 %%   -  A game history :: [{Player, Move, Score}]
+%%   -  The name of the game we're playing :: scrabble | words_with_friends | lexulous
 %%
 %% This factors heavily into the MVC separation:  most of the controller code
 %% (that on the Erlang side) will communicate to any View by serializing these
 %% objects and passing them around, and save their state correspondingly.
 
-make_gamestate(Board, Scores, Turn, History) -> {gamestate, Board, Scores, Turn, History}.
+make_gamestate(Board, Scores, Turn, History) -> 
+    #gamestate{board = Board, scores = Scores, turn = Turn, history = History}.
 
-get_gamestate_board  ({gamestate, Board, _, _, _}) -> Board.
-get_gamestate_scores ({gamestate, _, Scores, _, _}) -> Scores.
-get_gamestate_turn   ({gamestate, _, _, Turn, _}) -> Turn.
-get_gamestate_history({gamestate, _, _, _, History}) -> History.
+get_gamestate_board  (GS) -> GS#gamestate.board.
+get_gamestate_scores (GS) -> GS#gamestate.scores.
+get_gamestate_turn   (GS) -> GS#gamestate.turn.
+get_gamestate_history(GS) -> GS#gamestate.history.
+get_gamestate_game   (GS) -> GS#gamestate.game.
+
+
+
+%% fresh_gamestate :: [String] * gamename() -> Gamestate
+%%
+%% Creates a gamestate representing a new game for a the specified game, where 
+%% the players are indicated by the parameter.
+fresh_gamestate(Players, Game) ->
+    Gameinfo = game_parser:parse_game(Game),
+    Board = Gameinfo#gameinfo.board,
+    [First|_] = Players,
+    make_gamestate(Board, map(fun (X) -> {X, 0} end, Players), First, []).
 
 
 %% fresh_gamestate :: [String] -> Gamestate
 %%
-%% Creates a gamestate for a new game, where the players are indicated by the parameter.
+%% Creates a fresh gamestate with our default game (Scrabble).
 fresh_gamestate(Players) ->
-    [First|_] = Players,
-    make_gamestate(game_parser:new_board(), map(fun (X) -> {X, 0} end, Players), First, []).
+    fresh_gamestate(Players, scrabble).
 
 
 %% play_move :: Gamestate * Move -> Gamestate
 %%
 %% Returns the gamestate after a move has been played on it.
 play_move(Gamestate, Move) ->
-    {gamestate, Board, Scores, Turn, History} =  Gamestate,
+
+    Board = Gamestate#gamestate.board,
+    Scores = Gamestate#gamestate.scores,
+    Turn = Gamestate#gamestate.turn,
+    History = Gamestate#gamestate.history,
+
     {PlayerScore, NewTurn} = get_score_and_next(Scores, Turn),
     MoveScore = move:score(Move, Board),
     AugmentedScore = MoveScore + PlayerScore,
@@ -118,7 +143,7 @@ update_score(NewScore, OldList, Turn) ->
 %% Verifies the Gamestate, throws badGamestateException if it isn't up to snuff.
 verify(Gamestate) ->
     try 
-        {gamestate, Board, _Scores, _Turn, _History} = Gamestate,
+        Board = Gamestate#gamestate.board,
         Gaddag = scrabblecheat_main:get_master_gaddag(),
         board:verify(Board, Gaddag)
     catch
