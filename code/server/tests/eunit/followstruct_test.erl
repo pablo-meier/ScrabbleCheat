@@ -40,7 +40,7 @@
 %% Rebar runs Eunit tests from a .eunit directory;  cd out, maybe
 %% later find a way to more cleanly set $PROJECT_HOME or some such
 %% var.
--define(TESTDICT, "../test/testdict.txt").
+-define(TESTDICT, "../tests/eunit/testdict.txt").
 
 flip_horiz_test() ->
 	Board = place_word("ABLE", right, {7,7}, new_board()),

@@ -115,7 +115,7 @@ string_to_bonus(?DOUBLE_LETTER_SCORE) -> double_letter_score.
 
 %% Parses a file of the form Char - Value into a dict.
 parse_mapping(Filename, MapPattern) ->
-    parse_mapping_common(Filename, MapPattern, fun (X) -> X end, fun list_to_integer/1).
+    parse_mapping_common(Filename, MapPattern, fun hd/1, fun list_to_integer/1).
 
 
 %% Very similar to parse_mapping, but we accept a number on the left-hand side rather than
@@ -168,7 +168,20 @@ line_looper(FileHandle, Lst) ->
 
 
 
+
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%   OBSOLETE CODE - DELETE SOON
+%%
+%% This code creates a new Scrabble board by default.  In theory, we'd like to do
+%% this by simply calling GameInfo#gameinfo.board on a Scrabble GameInfo, but 
+%% almost all test rely on this function, and their called with the gaminfo files
+%% in the OTP apps priv/ directory.  We should delete this code as soon as a 
+%% resolution is found, wherein we either test on the OTP app running the server
+%% (preferred) or hack it, via a debug build that searches for the files in a
+%% hard-coded path (lame).
+
+
 %% new_board :: () -> Board
 %%
 %% Generates a new, blank Scrabble board.  This includes all the bonuses, but

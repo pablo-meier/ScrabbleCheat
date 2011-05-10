@@ -26,6 +26,8 @@
 -import(move, [score/2]).
 -import(lists, [reverse/1,foreach/2, keysort/2, sort/2, map/2]).
 
+-include("gameinfo.hrl").
+
 -define(DICT_FILE, "../test/testdict.txt").
 -define(LARGE_DICT_FILE, "priv/dicts/twl06.txt").
 -define(DICT_BIN_PATH, "priv/gaddag.dict").
@@ -40,18 +42,26 @@
 
 -include("scrabbleCheat_thrift.hrl").
 
-
+%% APPLICATION API
 -export([start_link/0,
         start_link/1,
-        stop/1,
-        handle_function/2,
-        new_game/1,
-        game_info/1,
-        play_move/2,
-        get_scrabblecheat_suggestions/2,
-        quit/0,
-        get_master_gaddag/0,
+        stop/1]).
+        
+%% THRIFT LIBRARY API
+-export([handle_function/2]).
+
+%% USER-DEFINED THRIFT API
+-export([new_game/1,
+         game_info/1,
+         pass_turn/1,
+         play_move/2,
+         get_scrabblecheat_suggestions/2,
+         quit/0]).
+
+%% SUPPORT API
+-export([get_master_gaddag/1,
         make_binary_gaddag/0]).
+
 
 
 %% make_binary_gaddag :: () -> File ()
@@ -74,22 +84,56 @@ start_link() ->
 
 %% start :: Int -> ()
 %%
-%% Starts a new ScrabbleCheat server on the parametrized port.  Follows the 
-%% example of the Mighty Mighty Todd Lipcon on his Thrift tutorial.  Todd 
-%% Lipcon is a Boss, if you didn't know.
+%% Starts a new ScrabbleCheat server on the parametrized port. Also sets up 
+%% top-level data (reading Gameinfos, making score functions) as necessary.
 start_link(Port) ->
     io:format(user, "Scrabblecheat Server starting...~n", []),
-    Gaddag = get_or_make_gaddag(),
-    WordFunction = get_best_move_function(Gaddag),
-    ets:new(globals, [set, protected, named_table, {keypos, 1}]), % {read_concurrency, true}]),
-    ets:insert(globals, {search_function, WordFunction}),
-    ets:insert(globals, {master_gaddag, Gaddag}),
+    configure_global_data(),
     Handler = ?MODULE,
     thrift_socket_server:start([{handler, Handler},
                                 {service, scrabbleCheat_thrift},
                                 {port, Port},
-                                {socket_opts, [{recv_timeout, 100000}]},
+                                {socket_opts, [{recv_timeout, 600000}]},
                                 {name, scrabbleCheat_server}]).
+
+
+
+%% configure_global_data :: () -> ()
+%% 
+%% Sets up the ETS tables for fetching the various bits of data, such as
+%% parsed Gameinfos, score functions, and GADDAGs.  We do this with three
+%% ETS tables:  
+%%
+%%         gaddags -> {dictionary(), Gaddag}
+%%  word_functions -> {dictionary(), (Rack * Board -> [Move])}
+%%       gameinfos -> {game(), GameInfo}
+%% score_functions -> {game(), (Move * Board -> Int)}
+%%
+%% where
+%%   dictionary() = twl06 | sowpods | zynga
+%%         game() = scrabble | words_with_friends | lexulous
+configure_global_data() ->
+
+    Gaddag = get_or_make_gaddag(),
+    make_named_table(gaddags),
+    ets:insert(gaddags, {twl06, Gaddag}),
+
+    WordFunction = get_best_move_function(Gaddag),
+    make_named_table(word_functions),
+    ets:insert(word_functions, {twl06, WordFunction}),
+    
+    GameInfos = lists:map(fun (X) -> {X, game_parser:parse_game(X)} end, 
+                          [scrabble, lexulous, words_with_friends]),
+    make_named_table(gameinfos),
+    lists:foreach(fun(X) -> ets:insert(gameinfos, X) end, GameInfos),
+    
+    ScoreFuns = lists:map(fun({X,Y}) -> {X, move:get_score_function(Y)} end, GameInfos),
+    make_named_table(score_functions),
+    lists:foreach(fun(X) -> ets:insert(score_functions, X) end, ScoreFuns).
+
+
+make_named_table(Name) ->
+    ets:new(Name, [set, protected, named_table, {keypos, 1}]).
 
 
 %% get_or_make_gaddag :: () -> Gaddag
@@ -113,20 +157,20 @@ get_or_make_gaddag() ->
         end.
 
 
-%% get_search_function :: () -> (Board * Rack -> [Move])
+%% get_search_function :: dictionary() -> (Board * Rack -> [Move])
 %%
 %% Returns a search function that takes a board and rack, and produces
 %% a list of moves.
-get_search_function() ->
-    [{search_function, Search}] = ets:lookup(globals, search_function),
+get_search_function(Dict) ->
+    [{Dict, Search}] = ets:lookup(word_functions, Dict),
     Search.
 
-%% get_master_gaddag :: () -> Gaddag
+%% get_master_gaddag :: dictionary() -> Gaddag
 %%
 %% Get's a master, top-level Gaddag.  These are mostly used for verification
 %% of moves and boards.
-get_master_gaddag() ->
-    [{master_gaddag, Gaddag}] = ets:lookup(globals, master_gaddag),
+get_master_gaddag(Dict) ->
+    [{Dict, Gaddag}] = ets:lookup(gaddags, Dict),
     Gaddag.
 
 
@@ -137,7 +181,10 @@ get_master_gaddag() ->
 %%
 %% Stops the server named by the parameter, or its Pid.
 stop(Server) ->
-    ets:delete(globals),
+    ets:delete(gaddags),
+    ets:delete(word_functions),
+    ets:delete(score_functions),
+    ets:delete(gameinfos),
     thrift_socket_server:stop(Server).
 
 %% THRIFT INTERFACE 
@@ -214,6 +261,14 @@ game_info(GameName) ->
     ok.
 
 
+%% pass_turn :: Gamestate -> Gamestate
+%%
+%% Allows a Player to pass their turn without playing a move.  Advances the 
+%% current turn forward.
+pass_turn(Gamestate) ->
+    ok.
+
+
 %% play_move :: [ThriftTile] * ThriftGamestate -> ThriftGamestate
 %%
 %% Given a set of tiles and a gamestate, returns a new gamestate with the tiles 
@@ -242,9 +297,9 @@ get_scrabblecheat_suggestions(Rack, Board) ->
     RackAsString = binary_to_list(Rack),
     validate_rack(RackAsString),
     NativeBoard = thrift_helper:thrift_to_native_board(Board),
-    Master = get_master_gaddag(),
+    Master = get_master_gaddag(scrabble),
     board:verify(NativeBoard, Master),
-    Search = get_search_function(),
+    Search = get_search_function(scrabble),
     Moves = Search(NativeBoard, RackAsString),
     WithScores = lists:map(fun (X) -> {X, move:score(X, NativeBoard)} end, Moves),
     Sorted = reverse(keysort(2, WithScores)),
@@ -257,7 +312,7 @@ get_scrabblecheat_suggestions(Rack, Board) ->
 
 validate_rack([]) -> throw({badRackException, "This rack is empty!"});
 validate_rack(Rack) ->
-    Len = length(Rack) =< ?RACK_MAX_LENGTH,
+    Len = (length(Rack) =< ?RACK_MAX_LENGTH),
     Valid = lists:all(fun (X) -> (X >= $A andalso X =< $Z) orelse X =:= ?WILDCARD end, Rack),
     case {Len, Valid} of
         {true, true} -> ok;

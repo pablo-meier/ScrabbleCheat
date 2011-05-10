@@ -24,14 +24,14 @@
 
 -import(game_parser, [parse_game_body/1]).
 
--define(SCRABBLE_LETTER_DIST, make_dict([{"E",12},{"F",2},{"L",4},{"H",2},{"T",6},{"A",9}])).
--define(LEXULOUS_LETTER_DIST, make_dict([{"E",12},{"F",2},{"L",4},{"H",2},{"T",6},{"A",9}])).
--define(WWF_LETTER_DIST, make_dict([{"E",13},{"F",2},{"L",4},{"H",2},{"T",7},{"A",9}])).
+-define(SCRABBLE_LETTER_DIST, make_dict([{$E,12},{$F,2},{$L,4},{$H,2},{$T,6},{$A,9}])).
+-define(LEXULOUS_LETTER_DIST, make_dict([{$E,12},{$F,2},{$L,4},{$H,2},{$T,6},{$A,9}])).
+-define(WWF_LETTER_DIST, make_dict([{$E,13},{$F,2},{$L,4},{$H,2},{$T,7},{$A,9}])).
 
 
--define(SCRABBLE_POINT_DIST, make_dict([{"E",1},{"F",4},{"L",1},{"H",4},{"T",1},{"A",1}])).
--define(LEXULOUS_POINT_DIST, make_dict([{"E",1},{"F",5},{"L",1},{"H",5},{"T",2},{"A",1}])).
--define(WWF_POINT_DIST, make_dict([{"E",1},{"F",4},{"L",2},{"H",3},{"T",1},{"A",1}])).
+-define(SCRABBLE_POINT_DIST, make_dict([{$E,1},{$F,4},{$L,1},{$H,4},{$T,1},{$A,1}])).
+-define(LEXULOUS_POINT_DIST, make_dict([{$E,1},{$F,5},{$L,1},{$H,5},{$T,2},{$A,1}])).
+-define(WWF_POINT_DIST, make_dict([{$E,1},{$F,4},{$L,2},{$H,3},{$T,1},{$A,1}])).
 
 
 

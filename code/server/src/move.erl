@@ -23,10 +23,20 @@
 -define(SCRABBLE_RACK_SIZE, 7).
 -define(SCRABBLE_BINGO_BONUS, 50).
 
+-include("gameinfo.hrl").
+
 -import(tile, [get_tile_letter/1, is_wildcard/1, get_tile_location/1, is_occupied/1, get_tile_bonus/1, duplicate_tile/2]).
 -import(board, [place_move_on_board/2, to_beginning/1, orthogonals/1, get_adjacent/3, zoom/3, flip/1]).
 -import(lists, [foldl/3, filter/2, any/2, map/2]).
--export([new_move/0, verify/2, add_to_move/2, duplicate_moves/2, get_move_tiles/1, score/2, from_list/1]).
+
+-export([new_move/0, 
+         verify/2, 
+         add_to_move/2, 
+         duplicate_moves/2, 
+         get_move_tiles/1, 
+         score/2, 
+         make_score_function/1,
+         from_list/1]).
 
 %% The move datatype.  Checks structural integrity of moves, not
 %% responsible for legal placement relative to a board, or dictionary
@@ -75,6 +85,102 @@ check_integrity(Row, Col) ->
     Row =< 15 andalso Row >= 1 andalso Col =< 15 andalso Col >= 1.
 
 
+%% make_score_function :: GameInfo -> (Move * Board -> Int)
+%%
+%% Makes an appropriate score function given the parametrized
+%% GameInfo.
+make_score_function(Gameinfo) ->
+    Scoredist = dict_as_function(Gameinfo#gameinfo.scoredist),
+    ScorePath = get_wordpath_calculator_function(Scoredist),
+
+    Bingos = dict_as_function(Gameinfo#gameinfo.bingo_bonuses),
+    BingoBonus = get_bingo_bonus_function(Bingos),
+    fun (Move, Board) ->
+        %% Get the orientation, start point of a move.
+        Lst = get_move_tiles(Move),
+    
+        ZoomBackDir = to_beginning(get_move_orientation(Lst)),
+        MockBoard = place_move_on_board(Move, Board),
+        [ATile|_] = Lst,
+        StartTile = zoom(ATile, ZoomBackDir, MockBoard),
+        Forward = flip(ZoomBackDir),
+    
+        %% Calculate the score of the original move
+        Original = ScorePath(StartTile, Forward, MockBoard, Lst, 0, []),
+    
+        %% Calculate the score of any Perpendicular moves 
+        Perpendiculars = score_perpendiculars(StartTile, Forward, MockBoard, Lst, 0),
+    
+        Original + Perpendiculars + BingoBonus(Lst)
+    end.
+
+
+%% dict_as_function :: Dict<Key, Value> -> (Key -> Value)
+%%
+%% A dict is just a poor abstraction of a function. We just make it so ^_^
+dict_as_function(Dict) ->
+    fun (X) -> 
+        case dict:fetch(X, Dict) of
+            none -> 0;
+            Value -> Value
+        end
+    end.
+
+
+%% get_bingo_bonus_function :: (Int -> Int) -> ([Tile] -> Int)
+%%
+%% Given a set of bonuses, produce a function that calculates the bingo bonus
+%% applicable to a given move.
+get_bingo_bonus_function(Bonuses) ->
+    fun (Lst) ->
+        Bonuses(length(Lst))
+    end.
+
+
+%% get_wordpath_calculator_function 
+%%  :: (String -> Int) -> (Tile * Direction * Board * [Tile] * Int * [Bonus] -> Points)
+%%
+%% Given a function with a score distribution for the letters in the game (e.g.
+%% A is 1 point, Q is 10), create a function that 'traces' the score by following
+%% a path on the board.
+get_wordpath_calculator_function(LetterDist) ->
+    fun (Tile, Direction, Board, MoveComponents, Accum, Bonuses) ->
+        TilePoints = case is_wildcard(Tile) of 
+                        true -> 0; 
+                        false -> LetterDist(get_tile_letter(Tile)) 
+                     end,
+    
+        %% Adjust points for letter bonuses
+        IsNew = is_part_of_new_move(Tile, MoveComponents),
+        LetterBonus = get_tile_bonus(Tile),
+        WithBonuses = case {LetterBonus, IsNew} of 
+                          {double_letter_score, true} -> 2 * TilePoints;
+                          {triple_letter_score, true} -> 3 * TilePoints;
+                          _Else -> TilePoints
+                      end,
+    
+        %% Check word bonuses and whether or not they belong in the original move.
+        BonusAcc = check_and_add_bonuses(Tile, MoveComponents, Bonuses),
+    
+        %% See if you can continue
+        case get_adjacent(Tile, Board, Direction) of
+            none -> 
+                foldl(fun (X, Y) -> X(Y) end, Accum + WithBonuses, BonusAcc);
+            NewTile ->
+                case is_occupied(NewTile) of
+                    true  -> score_word_path(NewTile, Direction, Board, MoveComponents, Accum + WithBonuses, BonusAcc);
+                    false -> 
+                        foldl(fun (X, Y) -> X(Y) end, Accum + WithBonuses, BonusAcc)
+                end
+        end
+    end.
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
+%%%%%%%%%%%% OBSOLETE FUNCTIONS TO DELETE AFTER TESTING
+
 %% score :: Move * Board -> Int
 %%
 %% Calculates the score of a move.
@@ -100,14 +206,63 @@ score(Move, Board) ->
 %% get_bingo_bonus :: [Tile] -> Int
 %%
 %% Returns bonus points if this move is a 'bingo': where it uses and player's
-%% entire rack. TODO:  If we make the AI game-agnostic (say, using Lexulous rules)
-%% this is a spot where we need to add a check, since some other games have more than
-%% 7 tiles in a rack.
+%% entire rack. 
 get_bingo_bonus(List) ->
     case length(List) of
         ?SCRABBLE_RACK_SIZE -> ?SCRABBLE_BINGO_BONUS;
         _Else -> 0
     end.
+
+
+%% score_word_path :: Tile * Direction * Board * [Tile] * Int * [Bonus] -> Points
+%%
+%% Actually counts the points of every component in a path.  Handles bonuses
+%% by checking if they were part of the original moves.
+score_word_path(Tile, Direction, Board, MoveComponents, Accum, Bonuses) ->
+    %% Score the tile you are on.
+    TilePoints = case is_wildcard(Tile) of 
+                    true -> 0; 
+                    false -> letter_score(get_tile_letter(Tile)) 
+                 end,
+
+    %% Adjust points for letter bonuses
+    IsNew = is_part_of_new_move(Tile, MoveComponents),
+    LetterBonus = get_tile_bonus(Tile),
+    WithBonuses = case {LetterBonus, IsNew} of 
+                      {double_letter_score, true} -> 2 * TilePoints;
+                      {triple_letter_score, true} -> 3 * TilePoints;
+                      _Else -> TilePoints
+                  end,
+
+    %% Check word bonuses and whether or not they belong in the original move.
+    BonusAcc = check_and_add_bonuses(Tile, MoveComponents, Bonuses),
+
+    %% See if you can continue
+    case get_adjacent(Tile, Board, Direction) of
+        none -> 
+            foldl(fun (X, Y) -> X(Y) end, Accum + WithBonuses, BonusAcc);
+        NewTile ->
+            case is_occupied(NewTile) of
+                true  -> score_word_path(NewTile, Direction, Board, MoveComponents, Accum + WithBonuses, BonusAcc);
+                false -> 
+                    foldl(fun (X, Y) -> X(Y) end, Accum + WithBonuses, BonusAcc)
+            end
+    end.
+
+
+%% Currently hardcoded for standard Scrabble.  Could have just defined as a list?
+%% Lazy Sunday coding, this is...
+letter_score($A) -> 1;  letter_score($B) -> 3;  letter_score($C) -> 3;  letter_score($D) -> 2;
+letter_score($E) -> 1;  letter_score($F) -> 4;  letter_score($G) -> 2;  letter_score($H) -> 4;
+letter_score($I) -> 1;  letter_score($J) -> 8;  letter_score($K) -> 5;  letter_score($L) -> 1;
+letter_score($M) -> 3;  letter_score($N) -> 1;  letter_score($O) -> 1;  letter_score($P) -> 3;
+letter_score($Q) -> 10; letter_score($R) -> 1;  letter_score($S) -> 1;  letter_score($T) -> 1;
+letter_score($U) -> 1;  letter_score($V) -> 4;  letter_score($W) -> 4;  letter_score($X) -> 8;
+letter_score($Y) -> 4;  letter_score($Z) -> 10.
+
+
+%%%%%%%%%%%% OBSOLETE FUNCTIONS END
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
 
 
 %% get_move_orientation :: [Tile] -> horizontal | vertical
@@ -158,42 +313,6 @@ score_perpendiculars(Tile, Direction, Board, MoveComponents, Accum) ->
     end.
 
 
-%% score_word_path :: Tile * Direction * Board * [Tile] * Int * [Bonus] -> Points
-%%
-%% Actually counts the points of every component in a path.  Handles bonuses
-%% by checking if they were part of the original moves.
-score_word_path(Tile, Direction, Board, MoveComponents, Accum, Bonuses) ->
-    %% Score the tile you are on.
-    TilePoints = case is_wildcard(Tile) of 
-                    true -> 0; 
-                    false -> letter_score(get_tile_letter(Tile)) 
-                end,
-
-    %% Adjust points for letter bonuses
-    IsNew = is_part_of_new_move(Tile, MoveComponents),
-    LetterBonus = get_tile_bonus(Tile),
-    WithBonuses = case {LetterBonus, IsNew} of 
-                      {double_letter_score, true} -> 2 * TilePoints;
-                      {triple_letter_score, true} -> 3 * TilePoints;
-                      _Else -> TilePoints
-                end,
-
-    %% Check word bonuses and whether or not they belong in the original move.
-    BonusAcc = check_and_add_bonuses(Tile, MoveComponents, Bonuses),
-
-    %% See if you can continue
-    case get_adjacent(Tile, Board, Direction) of
-        none -> 
-            foldl(fun (X, Y) -> X(Y) end, Accum + WithBonuses, BonusAcc);
-        NewTile ->
-            case is_occupied(NewTile) of
-                true  -> score_word_path(NewTile, Direction, Board, MoveComponents, Accum + WithBonuses, BonusAcc);
-                false -> 
-                    foldl(fun (X, Y) -> X(Y) end, Accum + WithBonuses, BonusAcc)
-            end
-    end.
-
-
 check_and_add_bonuses(Tile, MoveComponents, Bonuses) ->
     IsNew = is_part_of_new_move(Tile, MoveComponents),
     case {get_tile_bonus(Tile), IsNew} of
@@ -206,17 +325,6 @@ check_and_add_bonuses(Tile, MoveComponents, Bonuses) ->
 is_part_of_new_move(Tile, MoveComponents) ->
     any(fun (X) -> duplicate_tile(Tile, X) end, MoveComponents).
 
-
-
-%% Currently hardcoded for standard Scrabble.  Could have just defined as a list?
-%% Lazy Sunday coding, this is...
-letter_score($A) -> 1;  letter_score($B) -> 3;  letter_score($C) -> 3;  letter_score($D) -> 2;
-letter_score($E) -> 1;  letter_score($F) -> 4;  letter_score($G) -> 2;  letter_score($H) -> 4;
-letter_score($I) -> 1;  letter_score($J) -> 8;  letter_score($K) -> 5;  letter_score($L) -> 1;
-letter_score($M) -> 3;  letter_score($N) -> 1;  letter_score($O) -> 1;  letter_score($P) -> 3;
-letter_score($Q) -> 10; letter_score($R) -> 1;  letter_score($S) -> 1;  letter_score($T) -> 1;
-letter_score($U) -> 1;  letter_score($V) -> 4;  letter_score($W) -> 4;  letter_score($X) -> 8;
-letter_score($Y) -> 4;  letter_score($Z) -> 10.
 
 
 %% verify :: Move * Board -> ()

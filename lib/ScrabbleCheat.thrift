@@ -149,7 +149,7 @@ service ScrabbleCheat {
     /**
      * The good stuff.  Get a list of moves given a rack and a board.
      */
-    list<Move> get_scrabblecheat_suggestions(1: string rack, 2: Board board) 
+    list<Move> get_scrabblecheat_suggestions(1: string rack, 2: Board board, 3: GameName game_name) 
                                      throws (1: BadRackException boo, 
                                              2: BadBoardException urns),
 

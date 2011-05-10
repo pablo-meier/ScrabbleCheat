@@ -39,7 +39,7 @@ run: compile
 shell: compile
 	erl -pa ebin/ -pa $(THRIFT_APP)/ebin/
 
-thrift-generate: thrift-compile
+thrift-generate: thrift-compile prepare
 	[[ -d include ]] || mkdir include
 	mv gen-erl/*.hrl include/
 	mv gen-erl/*.beam ebin/
@@ -49,6 +49,9 @@ thrift-generate: thrift-compile
 thrift-compile: 
 	thrift -r --gen erl $(THRIFT_PATH)
 	erlc -o gen-erl gen-erl/*.erl
+
+prepare:
+	test -d ebin || mkdir ebin
 
 compile: thrift-generate
 	rebar compile
