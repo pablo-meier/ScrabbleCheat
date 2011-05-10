@@ -129,7 +129,7 @@ configure_global_data() ->
     
     ScoreFuns = lists:map(fun({X,Y}) -> {X, move:make_score_function(Y)} end, GameInfos),
     make_named_table(score_functions),
-    lists:foreach(fun(X) -> ets:insert(score_functions, X) end, ScoreFuns),
+    lists:foreach(fun(X) -> ets:insert(score_functions, X) end, ScoreFuns).
 
 
 make_named_table(Name) ->
