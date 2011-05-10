@@ -18,7 +18,7 @@
 %% OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 %% THE SOFTWARE.
 
--module(game_parser_test).
+-module(game_parser_tests).
 -include("gameinfo.hrl").
 -include_lib("eunit/include/eunit.hrl").
 

@@ -18,7 +18,7 @@
 %% OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 %% THE SOFTWARE.
 
--module(movesearch_test).
+-module(movesearch_tests).
 -include_lib("eunit/include/eunit.hrl").
 
 %% Rebar runs Eunit tests from a .eunit directory;  cd out, maybe

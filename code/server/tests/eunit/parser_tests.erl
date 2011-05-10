@@ -18,7 +18,7 @@
 %% OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 %% THE SOFTWARE.
 
--module(parser_test).
+-module(parser_tests).
 -include_lib("eunit/include/eunit.hrl").
 
 -import(dict_parser, [parse/1]).

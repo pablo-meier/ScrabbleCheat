@@ -18,7 +18,7 @@
 %% OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 %% THE SOFTWARE.
 
--module(gaddag_test).  
+-module(gaddag_tests).
 -include_lib("eunit/include/eunit.hrl").
 
 -import(gaddag, [empty_gaddag/0, 

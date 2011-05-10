@@ -18,7 +18,7 @@
 %% OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 %% THE SOFTWARE.
 
--module(move_test).
+-module(move_tests).
 -include_lib("eunit/include/eunit.hrl").
 
 -import(move, [duplicate_moves/2, 
