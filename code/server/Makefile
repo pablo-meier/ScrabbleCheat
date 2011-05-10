@@ -57,12 +57,12 @@ compile: thrift-generate
 	rebar compile
 
 binary-gaddag: compile
-	erl -noshell -pa ebin/ -s scrabblecheat_main make_binary_gaddag  -run erlang halt
+	[ -f priv/twl06.gaddag ] || erl -noshell -pa ebin/ -s scrabblecheat_main make_binary_gaddag  -run erlang halt
 
 clean:
-	rebar clean || 0
-	rm -f include/thrift_*.hrl include/scrabbleCheat_*.hrl ebin/gaddag.dict 
+	rm -f include/thrift_*.hrl include/scrabbleCheat_*.hrl 
 	rm -rf $(RELEASE_DIR)
 	rm -rf $(SC_APP)
-	rm -f priv/gaddag.dict
+	rm -f priv/twl06.gaddag priv/sowpods.gaddag priv/zynga.gaddag
+	rebar clean || 0
 

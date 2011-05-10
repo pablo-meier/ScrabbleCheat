@@ -30,7 +30,7 @@
 
 -define(DICT_FILE, "../test/testdict.txt").
 -define(LARGE_DICT_FILE, "priv/dicts/twl06.txt").
--define(DICT_BIN_PATH, "priv/gaddag.dict").
+-define(DICT_BIN_PATH, "priv/twl06.gaddag").
 -define(WILDCARD, $*).
 -define(SMALLEST_ASCII_CHARACTER, 33).
 -define(LARGEST_ASCII_CHARACTER, 126).
@@ -127,9 +127,9 @@ configure_global_data() ->
     make_named_table(gameinfos),
     lists:foreach(fun(X) -> ets:insert(gameinfos, X) end, GameInfos),
     
-    ScoreFuns = lists:map(fun({X,Y}) -> {X, move:get_score_function(Y)} end, GameInfos),
+    ScoreFuns = lists:map(fun({X,Y}) -> {X, move:make_score_function(Y)} end, GameInfos),
     make_named_table(score_functions),
-    lists:foreach(fun(X) -> ets:insert(score_functions, X) end, ScoreFuns).
+    lists:foreach(fun(X) -> ets:insert(score_functions, X) end, ScoreFuns),
 
 
 make_named_table(Name) ->
@@ -142,10 +142,10 @@ make_named_table(Name) ->
 %% boot time.  Either finds a predefined binary one, or produces one.
 get_or_make_gaddag() ->
     PrivDir = code:priv_dir(scrabblecheat),
-    Path = string:concat(PrivDir, "/gaddag.dict"),
+    Path = string:concat(PrivDir, "/twl06.gaddag"),
     case file:read_file_info(Path) of
         {ok, _} -> 
-            io:format("Parsing the dictionary, this could be a while...~n"),
+            io:format("Reading a dictionary, this may take a few seconds...~n"),
             dict_parser:read_from_binary(Path);
         {error, _} -> 
             io:format("Gaddag file not found!  Using test dictionary in meantime.~n"),
