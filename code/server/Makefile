@@ -15,8 +15,19 @@ SC_REL_INCLUDE=$(SC_APP)/include
 SC_REL_PRIV=$(SC_APP)/priv
 
 
-test: compile 
+test: eunit ct
+
+eunit: compile 
 	rebar eunit
+
+
+ct: release
+	rel/scrabblecheat/bin/scrabblecheat start
+	sleep 10
+	mkdir -p .common_test/logs
+	cat test.spec.in | sed -e "s,@PATH@,$(PWD)," > test.spec
+	ct_run -pa lib/*/ebin -spec test.spec
+
 
 release: binary-gaddag compile
 	rm -rf $(RELEASE_DIR)
@@ -63,6 +74,7 @@ clean:
 	rm -f include/thrift_*.hrl include/scrabbleCheat_*.hrl 
 	rm -rf $(RELEASE_DIR)
 	rm -rf $(SC_APP)
+	rm -rf .common_test test.spec tests/common_tests/*.beam
 	rm -f priv/twl06.gaddag priv/sowpods.gaddag priv/zynga.gaddag
 	rebar clean || 0
 

@@ -21,6 +21,9 @@
 -module(server_SUITE).
 -include_lib("common_test/include/ct.hrl").
 
+-include("eunit_macros.hrl").
+-include("scrabbleCheat_thrift.hrl").
+
 %% Test server callbacks.
 -export([all/0,
          init_per_suite/1,
@@ -28,7 +31,12 @@
          suite/0]).
 
 %% Test cases
--export([new_game_test/1]).
+-export([new_game_test/1,
+         play_move_test/1,
+         scrabblecheat_suggestions_test/1,
+         bad_namelist_test/1,
+         bad_rack_test/1,
+         bad_board_test/1]).
 
 
 %% Functions we're testing...
@@ -46,7 +54,12 @@
 %%%%%%%%%%% COMMON TEST API
 
 all() ->
-    [new_game_test].
+    [new_game_test,
+     play_move_test,
+     scrabblecheat_suggestions_test,
+     bad_namelist_test,
+     bad_rack_test,
+     bad_board_test].
 
 suite() ->
     [{userdata, [{info, "Tests the top-level API, defined by the Thrift file."}]}].
@@ -72,7 +85,7 @@ get_thrift_client() ->
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%% LOL TESTS LOL
 
-new_game_test() ->
+new_game_test(_Config) ->
     Client0 = get_thrift_client(),
     {_Client1, {ok, Gamestate}} = thrift_client:call(Client0, new_game, [["Paul", "Sam"]]),
     #gamestate{board = _Board, scores = _Scores, player_turn = CurrentTurn} = Gamestate,
@@ -82,8 +95,7 @@ new_game_test() ->
     ?assert(TurnOrder =:= [<<"Paul">>, <<"Sam">>]).
 
 
-
-play_move_test() ->
+play_move_test(_Config) ->
     Client0 = get_thrift_client(),
     {Client1, {ok, Fresh}} = thrift_client:call(Client0, new_game, [["Paul", "Sam"]]),
     TileList = [tile:new_tile({character, $A}, double_letter_score, 7, 7), 
@@ -117,8 +129,8 @@ play_move_test() ->
     ?assert(ReturnedScore =:= Score).
 
 
-scrabblecheat_suggestions_test() ->
-    Client = get_thrift_client(),
+scrabblecheat_suggestions_test(_Config) ->
+    Client0 = get_thrift_client(),
     {Client1, {ok, Fresh}} = thrift_client:call(Client0, new_game, [["Paul", "Sam"]]),
     MoveTiles= [tile:new_tile({character, $A}, double_letter_score, 7, 7), 
                 tile:new_tile({character, $B}, none, 7, 8), 
@@ -143,7 +155,7 @@ scrabblecheat_suggestions_test() ->
 	lists:foreach(fun (X) -> ?assert(lists:any(fun (Y) -> move:duplicate_moves(X, Y) end, NativeMoves)) end, Solutions).
 
 
-bad_namelist_test() ->
+bad_namelist_test(_Config) ->
     Client0 = get_thrift_client(),
 
     Thunk1 = fun() -> thrift_client:call(Client0, new_game, [[]]) end,
@@ -156,7 +168,7 @@ bad_namelist_test() ->
     ?assertException(throw, {_, {exception, {badNamelistException, _Msg2}}}, Thunk3()).
 
 
-bad_rack_test() ->
+bad_rack_test(_Config) ->
     Client0 = get_thrift_client(),
     {Client1, {ok, Fresh}} = thrift_client:call(Client0, new_game, [["Paul", "Sam"]]),
     MoveTiles= [tile:new_tile({character, $A}, double_letter_score, 7, 7), 
@@ -179,7 +191,7 @@ bad_rack_test() ->
 
 
 %% bad board
-bad_board_test() ->
+bad_board_test(_Config) ->
     Client1 = get_thrift_client(),
     Rack = <<"ZYGOTE">>,
 
