@@ -21,12 +21,14 @@ eunit: compile
 	rebar eunit
 
 
-ct: release
+ct: compile binary-gaddag
+	[ -d rel ] || $(MAKE) release
+	mkdir -p .common_test/logs
 	rel/scrabblecheat/bin/scrabblecheat start
 	sleep 10
-	mkdir -p .common_test/logs
 	cat test.spec.in | sed -e "s,@PATH@,$(PWD)," > test.spec
 	ct_run -pa lib/*/ebin -spec test.spec
+	rel/scrabblecheat/bin/scrabblecheat stop
 
 
 release: binary-gaddag compile
@@ -74,7 +76,7 @@ clean:
 	rm -f include/thrift_*.hrl include/scrabbleCheat_*.hrl 
 	rm -rf $(RELEASE_DIR)
 	rm -rf $(SC_APP)
-	rm -rf .common_test test.spec tests/common_tests/*.beam
+	rm -rf .common_test test.spec tests/common_test/*.beam
 	rm -f priv/twl06.gaddag priv/sowpods.gaddag priv/zynga.gaddag
 	rebar clean || 0
 
