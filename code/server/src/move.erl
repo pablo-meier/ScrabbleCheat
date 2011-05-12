@@ -120,9 +120,9 @@ make_score_function(Gameinfo) ->
 %% A dict is just a poor abstraction of a function. We just make it so ^_^
 dict_as_function(Dict) ->
     fun (X) -> 
-        case dict:fetch(X, Dict) of
-            none -> 0;
-            Value -> Value
+        case dict:find(X, Dict) of
+            error -> 0;
+            {ok, Value} -> Value
         end
     end.
 
