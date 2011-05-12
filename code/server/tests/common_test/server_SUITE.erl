@@ -22,6 +22,7 @@
 -include_lib("common_test/include/ct.hrl").
 
 -include("eunit_macros.hrl").
+-include("gameinfo.hrl").
 -include("scrabbleCheat_thrift.hrl").
 
 %% Test server callbacks.
@@ -38,14 +39,6 @@
          bad_rack_test/1,
          bad_board_test/1]).
 
-
-%% Functions we're testing...
--import(scrabblecheat_main, [start_link/1, 
-                             stop/1,
-                             new_game/1,
-                             play_move/2,
-                             get_scrabblecheat_suggestions/2,
-                             quit/0]).
 
 -define(PORT, 8888).
 -define(LOCALHOST, "127.0.0.1").
@@ -87,7 +80,11 @@ get_thrift_client() ->
 
 new_game_test(_Config) ->
     Client0 = get_thrift_client(),
-    {_Client1, {ok, Gamestate}} = thrift_client:call(Client0, new_game, [["Paul", "Sam"]]),
+    {_Client1, {ok, Gamestate}} = thrift_client:call(Client0, 
+                                                     new_game, 
+                                                     [["Paul", "Sam"], 
+                                                      ?scrabbleCheat_GameName_SCRABBLE,
+                                                      ?scrabbleCheat_Dictionary_TWL06]),
     #gamestate{board = _Board, scores = _Scores, player_turn = CurrentTurn} = Gamestate,
     #gamestate{turn_order = TurnOrder, history = History} = Gamestate,
     ?assert(string:equal(CurrentTurn, <<"Paul">>)),
@@ -97,7 +94,11 @@ new_game_test(_Config) ->
 
 play_move_test(_Config) ->
     Client0 = get_thrift_client(),
-    {Client1, {ok, Fresh}} = thrift_client:call(Client0, new_game, [["Paul", "Sam"]]),
+    {Client1, {ok, Fresh}} = thrift_client:call(Client0, 
+                                                new_game, 
+                                                [["Paul", "Sam"], 
+                                                 ?scrabbleCheat_GameName_SCRABBLE,
+                                                 ?scrabbleCheat_Dictionary_TWL06]),
     TileList = [tile:new_tile({character, $A}, double_letter_score, 7, 7), 
                 tile:new_tile({character, $B}, none, 7, 8), 
                 tile:new_tile({character, $L}, double_letter_score, 7, 9), 
@@ -131,15 +132,25 @@ play_move_test(_Config) ->
 
 scrabblecheat_suggestions_test(_Config) ->
     Client0 = get_thrift_client(),
-    {Client1, {ok, Fresh}} = thrift_client:call(Client0, new_game, [["Paul", "Sam"]]),
+    {Client1, {ok, Fresh}} = thrift_client:call(Client0, 
+                                                new_game, 
+                                                [["Paul", "Sam"], 
+                                                 ?scrabbleCheat_GameName_SCRABBLE,
+                                                 ?scrabbleCheat_Dictionary_TWL06]),
     MoveTiles= [tile:new_tile({character, $A}, double_letter_score, 7, 7), 
                 tile:new_tile({character, $B}, none, 7, 8), 
                 tile:new_tile({character, $L}, double_letter_score, 7, 9), 
                 tile:new_tile({character, $E}, none, 7, 10)], 
     ThriftTileList = lists:map(fun thrift_helper:native_to_thrift_tile/1, MoveTiles),
     {Client2, {ok, Gamestate}} = thrift_client:call(Client1, play_move, [ThriftTileList, Fresh]),
-    {gamestate, Board, _, _, _, _} = Gamestate,
-    {_Client3, {ok, Suggestions}} = thrift_client:call(Client2, get_scrabblecheat_suggestions, [<<"TRS">>, Board]),
+    NativeBoard = gamestate:get_gamestate_board(thrift_helper:thrift_to_gamestate(Gamestate)),
+    ThriftBoard = thrift_helper:native_to_thrift_board(NativeBoard),
+    {_Client3, {ok, Suggestions}} = thrift_client:call(Client2, 
+                                                       get_scrabblecheat_suggestions, 
+                                                       [<<"TRS">>, 
+                                                        ThriftBoard, 
+                                                        ?scrabbleCheat_GameName_SCRABBLE,
+                                                        ?scrabbleCheat_Dictionary_TWL06]),
     NativeMoves = lists:map(fun ({move, TileList, _Score}) -> 
                                 NativeTiles = lists:map(fun thrift_helper:thrift_to_native_tile/1, TileList),
                                 Move = lists:foldl(fun move:add_to_move/2, move:new_move(), NativeTiles),
@@ -157,31 +168,80 @@ scrabblecheat_suggestions_test(_Config) ->
 
 bad_namelist_test(_Config) ->
     Client0 = get_thrift_client(),
+    GameName = ?scrabbleCheat_GameName_SCRABBLE,
+    Dict = ?scrabbleCheat_Dictionary_TWL06,
 
-    Thunk1 = fun() -> thrift_client:call(Client0, new_game, [[]]) end,
+    Thunk1 = fun() -> thrift_client:call(Client0, 
+                                         new_game, 
+                                         [[], 
+                                          GameName,
+                                          Dict]) 
+             end,
     ?assertException(throw, {_, {exception, {badNamelistException, <<"There are no names here!">>}}}, Thunk1()),
 
-    Thunk2 = fun() -> thrift_client:call(Client0, new_game, [["Sam", "Robert", "PAULSNAMEISTOOLONGLIKETHIS"]]) end,
+    Thunk2 = fun() -> thrift_client:call(Client0, 
+                                         new_game, 
+                                         [["Sam", "Robert", "PAULSNAMEISTOOLONGLIKETHIS"], 
+                                          GameName,
+                                          Dict]) 
+             end,
     ?assertException(throw, {_, {exception, {badNamelistException, _Msg}}}, Thunk2()),
 
-    Thunk3 = fun() -> thrift_client:call(Client0, new_game, [["Arnegg", "Swartzenolder", [65,4,155]]]) end,
+    Thunk3 = fun() -> thrift_client:call(Client0, 
+                                         new_game, 
+                                         [["Arnegg", "Swartzenolder", [65,4,155]], 
+                                          GameName,
+                                          Dict]) 
+             end,
     ?assertException(throw, {_, {exception, {badNamelistException, _Msg2}}}, Thunk3()).
 
 
 bad_rack_test(_Config) ->
     Client0 = get_thrift_client(),
-    {Client1, {ok, Fresh}} = thrift_client:call(Client0, new_game, [["Paul", "Sam"]]),
+    GameName = ?scrabbleCheat_GameName_SCRABBLE,
+    Dict = ?scrabbleCheat_Dictionary_TWL06,
+    {Client1, {ok, Fresh}} = thrift_client:call(Client0, 
+                                                new_game, 
+                                                [["Paul", "Sam"], 
+                                                 GameName,
+                                                 Dict]),
+    Dict = ?scrabbleCheat_Dictionary_TWL06,
     MoveTiles= [tile:new_tile({character, $A}, double_letter_score, 7, 7), 
                 tile:new_tile({character, $B}, none, 7, 8), 
                 tile:new_tile({character, $L}, double_letter_score, 7, 9), 
                 tile:new_tile({character, $E}, none, 7, 10)], 
     ThriftTileList = lists:map(fun thrift_helper:native_to_thrift_tile/1, MoveTiles),
     {Client2, {ok, Gamestate}} = thrift_client:call(Client1, play_move, [ThriftTileList, Fresh]),
-    {gamestate, Board, _, _, _, _} = Gamestate,
-    Thunk1 = fun() -> thrift_client:call(Client2, get_scrabblecheat_suggestions, [<<"">>, Board]) end,
-    Thunk2 = fun() -> thrift_client:call(Client2, get_scrabblecheat_suggestions, [<<"ABCDEFGHIJKLMONPQURSTDKNKLN">>, Board]) end,
-    Thunk3 = fun() -> thrift_client:call(Client2, get_scrabblecheat_suggestions, [<<"PAUL&LU">>, Board]) end,
-    Thunk4 = fun() -> thrift_client:call(Client2, get_scrabblecheat_suggestions, [<<"lwrcase">>, Board]) end,
+    NativeBoard = gamestate:get_gamestate_board(thrift_helper:thrift_to_gamestate(Gamestate)),
+    ThriftBoard = thrift_helper:native_to_thrift_board(NativeBoard),
+    Thunk1 = fun() -> thrift_client:call(Client2, 
+                                         get_scrabblecheat_suggestions, 
+                                         [<<"">>, 
+                                          ThriftBoard, 
+                                          GameName,
+                                          Dict]) 
+             end,
+    Thunk2 = fun() -> thrift_client:call(Client2, 
+                                         get_scrabblecheat_suggestions, 
+                                         [<<"ABCDEFGHIJKLMONPQURSTDKNKLN">>, 
+                                          ThriftBoard,
+                                          GameName,
+                                          Dict]) 
+             end,
+    Thunk3 = fun() -> thrift_client:call(Client2, 
+                                         get_scrabblecheat_suggestions, 
+                                         [<<"PAUL&LU">>, 
+                                          ThriftBoard,
+                                          GameName,
+                                          Dict]) 
+             end,
+    Thunk4 = fun() -> thrift_client:call(Client2, 
+                                         get_scrabblecheat_suggestions, 
+                                         [<<"lwrcase">>, 
+                                          ThriftBoard,
+                                          GameName,
+                                          Dict]) 
+             end,
 
     ?assertException(throw, {_, {exception, {badRackException, _Msg2}}}, Thunk1()),
     ?assertException(throw, {_, {exception, {badRackException, _Msg2}}}, Thunk2()),
@@ -196,13 +256,17 @@ bad_board_test(_Config) ->
     Rack = <<"ZYGOTE">>,
 
     % wrong no of tiles
-    NewCleanBoard = game_parser:new_board(),
+    GI = game_parser:parse_game(scrabble),
+    NewCleanBoard = GI#gameinfo.board,
 
     Thunk1 = fun() ->
                  WrongNumber = board:from_list(lists:map(fun (X) -> tl(X) end, board:as_list(NewCleanBoard))),
                  thrift_helper:native_to_thrift_board(WrongNumber)
              end,
     ?assertException(throw, {badBoardException, _Str}, Thunk1()), 
+
+    Name = ?scrabbleCheat_GameName_SCRABBLE,
+    Dict = ?scrabbleCheat_Dictionary_TWL06,
 
     WordPlacements = [{"ABLE", right, {7,7}}, {"C", down, {6,7}}, {"RE", down, {8,7}}],
     ValidBoard = lists:foldl(fun ({W,D,L},Y) -> board:place_word(W,D,L,Y) end, NewCleanBoard, WordPlacements),
@@ -216,13 +280,13 @@ bad_board_test(_Config) ->
     Board5 = thrift_helper:native_to_thrift_board(board:place_word("VAGOO", down, {6, 11}, ValidBoard)),
 
     % Islands
-    Thunk2 = fun() -> thrift_client:call(Client1, get_scrabblecheat_suggestions, [Rack, Board2]) end,
+    Thunk2 = fun() -> thrift_client:call(Client1, get_scrabblecheat_suggestions, [Rack, Board2, Name, Dict]) end,
     % invalid character on board?
-    Thunk3 = fun() -> thrift_client:call(Client1, get_scrabblecheat_suggestions, [Rack, Board3]) end,
+    Thunk3 = fun() -> thrift_client:call(Client1, get_scrabblecheat_suggestions, [Rack, Board3, Name, Dict]) end,
     % Wrong word (Row)
-    Thunk4 = fun() -> thrift_client:call(Client1, get_scrabblecheat_suggestions, [Rack, Board4]) end,
+    Thunk4 = fun() -> thrift_client:call(Client1, get_scrabblecheat_suggestions, [Rack, Board4, Name, Dict]) end,
     % Wrong word (Col)
-    Thunk5 = fun() -> thrift_client:call(Client1, get_scrabblecheat_suggestions, [Rack, Board5]) end,
+    Thunk5 = fun() -> thrift_client:call(Client1, get_scrabblecheat_suggestions, [Rack, Board5, Name, Dict]) end,
 
     ?assertException(throw, {_, {exception, {badBoardException, _Msg}}}, Thunk2()),
     ?assertException(throw, {_, {exception, {badBoardException, _Msg}}}, Thunk3()),

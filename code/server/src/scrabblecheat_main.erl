@@ -34,7 +34,6 @@
 -define(WILDCARD, $*).
 -define(SMALLEST_ASCII_CHARACTER, 33).
 -define(LARGEST_ASCII_CHARACTER, 126).
--define(RACK_MAX_LENGTH, 7).
 
 -define(TCP_OPTIONS, [binary, {packet, 0}, {active, false}, {reuseaddr, true}]).
 -define(PORT, 8888). %% Hard coded for testing, can make this command-line option.
@@ -51,16 +50,16 @@
 -export([handle_function/2]).
 
 %% USER-DEFINED THRIFT API
--export([new_game/1,
+-export([new_game/3,
          game_info/1,
          pass_turn/1,
          play_move/2,
-         get_scrabblecheat_suggestions/2,
+         get_scrabblecheat_suggestions/4,
          quit/0]).
 
 %% SUPPORT API
 -export([get_master_gaddag/1,
-        make_binary_gaddag/0]).
+         make_binary_gaddag/0]).
 
 
 
@@ -165,6 +164,16 @@ get_search_function(Dict) ->
     [{Dict, Search}] = ets:lookup(word_functions, Dict),
     Search.
 
+
+%% get_search_function :: dictionary() -> (Board * Rack -> [Move])
+%%
+%% Returns a search function that takes a board and rack, and produces
+%% a list of moves.
+get_score_function(Game) ->
+    [{Game, Fun}] = ets:lookup(score_functions, Game),
+    Fun.
+
+
 %% get_master_gaddag :: dictionary() -> Gaddag
 %%
 %% Get's a master, top-level Gaddag.  These are mostly used for verification
@@ -203,12 +212,13 @@ debug(Format, Data) ->
 %% Given a list of players, return a fresh gamestate to start a new game.  
 %% Throws BadNamelistException if the list is empty, or the player's names are
 %% too long.
-new_game(Playerlist) ->
-    io:format(user, "Entered New Game", []),
+new_game(Playerlist, ThriftGameName, ThriftDict) ->
     debug("New Game for ~p~n", Playerlist),
     Stringlist = lists:map(fun binary_to_list/1, Playerlist),
     validate_namelist(Stringlist),
-    Gamestate = gamestate:fresh_gamestate(Stringlist),
+    GameName = thrift_helper:as_native_game(ThriftGameName),
+    Dict = thrift_helper:as_native_dict(ThriftDict),
+    Gamestate = gamestate:fresh_gamestate(Stringlist, GameName, Dict),
     thrift_helper:gamestate_to_thrift(Gamestate).
 
 
@@ -257,8 +267,10 @@ validate_length(Name) ->
 %% A client may want to receive information about a game, such as the letter 
 %% distribution, or what its blank board looks like.  We give that data back 
 %% as a structure.
-game_info(GameName) ->
-    ok.
+game_info(ThriftName) ->
+    GameName = thrift_helper:as_native_game(ThriftName),
+    Gameinfo = game_parser:parse_game(GameName),
+    thrift_helper:gameinfo_to_thrift(Gameinfo).
 
 
 %% pass_turn :: Gamestate -> Gamestate
@@ -266,7 +278,10 @@ game_info(GameName) ->
 %% Allows a Player to pass their turn without playing a move.  Advances the 
 %% current turn forward.
 pass_turn(Gamestate) ->
-    ok.
+    NativeGamestate = thrift_helper:thrift_to_gamestate(Gamestate),
+    gamestate:verify(NativeGamestate),
+    WithTurnPassed = gamestate:pass_turn(NativeGamestate),
+    thrift_helper:gamestate_to_thrift(WithTurnPassed).
 
 
 %% play_move :: [ThriftTile] * ThriftGamestate -> ThriftGamestate
@@ -274,16 +289,16 @@ pass_turn(Gamestate) ->
 %% Given a set of tiles and a gamestate, returns a new gamestate with the tiles 
 %% placed as a move.  Throws BadMoveException, or BadGamestateException if incoming 
 %% data is invalid.
-play_move(Tiles, Gamestate) ->
-    debug("play_move for ~p tiles~n", [Tiles]),
-    NativeTiles = lists:map(fun thrift_helper:thrift_to_native_tile/1, Tiles),
-    NativeGamestate = thrift_helper:thrift_to_gamestate(Gamestate),
-    gamestate:verify(NativeGamestate),
+play_move(ThriftTiles, ThriftGamestate) ->
+    debug("play_move for ~p tiles~n", [ThriftTiles]),
+    Tiles = lists:map(fun thrift_helper:thrift_to_native_tile/1, ThriftTiles),
+    Gamestate = thrift_helper:thrift_to_gamestate(ThriftGamestate),
+    gamestate:verify(Gamestate),
 
-    Move = move:from_list(NativeTiles),
-    Board = gamestate:get_gamestate_board(NativeGamestate),
-    move:verify(Move, Board),
-    WithMove = gamestate:play_move(NativeGamestate, Move),
+    Move = move:from_list(Tiles),
+    Board = gamestate:get_gamestate_board(Gamestate),
+    move:verify(Move, Board, Gamestate),
+    WithMove = gamestate:play_move(Gamestate, Move),
     thrift_helper:gamestate_to_thrift(WithMove).
 
 
@@ -292,16 +307,24 @@ play_move(Tiles, Gamestate) ->
 %% Given a rack and a board, return a list of Thrift-compliant moves that 
 %% clients can use.  Throws BadRackException and BadBoardException, if your
 %% incoming data sucks.
-get_scrabblecheat_suggestions(Rack, Board) ->
+get_scrabblecheat_suggestions(Rack, Board, ThriftName, ThriftDict) ->
     debug("get_scrabblecheat_suggestions for rack ~p~n", [Rack]),
+    GameName = thrift_helper:as_native_game(ThriftName),
+    Dict = thrift_helper:as_native_dict(ThriftDict),
+
     RackAsString = binary_to_list(Rack),
-    validate_rack(RackAsString),
+    validate_rack(RackAsString, GameName),
+
     NativeBoard = thrift_helper:thrift_to_native_board(Board),
-    Master = get_master_gaddag(scrabble),
+    Master = get_master_gaddag(Dict),
     board:verify(NativeBoard, Master),
-    Search = get_search_function(scrabble),
+
+    Search = get_search_function(Dict),
     Moves = Search(NativeBoard, RackAsString),
-    WithScores = lists:map(fun (X) -> {X, move:score(X, NativeBoard)} end, Moves),
+
+    ScoreFun = get_score_function(GameName),
+
+    WithScores = lists:map(fun (X) -> {X, ScoreFun(X, NativeBoard)} end, Moves),
     Sorted = reverse(keysort(2, WithScores)),
     lists:map(fun ({NativeMove, Score}) ->
                   Tiles = move:get_move_tiles(NativeMove),
@@ -310,9 +333,11 @@ get_scrabblecheat_suggestions(Rack, Board) ->
               end, Sorted).
 
 
-validate_rack([]) -> throw({badRackException, "This rack is empty!"});
-validate_rack(Rack) ->
-    Len = (length(Rack) =< ?RACK_MAX_LENGTH),
+validate_rack([], _) -> throw({badRackException, "This rack is empty!"});
+validate_rack(Rack, GameName) ->
+    GameInfo = game_parser:parse_game(GameName),
+    MaxLength = GameInfo#gameinfo.racksize,
+    Len = (length(Rack) =< MaxLength),
     Valid = lists:all(fun (X) -> (X >= $A andalso X =< $Z) orelse X =:= ?WILDCARD end, Rack),
     case {Len, Valid} of
         {true, true} -> ok;

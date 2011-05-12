@@ -30,7 +30,7 @@
 -import(lists, [foldl/3, filter/2, any/2, map/2]).
 
 -export([new_move/0, 
-         verify/2, 
+         verify/3,
          add_to_move/2, 
          duplicate_moves/2, 
          get_move_tiles/1, 
@@ -327,25 +327,27 @@ is_part_of_new_move(Tile, MoveComponents) ->
 
 
 
-%% verify :: Move * Board -> ()
+%% verify :: Move * Board * Gamestate -> ()
 %%
 %% Throws a BadMoveException if the move isn't valid.  This can happen if it's empty,
 %% or disconnected from other moves on the board.
-verify(Move, Board) ->
+verify(Move, Board, Gamestate) ->
     Tiles = get_move_tiles(Move),
+    Dict = gamestate:get_gamestate_dict(Gamestate),
     case Tiles of
         [] -> throw_badMove("Move is empty!");
         _Else ->
             WithMove = board:place_move_on_board(Move, Board),
             try
-                Gaddag = scrabblecheat_main:get_master_gaddag(),
+                Gaddag = scrabblecheat_main:get_master_gaddag(Dict),
                 board:verify(WithMove, Gaddag)
             catch
                 {badBoardException, _} -> 
                     throw_badMove("This move doesn't work with the board supplied in the gamestate.")
             end
     end.
-        
+
+
 throw_badMove(Msg) ->
     Encoded = list_to_binary(Msg),
     throw({badMoveException, Encoded}).

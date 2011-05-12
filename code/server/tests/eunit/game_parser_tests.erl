@@ -22,8 +22,6 @@
 -include("gameinfo.hrl").
 -include_lib("eunit/include/eunit.hrl").
 
--import(game_parser, [parse_game_body/1]).
-
 -define(SCRABBLE_LETTER_DIST, make_dict([{$E,12},{$F,2},{$L,4},{$H,2},{$T,6},{$A,9}])).
 -define(LEXULOUS_LETTER_DIST, make_dict([{$E,12},{$F,2},{$L,4},{$H,2},{$T,6},{$A,9}])).
 -define(WWF_LETTER_DIST, make_dict([{$E,13},{$F,2},{$L,4},{$H,2},{$T,7},{$A,9}])).
@@ -36,7 +34,7 @@
 
 
 scrabble_parse_test() ->
-    Gameinfo = parse_game_body("../priv/games/scrabble/"),
+    Gameinfo = game_parser:parse_game_body(scrabble, "../priv/games/scrabble/"),
     #gameinfo{board = _B, letterdist = LD, scoredist = SD, racksize = R} = Gameinfo,
     compare_dicts(LD, ?SCRABBLE_LETTER_DIST),
     compare_dicts(SD, ?SCRABBLE_POINT_DIST),
@@ -44,7 +42,7 @@ scrabble_parse_test() ->
 
 
 lexulous_parse_test() ->
-    Gameinfo = parse_game_body("../priv/games/lexulous/"),
+    Gameinfo = game_parser:parse_game_body(lexulous, "../priv/games/lexulous/"),
     #gameinfo{board = _B, letterdist = LD, scoredist = SD, racksize = R} = Gameinfo,
     compare_dicts(LD, ?LEXULOUS_LETTER_DIST),
     compare_dicts(SD, ?LEXULOUS_POINT_DIST),
@@ -52,7 +50,7 @@ lexulous_parse_test() ->
 
 
 wwf_parse_test() ->
-    Gameinfo = parse_game_body("../priv/games/words_with_friends/"),
+    Gameinfo = game_parser:parse_game_body(words_with_friends, "../priv/games/words_with_friends/"),
     #gameinfo{board = _B, letterdist = LD, scoredist = SD, racksize = R} = Gameinfo,
     compare_dicts(LD, ?WWF_LETTER_DIST),
     compare_dicts(SD, ?WWF_POINT_DIST),

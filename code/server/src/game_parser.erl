@@ -21,7 +21,8 @@
 -module(game_parser).
 
 -export([parse_game/1, 
-         parse_game_body/1,
+         parse_game_body/2,
+         default_dictionary/1,
          new_board/0]).
 
 -include("gameinfo.hrl").
@@ -49,13 +50,23 @@
 %% point distribution of letters, and the letter distribution.
 parse_game(GameName) ->
     GameInfoDir = lists:concat([code:priv_dir(scrabblecheat), "/games/", GameName, '/']),
-    parse_game_body(GameInfoDir).
+    parse_game_body(GameName, GameInfoDir).
+
+
+%% default_dictionary :: gamename() -> dict()
+%%
+%% Given a game name, retrieve the name of that game's default dictionary.
+%% NOTE: If we ever make gameinfo it's own proper datatype, we should move this 
+%% function to that module.
+default_dictionary(Game) ->
+    GameInfo = parse_game(Game),
+    hd(GameInfo#gameinfo.allowed_dicts).
 
 
 %% Separated out to aid in testing, with our unit tests. Provide a hard-coded 
 %% path to the games directory, rather than a dynamically-generated path to the 
 %% priv directory.
-parse_game_body(GameInfoDir) ->
+parse_game_body(GameName, GameInfoDir) ->
     Board = parse_board(GameInfoDir ++ "board.txt"),
     {ok, MapPattern} = re:compile(?MAPPING_PATTERN),
     LetterDist = parse_mapping(GameInfoDir ++ "letterdist.txt", MapPattern),
@@ -63,7 +74,8 @@ parse_game_body(GameInfoDir) ->
     RackSize = parse_number_in_file(GameInfoDir ++ "rack_size.txt"),
     BingoBonuses = parse_bonuses(GameInfoDir ++ "bingo_bonuses.txt", MapPattern),
     Dicts = parse_dicts(GameInfoDir ++ "allowed_dicts.txt"),
-    #gameinfo{board = Board, 
+    #gameinfo{name = GameName,
+              board = Board, 
               letterdist = LetterDist, 
               scoredist = ScoreDist, 
               racksize = RackSize,

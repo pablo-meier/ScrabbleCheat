@@ -45,6 +45,15 @@ enum GameName {
 
 
 /**
+ * Represents a game the server can 'play'
+ */
+enum Dictionary {
+    TWL06,
+    SOWPODS,
+    ZYNGA 
+}
+
+/**
  * Basic datatype for a tile on the board.  'row' and 'col' are 1-indexed.
  * If the tile is empty the string is empty and LetterType is EMPTY.
  */
@@ -73,12 +82,12 @@ struct Turn {
 }
 
 struct GameInfo {
-    1: string name,
+    1: GameName name,
     2: byte rack_size
-    3: i32 bingo_bonus,
+    3: map<byte, i32> bingo_bonus,
     4: map<string, byte> letter_distribution,
     5: map<string, byte> score_distribution,
-    6: list<string> allowed_dictionaries,
+    6: list<Dictionary> allowed_dictionaries,
     7: Board board_template
 }
 
@@ -93,7 +102,8 @@ struct Gamestate {
     3: string player_turn,
     4: list<string> turn_order,
     5: list<Turn> history,
-    6: string game_name
+    6: GameName game_name,
+    7: Dictionary dict
 }
 
 
@@ -121,15 +131,14 @@ service ScrabbleCheat {
 
     /**
      * Initiates a new game with the server.  This creates a new empty gamestate
-     * with the specified players.
+     * with the specified players, game, and dictionary.
      */
-    Gamestate new_game(1: list<string> players, 2: GameName game_name)
+    Gamestate new_game(1: list<string> players, 2: GameName game_name, 3: Dictionary dict)
                 throws(1: BadNamelistException boo),
 
 
     /**
-     * Returns the game info given the game's name. Game info entails things 
-     * like the letter distribution
+     * Returns the game info given the game's name. 
      */
     GameInfo game_info(1: GameName game_name),
 
@@ -147,9 +156,12 @@ service ScrabbleCheat {
                  throws(1: BadGamestateException msg),
 
     /**
-     * The good stuff.  Get a list of moves given a rack and a board.
+     * The good stuff.  Get a list of moves given a rack, board.
      */
-    list<Move> get_scrabblecheat_suggestions(1: string rack, 2: Board board, 3: GameName game_name) 
+    list<Move> get_scrabblecheat_suggestions(1: string rack, 
+                                             2: Board board, 
+                                             3: GameName game_name,
+                                             4: Dictionary dict) 
                                      throws (1: BadRackException boo, 
                                              2: BadBoardException urns),
 
