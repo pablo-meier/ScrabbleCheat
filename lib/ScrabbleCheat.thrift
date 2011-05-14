@@ -1,5 +1,3 @@
-
-
 /**
  * Thrift specification for the Client/Server of ScrabbleCheat.  We send 
  * Gamestates, which contain everything needed for the game at a given point 
@@ -19,7 +17,6 @@ enum LetterType {
     WILDCARD,
     EMPTY 
 }
-
 
 
 /**
@@ -108,24 +105,12 @@ struct Gamestate {
 
 
 /**
- * Called when a client asks for moves with a bad rack -- empty, containing 
- * bad characters, too many chars, etc.
- */ 
-exception BadRackException {
-    1: string reprimand,
-}
-
-/**
- * Called when a client asks for moves with a bad board -- Invalid state, wrong 
- * size, etc.
+ * Called when you pass in bad arguments.
  */
-exception BadBoardException {
+exception BadArgsException {
     1: string reprimand,
 }
 
-exception BadMoveException { 1: string reprimand, }
-exception BadGamestateException { 1: string reprimand, }
-exception BadNamelistException { 1: string reprimand, }
 
 service ScrabbleCheat {
 
@@ -134,26 +119,27 @@ service ScrabbleCheat {
      * with the specified players, game, and dictionary.
      */
     Gamestate new_game(1: list<string> players, 2: GameName game_name, 3: Dictionary dict)
-                throws(1: BadNamelistException boo),
+                throws(1: BadArgsException what),
 
 
     /**
      * Returns the game info given the game's name. 
      */
-    GameInfo game_info(1: GameName game_name),
+    GameInfo game_info(1: GameName game_name)
+             throws(1: BadArgsException msg),
 
 
     /**
      * Plays the specified move on the board, for the player.
      */
     Gamestate play_move(1: list<Tile> tiles, 2: Gamestate gamestate)
-                 throws(1: BadMoveException boo, 2: BadGamestateException urns),
+                 throws(1: BadArgsException msg),
 
     /**
      * Allows a player to "pass" on their turn, if they can't/won't make a move.
      */
     Gamestate pass_turn(1: Gamestate gamestate)
-                 throws(1: BadGamestateException msg),
+                 throws(1: BadArgsException msg),
 
     /**
      * The good stuff.  Get a list of moves given a rack, board.
@@ -162,8 +148,7 @@ service ScrabbleCheat {
                                              2: Board board, 
                                              3: GameName game_name,
                                              4: Dictionary dict) 
-                                     throws (1: BadRackException boo, 
-                                             2: BadBoardException urns),
+                                     throws (1: BadArgsException msg),
 
     /**
      * Tells the server we're done here.

@@ -37,6 +37,9 @@
          scrabblecheat_suggestions_test/1,
          bad_namelist_test/1,
          bad_rack_test/1,
+         various_games_test/1,
+         unallowed_dicts_test/1,
+         bad_dicts_and_gamename_test/1,
          bad_board_test/1]).
 
 
@@ -52,17 +55,19 @@ all() ->
      scrabblecheat_suggestions_test,
      bad_namelist_test,
      bad_rack_test,
+     various_games_test,
+     unallowed_dicts_test,
+     bad_dicts_and_gamename_test,
      bad_board_test].
 
 suite() ->
     [{userdata, [{info, "Tests the top-level API, defined by the Thrift file."}]}].
 
 init_per_suite(Config) ->
-    application:start(scrabblecheat),
     Config.
 
 end_per_suite(_Config) ->
-    application:stop(scrabblecheat).
+    ok. % application:stop(scrabblecheat).
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -90,6 +95,98 @@ new_game_test(_Config) ->
     ?assert(string:equal(CurrentTurn, <<"Paul">>)),
     ?assert(length(History) =:= 0),
     ?assert(TurnOrder =:= [<<"Paul">>, <<"Sam">>]).
+
+
+various_games_test(_Config) ->
+    Client0 = get_thrift_client(),
+    {Client1, {ok, Gamestate}} = thrift_client:call(Client0, 
+                                                    new_game, 
+                                                    [["Paul", "Sam"], 
+                                                     ?scrabbleCheat_GameName_WORDS_WITH_FRIENDS,
+                                                     ?scrabbleCheat_Dictionary_ZYNGA]),
+    ExWWFDict = ?scrabbleCheat_Dictionary_ZYNGA,
+    ExWWFGameName = ?scrabbleCheat_GameName_WORDS_WITH_FRIENDS,
+    WWFPairs = [{{1,1}, none},
+                {{4,1}, triple_word_score},
+                {{3,14}, double_word_score},
+                {{7,1},  triple_letter_score},
+                {{12,7}, double_word_score}],
+    check_game_validity(Gamestate, ExWWFGameName, ExWWFDict, WWFPairs),
+
+    {_Client2, {ok, Lexulous}} = thrift_client:call(Client1,
+                                                    new_game, 
+                                                    [["Paul", "Sam"], 
+                                                     ?scrabbleCheat_GameName_LEXULOUS,
+                                                     ?scrabbleCheat_Dictionary_SOWPODS]),
+    LGameName = ?scrabbleCheat_GameName_LEXULOUS,
+    LDict = ?scrabbleCheat_Dictionary_SOWPODS,
+    LPairs = [{{1,1}, triple_word_score},
+              {{4,1}, double_letter_score},
+              {{3,14}, double_word_score},
+              {{7,1}, none},
+              {{10,3}, triple_letter_score}],
+     check_game_validity(Lexulous, LGameName, LDict, LPairs).
+
+
+check_game_validity(ThriftGamestate, ExGameName, ExDict, LocBonusPairs) ->
+    #gamestate{board = ThriftBoard, game_name = GameName, dict = Dict} = ThriftGamestate,
+    Board = thrift_helper:thrift_to_native_board(ThriftBoard),
+
+    ?assert(GameName =:= ExGameName),
+    ?assert(Dict =:= ExDict),
+
+    BonusAt = fun(Row,Col) -> tile:get_tile_bonus(board:get_tile(Row, Col, Board)) end,
+
+    lists:foreach(fun({{Row,Col},Bonus}) -> ?assert(BonusAt(Row,Col) =:= Bonus) end, LocBonusPairs).
+
+
+bad_namelist_test(_Config) ->
+    Client0 = get_thrift_client(),
+    GameName = ?scrabbleCheat_GameName_SCRABBLE,
+    Dict = ?scrabbleCheat_Dictionary_TWL06,
+
+    Thunk1 = fun() -> thrift_client:call(Client0, 
+                                         new_game, 
+                                         [[], 
+                                          GameName,
+                                          Dict]) 
+             end,
+    ?assertException(throw, {_, {exception, {badArgsException, <<"There are no names here!">>}}}, Thunk1()),
+
+    Thunk2 = fun() -> thrift_client:call(Client0, 
+                                         new_game, 
+                                         [["Sam", "Robert", "PAULSNAMEISTOOLONGLIKETHIS"], 
+                                          GameName,
+                                          Dict]) 
+             end,
+    ?assertException(throw, {_, {exception, {badArgsException, _Msg}}}, Thunk2()),
+
+    Thunk3 = fun() -> thrift_client:call(Client0, 
+                                         new_game, 
+                                         [["Arnegg", "Swartzenolder", [65,4,155]], 
+                                          GameName,
+                                          Dict]) 
+             end,
+    ?assertException(throw, {_, {exception, {badArgsException, _Msg2}}}, Thunk3()).
+
+
+bad_dicts_and_gamename_test(_Config) ->
+    Client0 = get_thrift_client(),
+    GoodDict = ?scrabbleCheat_Dictionary_TWL06,
+    GoodName = ?scrabbleCheat_GameName_SCRABBLE,
+    Thunk1 = fun() -> thrift_client:call(Client0, new_game, [["Paul", "Sam"], GoodName, 55]) end,
+    Thunk2 = fun() -> thrift_client:call(Client0, new_game, [["Paul", "Sam"], 55, GoodDict]) end,
+    ?assertException(throw, {_, {exception, {badArgsException, _Msg2}}}, Thunk1()),
+    ?assertException(throw, {_, {exception, {badArgsException, _Msg2}}}, Thunk2()).
+
+    
+unallowed_dicts_test(_Config) ->
+    Client0 = get_thrift_client(),
+    GoodName = ?scrabbleCheat_GameName_WORDS_WITH_FRIENDS,
+    BadDict = ?scrabbleCheat_Dictionary_TWL06,  %% WWF only allows the Zynga dictionary
+    Thunk1 = fun() -> thrift_client:call(Client0, new_game, [["Paul", "Sam"], GoodName, BadDict]) end,
+    ?assertException(throw, {_, {exception, {badArgsException, _Msg2}}}, Thunk1()).
+    
 
 
 play_move_test(_Config) ->
@@ -166,34 +263,6 @@ scrabblecheat_suggestions_test(_Config) ->
 	lists:foreach(fun (X) -> ?assert(lists:any(fun (Y) -> move:duplicate_moves(X, Y) end, NativeMoves)) end, Solutions).
 
 
-bad_namelist_test(_Config) ->
-    Client0 = get_thrift_client(),
-    GameName = ?scrabbleCheat_GameName_SCRABBLE,
-    Dict = ?scrabbleCheat_Dictionary_TWL06,
-
-    Thunk1 = fun() -> thrift_client:call(Client0, 
-                                         new_game, 
-                                         [[], 
-                                          GameName,
-                                          Dict]) 
-             end,
-    ?assertException(throw, {_, {exception, {badNamelistException, <<"There are no names here!">>}}}, Thunk1()),
-
-    Thunk2 = fun() -> thrift_client:call(Client0, 
-                                         new_game, 
-                                         [["Sam", "Robert", "PAULSNAMEISTOOLONGLIKETHIS"], 
-                                          GameName,
-                                          Dict]) 
-             end,
-    ?assertException(throw, {_, {exception, {badNamelistException, _Msg}}}, Thunk2()),
-
-    Thunk3 = fun() -> thrift_client:call(Client0, 
-                                         new_game, 
-                                         [["Arnegg", "Swartzenolder", [65,4,155]], 
-                                          GameName,
-                                          Dict]) 
-             end,
-    ?assertException(throw, {_, {exception, {badNamelistException, _Msg2}}}, Thunk3()).
 
 
 bad_rack_test(_Config) ->
@@ -243,10 +312,10 @@ bad_rack_test(_Config) ->
                                           Dict]) 
              end,
 
-    ?assertException(throw, {_, {exception, {badRackException, _Msg2}}}, Thunk1()),
-    ?assertException(throw, {_, {exception, {badRackException, _Msg2}}}, Thunk2()),
-    ?assertException(throw, {_, {exception, {badRackException, _Msg2}}}, Thunk3()),
-    ?assertException(throw, {_, {exception, {badRackException, _Msg2}}}, Thunk4()).
+    ?assertException(throw, {_, {exception, {badArgsException, _Msg2}}}, Thunk1()),
+    ?assertException(throw, {_, {exception, {badArgsException, _Msg2}}}, Thunk2()),
+    ?assertException(throw, {_, {exception, {badArgsException, _Msg2}}}, Thunk3()),
+    ?assertException(throw, {_, {exception, {badArgsException, _Msg2}}}, Thunk4()).
 
 
 
@@ -263,7 +332,7 @@ bad_board_test(_Config) ->
                  WrongNumber = board:from_list(lists:map(fun (X) -> tl(X) end, board:as_list(NewCleanBoard))),
                  thrift_helper:native_to_thrift_board(WrongNumber)
              end,
-    ?assertException(throw, {badBoardException, _Str}, Thunk1()), 
+    ?assertException(throw, {badArgsException, _Str}, Thunk1()), 
 
     Name = ?scrabbleCheat_GameName_SCRABBLE,
     Dict = ?scrabbleCheat_Dictionary_TWL06,
@@ -288,9 +357,9 @@ bad_board_test(_Config) ->
     % Wrong word (Col)
     Thunk5 = fun() -> thrift_client:call(Client1, get_scrabblecheat_suggestions, [Rack, Board5, Name, Dict]) end,
 
-    ?assertException(throw, {_, {exception, {badBoardException, _Msg}}}, Thunk2()),
-    ?assertException(throw, {_, {exception, {badBoardException, _Msg}}}, Thunk3()),
-    ?assertException(throw, {_, {exception, {badBoardException, _Msg}}}, Thunk4()),
-    ?assertException(throw, {_, {exception, {badBoardException, _Msg}}}, Thunk5()).
+    ?assertException(throw, {_, {exception, {badArgsException, _Msg}}}, Thunk2()),
+    ?assertException(throw, {_, {exception, {badArgsException, _Msg}}}, Thunk3()),
+    ?assertException(throw, {_, {exception, {badArgsException, _Msg}}}, Thunk4()),
+    ?assertException(throw, {_, {exception, {badArgsException, _Msg}}}, Thunk5()).
 
 

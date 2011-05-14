@@ -2,7 +2,7 @@
 SHORT-TERM:
 
     - OTP/Dialyzer/Rebar builds?
-        - Long-pole: Clean up release builds.  Includes lots of std library we don't need.
+        - Long-pole: Clean up release builds. Includes lots of std library we don't need.
         - Long-pole: Testing of server not working with OTP stuff.  More hours into testing
                      harness and tests.
 
@@ -13,13 +13,22 @@ SHORT-TERM:
     - Command line client:  Every app should have a CLI.  Also good for automation...
 
     - Allow for null moves/lost turns.  Add to Thrift file, add to code.
+
     - Deploy?  Snap site that talks to the Erlang via Thrift, Snap provides the web presence?
 
-    - Integrate the bug list/this file with the Github issue tracker, API?
+    - Wildcard optimization.
+
+    - Paralelization.
+
+    - GADDAG minimization.
 
     ****************************************************************************************
-    - Refactor the actual movesearch into a sub-application?  Let VM handle threading?
+    *   Refactor the actual movesearch into a sub-application?  Let VM handle threading?   *
     ****************************************************************************************
+    
+    - Optional word verification as a gamestate bit, allowing a player to challenge?
+    
+    - Integrate the bug list/this file with the Github issue tracker, API?
 
 SERVER
     - Better, more rigorous testing.  Mostly in movesearches, and the most recent features (wildcards, 

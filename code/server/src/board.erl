@@ -309,7 +309,7 @@ make_array_indices(Num1, Num2) -> {Num1 - 1, Num2 - 1}.
 %% Criteria for validity are:
 %%   - Every non-empty tile is connected (no 'islands')
 %%   - Every move is valid.
-%% If the board is found to be invalid, we throw a badBoardException, defined
+%% If the board is found to be invalid, we throw a badArgsException, defined
 %% in the ScrabbleCheat Thrift protocol.
 verify(Board, Master) ->
     check_connectedness(Board),
@@ -412,4 +412,4 @@ go_forwards(Tiles, Gaddag) ->
 
 throw_badboard(Str) ->
     Encoded = list_to_binary(Str),
-    throw({badBoardException, Encoded}).
+    throw({badArgsException, Encoded}).

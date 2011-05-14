@@ -186,10 +186,10 @@ verify(Gamestate) ->
         board:verify(Board, Gaddag)
     catch
         throw:{badMatchException, _} -> throw_badGamestate("Error with gamestate representation.");
-        throw:{badBoardException, _} -> throw_badGamestate("Error with supplied board.")
+        throw:{badArgsException, _} -> throw_badGamestate("Error with supplied board.")
     end.
 
 throw_badGamestate(Msg) ->
     Encoded = list_to_binary(Msg),
-    throw({badGamestateException, Encoded}).
+    throw({badArgsException, Encoded}).
 

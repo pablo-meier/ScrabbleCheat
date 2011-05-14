@@ -2,7 +2,7 @@
 % by the buildfiles at compile-time.
 
 
-% {cover, "@PATH@/.common_test/coverage"}.
+% {cover, "@PATH@/tests/common_test/coverage.config"}.
 {logdir, "@PATH@/.common_test/logs"}.
 {include, "@PATH@/include/"}.
 

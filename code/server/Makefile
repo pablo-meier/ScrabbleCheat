@@ -24,10 +24,11 @@ eunit: compile
 ct: compile binary-gaddag
 	[ -d rel ] || $(MAKE) release
 	mkdir -p .common_test/logs
+	mkdir -p .common_test/coverage
 	rel/scrabblecheat/bin/scrabblecheat start
 	sleep 10
 	cat test.spec.in | sed -e "s,@PATH@,$(PWD)," > test.spec
-	ct_run -pa lib/*/ebin -spec test.spec
+	ct_run -pa ebin/ -pa lib/*/ebin -spec test.spec
 	rel/scrabblecheat/bin/scrabblecheat stop
 
 

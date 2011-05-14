@@ -210,7 +210,7 @@ debug(Format, Data) ->
 %% new_game :: [String] -> Gamestate
 %%
 %% Given a list of players, return a fresh gamestate to start a new game.  
-%% Throws BadNamelistException if the list is empty, or the player's names are
+%% Throws BadArgsException if the list is empty, or the player's names are
 %% too long.
 new_game(Playerlist, ThriftGameName, ThriftDict) ->
     debug("New Game for ~p~n", Playerlist),
@@ -226,10 +226,10 @@ new_game(Playerlist, ThriftGameName, ThriftDict) ->
 %%
 %% Checks the validity of the list of names.  If the list is empty or the names aren't
 %% well formed, we throw an exception.
-validate_namelist([]) -> throw(#badNamelistException{reprimand="There are no names here!"});
+validate_namelist([]) -> throw(#badArgsException{reprimand="There are no names here!"});
 validate_namelist(Lst) ->
     case is_list(Lst) of
-        false -> throw(#badNamelistException{reprimand="This is not a list!"});
+        false -> throw(#badArgsException{reprimand="This is not a list!"});
         true ->
                 lists:foreach(fun validate_length/1,  Lst),
                 lists:foreach(fun (X) -> lists:foreach(fun validate_list_contents/1, X) end, Lst),
@@ -240,12 +240,12 @@ validate_list_contents(Elem) ->
     case is_integer(Elem) of
         false -> 
             Reprimand = lists:concat(["Element \"", [Elem], "\" not valid in a name."]),
-            throw(#badNamelistException{reprimand=Reprimand});
+            throw(#badArgsException{reprimand=Reprimand});
         true -> 
             if 
                 Elem < ?SMALLEST_ASCII_CHARACTER orelse Elem > ?LARGEST_ASCII_CHARACTER ->
                     Reprimand = lists:concat(["Character \"", [Elem], "\" not valid in a name."]),
-                    throw(#badNamelistException{reprimand=Reprimand});
+                    throw(#badArgsException{reprimand=Reprimand});
                 true -> ok
             end
     end.
@@ -254,7 +254,7 @@ validate_length(Name) ->
     if 
         length(Name) > 15 -> 
             Message = lists:concat(["The name ", Name, " is too long!  15 Characters or less, please ^_^"]),
-            throw(#badNamelistException{reprimand=Message});
+            throw(#badArgsException{reprimand=Message});
         true -> ok
     end.
 
@@ -305,7 +305,7 @@ play_move(ThriftTiles, ThriftGamestate) ->
 %% get_scrabblecheat_suggestions :: String * ThriftBoard -> [ThriftMove]
 %%
 %% Given a rack and a board, return a list of Thrift-compliant moves that 
-%% clients can use.  Throws BadRackException and BadBoardException, if your
+%% clients can use.  Throws BadArgsException and BadBoardException, if your
 %% incoming data sucks.
 get_scrabblecheat_suggestions(Rack, Board, ThriftName, ThriftDict) ->
     debug("get_scrabblecheat_suggestions for rack ~p~n", [Rack]),
@@ -333,7 +333,7 @@ get_scrabblecheat_suggestions(Rack, Board, ThriftName, ThriftDict) ->
               end, Sorted).
 
 
-validate_rack([], _) -> throw({badRackException, "This rack is empty!"});
+validate_rack([], _) -> throw({badArgsException, "This rack is empty!"});
 validate_rack(Rack, GameName) ->
     GameInfo = game_parser:parse_game(GameName),
     MaxLength = GameInfo#gameinfo.racksize,
@@ -341,8 +341,8 @@ validate_rack(Rack, GameName) ->
     Valid = lists:all(fun (X) -> (X >= $A andalso X =< $Z) orelse X =:= ?WILDCARD end, Rack),
     case {Len, Valid} of
         {true, true} -> ok;
-        {false, _} -> throw({badRackException, "Rack is too long!"});
-        {_, false} -> throw({badRackException, "There is an invalid character in your rack."})
+        {false, _} -> throw({badArgsException, "Rack is too long!"});
+        {_, false} -> throw({badArgsException, "There is an invalid character in your rack."})
     end.
 
 

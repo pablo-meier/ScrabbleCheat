@@ -342,7 +342,7 @@ verify(Move, Board, Gamestate) ->
                 Gaddag = scrabblecheat_main:get_master_gaddag(Dict),
                 board:verify(WithMove, Gaddag)
             catch
-                {badBoardException, _} -> 
+                {badArgsException, _} -> 
                     throw_badMove("This move doesn't work with the board supplied in the gamestate.")
             end
     end.
@@ -350,5 +350,5 @@ verify(Move, Board, Gamestate) ->
 
 throw_badMove(Msg) ->
     Encoded = list_to_binary(Msg),
-    throw({badMoveException, Encoded}).
+    throw({badArgsException, Encoded}).
 
