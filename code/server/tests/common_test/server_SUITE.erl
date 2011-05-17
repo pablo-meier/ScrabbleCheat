@@ -33,6 +33,7 @@
 
 %% Test cases
 -export([new_game_test/1,
+         gameinfo_test/1,
          play_move_test/1,
          scrabblecheat_suggestions_test/1,
          bad_namelist_test/1,
@@ -51,6 +52,7 @@
 
 all() ->
     [new_game_test,
+     gameinfo_test,
      play_move_test,
      scrabblecheat_suggestions_test,
      bad_namelist_test,
@@ -187,6 +189,98 @@ unallowed_dicts_test(_Config) ->
     Thunk1 = fun() -> thrift_client:call(Client0, new_game, [["Paul", "Sam"], GoodName, BadDict]) end,
     ?assertException(throw, {_, {exception, {badArgsException, _Msg}}}, Thunk1()).
     
+
+gameinfo_test(_Config) ->
+    ClientScrabble = get_thrift_client(),
+    ClientWWF = get_thrift_client(),
+    ClientLexulous = get_thrift_client(),
+    ClientBad = get_thrift_client(),
+
+    {_, {ok, ThriftGameInfoS}} = thrift_client:call(ClientScrabble, 
+                                                    game_info, 
+                                                    [?scrabbleCheat_GameName_SCRABBLE]),
+    ScrabbleBoard = (game_parser:parse_game(scrabble))#gameinfo.board,
+    PropListS = [{game_name, ?scrabbleCheat_GameName_SCRABBLE},
+                 {rack_size, 7},
+                 {bingo_bonus, [{7, 50}]},
+                 {letter_distribution, [{<<"E">>,12},{<<"O">>,8},{<<"F">>, 2}]},
+                 {score_distribution,  [{<<"K">>,5}, {<<"B">>,3},{<<"H">>,4}]},
+                 {allowed_dictionaries, [?scrabbleCheat_Dictionary_TWL06,
+                                         ?scrabbleCheat_Dictionary_SOWPODS]},
+                 {board_template, ScrabbleBoard}],
+    test_gameinfo(ThriftGameInfoS, PropListS),
+
+    {_, {ok, ThriftGameInfoL}} = thrift_client:call(ClientLexulous, 
+                                                    game_info, 
+                                                    [?scrabbleCheat_GameName_LEXULOUS]),
+    LexulousBoard = (game_parser:parse_game(lexulous))#gameinfo.board,
+    PropListL = [{game_name, ?scrabbleCheat_GameName_LEXULOUS},
+                 {rack_size, 8},
+                 {bingo_bonus, [{7,40},{8,50}]},
+                 {letter_distribution, [{<<"E">>,12},{<<"O">>,8},{<<"F">>,2}]},
+                 {score_distribution,  [{<<"K">>,6}, {<<"B">>,4},{<<"H">>,5}]},
+                 {allowed_dictionaries, [?scrabbleCheat_Dictionary_TWL06,
+                                         ?scrabbleCheat_Dictionary_SOWPODS]},
+                 {board_template, LexulousBoard}],
+    test_gameinfo(ThriftGameInfoL, PropListL),
+
+    {_, {ok, ThriftGameInfoWWF}} = thrift_client:call(ClientWWF, 
+                                                      game_info, 
+                                                      [?scrabbleCheat_GameName_WORDS_WITH_FRIENDS]),
+    WWFBoard = (game_parser:parse_game(words_with_friends))#gameinfo.board,
+    PropListWWF = [{game_name, ?scrabbleCheat_GameName_WORDS_WITH_FRIENDS},
+                   {rack_size, 7},
+                   {bingo_bonus, [{7,35}]},
+                   {letter_distribution, [{<<"E">>,13},{<<"O">>,8},{<<"F">>,2}]},
+                   {score_distribution,  [{<<"K">>,5}, {<<"B">>,4},{<<"H">>,3}]},
+                   {allowed_dictionaries, [?scrabbleCheat_Dictionary_ZYNGA]},
+                   {board_template, WWFBoard}],
+    test_gameinfo(ThriftGameInfoWWF, PropListWWF),
+
+    BadThunk = fun() -> thrift_client:call(ClientBad, game_info, [55]) end,
+    ?assertException(throw, {_, {exception, {badArgsException, _Msg}}}, BadThunk()).
+
+
+test_gameinfo(ThriftGameInfo, PropList) ->
+    GameName = proplists:get_value(game_name, PropList),
+
+    %% Erlang is throwing a badrecord exception, and I don't have the patience to figure it
+    %% out properly.
+%    {gameInfo, Name, RackSize, ActualBingos, ActualLetterDist,
+%               ActualScoreDist, ActualDicts, ActualBoard}= ThriftGameInfo,
+
+    ?assert(ThriftGameInfo#gameInfo.name =:= GameName),
+
+    RackSize = proplists:get_value(rack_size, PropList),
+    ?assert(ThriftGameInfo#gameInfo.rack_size =:= RackSize),
+    
+    ExpectedBingos = proplists:get_value(bingo_bonus, PropList),
+    ActualBingos = ThriftGameInfo#gameInfo.bingo_bonus,
+    lists:foreach(fun({X,Y}) -> ?assert(dict:fetch(X, ActualBingos) =:= Y) end, ExpectedBingos),
+
+    ExpectedLetterDist = proplists:get_value(letter_distribution, PropList),
+    ActualLetterDist = ThriftGameInfo#gameInfo.letter_distribution,
+    lists:foreach(fun({X,Y}) -> ?assert(dict:fetch(X, ActualLetterDist) =:= Y) end, ExpectedLetterDist),
+
+    ExpectedScoreDist = proplists:get_value(score_distribution, PropList),
+    ActualScoreDist = ThriftGameInfo#gameInfo.score_distribution,
+    lists:foreach(fun({X,Y}) -> ?assert(dict:fetch(X, ActualScoreDist) =:= Y) end, ExpectedScoreDist),
+
+%    ExpectedDicts = proplists:get_value(allowed_dictionaries, PropList),
+%    ActualDicts = ThriftGameInfo#gameInfo.allowed_dictionaries,
+%    lists:all(fun (X) -> 
+%                  io:format(user, "Entering Dictionary comparison for ~p~n...", [X]),
+%                  Compare = lists:any(fun (Y) -> 
+%                                        io:format(user, "   comparing against ~p~n...", [Y]),
+%                                        X =:= Y 
+%                                    end, ExpectedDicts),
+%                  io:format(user, "Final value is ~p~n", [Compare]),
+%                  ?assert(Compare)
+%              end, ActualDicts),
+
+    ExpectedBoard = proplists:get_value(board_template, PropList),
+    ActualBoard = thrift_helper:thrift_to_native_board(ThriftGameInfo#gameInfo.board_template),
+    ?assert(ActualBoard =:= ExpectedBoard).
 
 
 play_move_test(_Config) ->

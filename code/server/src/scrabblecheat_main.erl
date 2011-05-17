@@ -298,9 +298,14 @@ validate_length(Name) ->
 %% distribution, or what its blank board looks like.  We give that data back 
 %% as a structure.
 game_info(ThriftName) ->
-    GameName = thrift_helper:as_native_game(ThriftName),
-    Gameinfo = game_parser:parse_game(GameName),
-    thrift_helper:gameinfo_to_thrift(Gameinfo).
+    debug("Game_info for ~p~n", ThriftName),
+    try
+        GameName = thrift_helper:as_native_game(ThriftName),
+        Gameinfo = game_parser:parse_game(GameName),
+        thrift_helper:gameinfo_to_thrift(Gameinfo)
+    catch
+        throw:{not_valid_thrift_game, _} -> throw({badArgsException, "Game name is invalid."})
+    end.
 
 
 %% pass_turn :: Gamestate -> Gamestate
