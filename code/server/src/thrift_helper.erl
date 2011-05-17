@@ -210,20 +210,24 @@ as_native_letter_type(?scrabbleCheat_LetterType_EMPTY)     -> none.
 %%%%%%%%% Game names
 as_thrift_game(scrabble)           -> ?scrabbleCheat_GameName_SCRABBLE;
 as_thrift_game(lexulous)           -> ?scrabbleCheat_GameName_LEXULOUS;
-as_thrift_game(words_with_friends) -> ?scrabbleCheat_GameName_WORDS_WITH_FRIENDS.
+as_thrift_game(words_with_friends) -> ?scrabbleCheat_GameName_WORDS_WITH_FRIENDS;
+as_thrift_game(Else)               -> throw({not_valid_native_game, Else}).
 
 as_native_game(?scrabbleCheat_GameName_SCRABBLE)           -> scrabble;
 as_native_game(?scrabbleCheat_GameName_LEXULOUS)           -> lexulous;
-as_native_game(?scrabbleCheat_GameName_WORDS_WITH_FRIENDS) -> words_with_friends.
+as_native_game(?scrabbleCheat_GameName_WORDS_WITH_FRIENDS) -> words_with_friends;
+as_native_game(Else)                                       -> throw({not_valid_thrift_game, Else}).
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%% Dictionaries
 as_thrift_dict(twl06)   -> ?scrabbleCheat_Dictionary_TWL06;
 as_thrift_dict(sowpods) -> ?scrabbleCheat_Dictionary_SOWPODS;
-as_thrift_dict(zynga)   -> ?scrabbleCheat_Dictionary_ZYNGA.
+as_thrift_dict(zynga)   -> ?scrabbleCheat_Dictionary_ZYNGA;
+as_thrift_dict(Else)    -> throw({not_valid_native_dictionary, Else}).
 
 as_native_dict(?scrabbleCheat_Dictionary_TWL06)   -> twl06;
 as_native_dict(?scrabbleCheat_Dictionary_SOWPODS) -> sowpods;
-as_native_dict(?scrabbleCheat_Dictionary_ZYNGA)   -> zynga.
+as_native_dict(?scrabbleCheat_Dictionary_ZYNGA)   -> zynga;
+as_native_dict(Else)                              -> throw({not_valid_thrift_dictionary, Else}).
 

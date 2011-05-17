@@ -108,9 +108,9 @@ various_games_test(_Config) ->
     ExWWFGameName = ?scrabbleCheat_GameName_WORDS_WITH_FRIENDS,
     WWFPairs = [{{1,1}, none},
                 {{4,1}, triple_word_score},
-                {{3,14}, double_word_score},
+                {{3,14}, double_letter_score},
                 {{7,1},  triple_letter_score},
-                {{12,7}, double_word_score}],
+                {{12,8}, double_word_score}],
     check_game_validity(Gamestate, ExWWFGameName, ExWWFDict, WWFPairs),
 
     {_Client2, {ok, Lexulous}} = thrift_client:call(Client1,
@@ -176,8 +176,8 @@ bad_dicts_and_gamename_test(_Config) ->
     GoodName = ?scrabbleCheat_GameName_SCRABBLE,
     Thunk1 = fun() -> thrift_client:call(Client0, new_game, [["Paul", "Sam"], GoodName, 55]) end,
     Thunk2 = fun() -> thrift_client:call(Client0, new_game, [["Paul", "Sam"], 55, GoodDict]) end,
-    ?assertException(throw, {_, {exception, {badArgsException, _Msg2}}}, Thunk1()),
-    ?assertException(throw, {_, {exception, {badArgsException, _Msg2}}}, Thunk2()).
+    ?assertException(throw, {_, {exception, {badArgsException, _Msg}}}, Thunk1()),
+    ?assertException(throw, {_, {exception, {badArgsException, _Msg}}}, Thunk2()).
 
     
 unallowed_dicts_test(_Config) ->
@@ -185,7 +185,7 @@ unallowed_dicts_test(_Config) ->
     GoodName = ?scrabbleCheat_GameName_WORDS_WITH_FRIENDS,
     BadDict = ?scrabbleCheat_Dictionary_TWL06,  %% WWF only allows the Zynga dictionary
     Thunk1 = fun() -> thrift_client:call(Client0, new_game, [["Paul", "Sam"], GoodName, BadDict]) end,
-    ?assertException(throw, {_, {exception, {badArgsException, _Msg2}}}, Thunk1()).
+    ?assertException(throw, {_, {exception, {badArgsException, _Msg}}}, Thunk1()).
     
 
 

@@ -183,6 +183,14 @@ get_master_gaddag(Dict) ->
     Gaddag.
 
 
+%% get_gameinfo :: gamename() -> GameInfo
+%%
+%% Given a Game name, returns the struct of data for that associated game.
+get_gameinfo(GameName) ->
+    [{GameName, GameInfo}] = ets:lookup(gameinfos, GameName),
+    GameInfo.
+
+
 %% EXTERNAL INTERFACE
 
 
@@ -216,10 +224,32 @@ new_game(Playerlist, ThriftGameName, ThriftDict) ->
     debug("New Game for ~p~n", Playerlist),
     Stringlist = lists:map(fun binary_to_list/1, Playerlist),
     validate_namelist(Stringlist),
-    GameName = thrift_helper:as_native_game(ThriftGameName),
-    Dict = thrift_helper:as_native_dict(ThriftDict),
-    Gamestate = gamestate:fresh_gamestate(Stringlist, GameName, Dict),
-    thrift_helper:gamestate_to_thrift(Gamestate).
+    try
+        Game = thrift_helper:as_native_game(ThriftGameName),
+        Dict = thrift_helper:as_native_dict(ThriftDict),
+        validate_pairing(Game, Dict),
+        Gamestate = gamestate:fresh_gamestate(Stringlist, Game, Dict),
+        thrift_helper:gamestate_to_thrift(Gamestate)
+    catch
+        throw:{not_valid_thrift_game, _} -> throw({badArgsException, "Game name in Gamestate is invalid."});
+        throw:{not_valid_thrift_dictionary, _} -> throw({badArgsException, "Dictionary in Gamestate invalid."})
+    end.
+
+
+%% validate_pairing :: gamename() * dict() -> ok | EXCEPTION
+%%
+%% We throw a badargs exception of the player is trying to perform an operation
+%% with a disallowed pairing of game and dictionary, e.g. words_with_friends on
+%% twl06.
+validate_pairing(GameName, Dict) ->
+    Gameinfo = get_gameinfo(GameName),
+    AllowedDicts = Gameinfo#gameinfo.allowed_dicts,
+    Allowed = lists:any(fun (X) -> X =:= Dict end, AllowedDicts),
+    case Allowed of
+        true -> ok;
+        false -> 
+            throw({badArgsException, "Invalid Dictionary for the game you are playing."}) 
+     end.
 
 
 %% validate_namelist :: [String] -> ()
@@ -291,15 +321,20 @@ pass_turn(Gamestate) ->
 %% data is invalid.
 play_move(ThriftTiles, ThriftGamestate) ->
     debug("play_move for ~p tiles~n", [ThriftTiles]),
-    Tiles = lists:map(fun thrift_helper:thrift_to_native_tile/1, ThriftTiles),
-    Gamestate = thrift_helper:thrift_to_gamestate(ThriftGamestate),
-    gamestate:verify(Gamestate),
-
-    Move = move:from_list(Tiles),
-    Board = gamestate:get_gamestate_board(Gamestate),
-    move:verify(Move, Board, Gamestate),
-    WithMove = gamestate:play_move(Gamestate, Move),
-    thrift_helper:gamestate_to_thrift(WithMove).
+    try
+        Tiles = lists:map(fun thrift_helper:thrift_to_native_tile/1, ThriftTiles),
+        Gamestate = thrift_helper:thrift_to_gamestate(ThriftGamestate),
+        gamestate:verify(Gamestate),
+    
+        Move = move:from_list(Tiles),
+        Board = gamestate:get_gamestate_board(Gamestate),
+        move:verify(Move, Board, Gamestate),
+        WithMove = gamestate:play_move(Gamestate, Move),
+        thrift_helper:gamestate_to_thrift(WithMove)
+    catch
+        throw:{not_valid_thrift_game, _} -> throw({badArgs, "Game name in Gamestate is invalid."});
+        throw:{not_valid_thrift_dictionary, _} -> throw({badArgs, "Dictionary in Gamestate invalid."})
+    end.
 
 
 %% get_scrabblecheat_suggestions :: String * ThriftBoard -> [ThriftMove]
