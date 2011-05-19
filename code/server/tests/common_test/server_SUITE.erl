@@ -34,7 +34,9 @@
 %% Test cases
 -export([new_game_test/1,
          gameinfo_test/1,
-         play_move_test/1,
+         play_move_scrabble_test/1,
+         play_move_lexulous_test/1,
+         play_move_wwf_test/1,
          scrabblecheat_suggestions_test/1,
          bad_namelist_test/1,
          bad_rack_test/1,
@@ -53,7 +55,9 @@
 all() ->
     [new_game_test,
      gameinfo_test,
-     play_move_test,
+     play_move_scrabble_test,
+     play_move_lexulous_test,
+     play_move_wwf_test,
      scrabblecheat_suggestions_test,
      bad_namelist_test,
      bad_rack_test,
@@ -283,7 +287,7 @@ test_gameinfo(ThriftGameInfo, PropList) ->
     ?assert(ActualBoard =:= ExpectedBoard).
 
 
-play_move_test(_Config) ->
+play_move_scrabble_test(_Config) ->
     Client0 = get_thrift_client(),
     {Client1, {ok, Fresh}} = thrift_client:call(Client0, 
                                                 new_game, 
@@ -301,6 +305,7 @@ play_move_test(_Config) ->
     #gamestate{board = Board, scores = Scores, player_turn = CurrentTurn} = Gamestate,
     #gamestate{turn_order = TurnOrder, history = History} = Gamestate,
 
+    %% Assert that the tiles are present.
     NativeBoard = thrift_helper:thrift_to_native_board(Board),
     ?assert(tile:is_occupied(board:get_tile(7,7, NativeBoard))),
     ?assert(tile:is_occupied(board:get_tile(7,8, NativeBoard))),
@@ -308,17 +313,114 @@ play_move_test(_Config) ->
     ?assert(tile:is_occupied(board:get_tile(7,10, NativeBoard))),
     ?assert(not tile:is_occupied(board:get_tile(7,11, NativeBoard))),
     
+    %% Assert the scoring is correct.
     ?assert(dict:fetch(<<"Paul">>, Scores) =:= Score),
     ?assert(dict:fetch(<<"Sam">>, Scores) =:= 0),
  
+    %% Assert that the turn has moved.
     ?assert(string:equal(CurrentTurn, <<"Sam">>)),
     ?assert(TurnOrder =:= [<<"Paul">>, <<"Sam">>]),
 
+    %% Assert that the history has been augmented.
     ?assert(length(History) =:= 1),
     {turn, {move, Move, ReturnedScore}, Player} = hd(History),
     ?assert(lists:all(fun (X) -> lists:any(fun (Y) -> X =:= Y end, ThriftTileList) end, Move)),
     ?assert(<<"Paul">> =:= Player),
-    ?assert(ReturnedScore =:= Score).
+    ?assert(ReturnedScore =:= Score)
+    
+    %% Now do it again, with a Bingo!
+    .
+
+
+play_move_lexulous_test(_Config) ->
+    Client0 = get_thrift_client(),
+    {Client1, {ok, Fresh}} = thrift_client:call(Client0, 
+                                                new_game, 
+                                                [["Paul", "Sam"], 
+                                                 ?scrabbleCheat_GameName_LEXULOUS,
+                                                 ?scrabbleCheat_Dictionary_TWL06]),
+    TileList = [tile:new_tile({character, $H}, none, 7, 7),
+                tile:new_tile({character, $O}, none, 7, 8),
+                tile:new_tile({character, $L}, none, 7, 9),
+                tile:new_tile({character, $E}, double_letter_score, 7, 10)],
+    ThriftTileList = lists:map(fun thrift_helper:native_to_thrift_tile/1, TileList),
+    Score = 9,
+    {_Client2, {ok, Gamestate}} = thrift_client:call(Client1, play_move, [ThriftTileList, Fresh]),
+
+    #gamestate{board = Board, scores = Scores, player_turn = CurrentTurn} = Gamestate,
+    #gamestate{turn_order = TurnOrder, history = History} = Gamestate,
+
+    %% Assert that the tiles are present.
+    NativeBoard = thrift_helper:thrift_to_native_board(Board),
+    ?assert(tile:is_occupied(board:get_tile(7,7, NativeBoard))),
+    ?assert(tile:is_occupied(board:get_tile(7,8, NativeBoard))),
+    ?assert(tile:is_occupied(board:get_tile(7,9, NativeBoard))),
+    ?assert(tile:is_occupied(board:get_tile(7,10, NativeBoard))),
+    ?assert(not tile:is_occupied(board:get_tile(7,11, NativeBoard))),
+    
+    %% Assert the scoring is correct.
+    io:format(user, "Expecting ~p, got ~p~n", [Score, dict:fetch(<<"Paul">>, Scores)]),
+    ?assert(dict:fetch(<<"Paul">>, Scores) =:= Score),
+    ?assert(dict:fetch(<<"Sam">>, Scores) =:= 0),
+ 
+    %% Assert that the turn has moved.
+    ?assert(string:equal(CurrentTurn, <<"Sam">>)),
+    ?assert(TurnOrder =:= [<<"Paul">>, <<"Sam">>]),
+
+    %% Assert that the history has been augmented.
+    ?assert(length(History) =:= 1),
+    {turn, {move, Move, ReturnedScore}, Player} = hd(History),
+    ?assert(lists:all(fun (X) -> lists:any(fun (Y) -> X =:= Y end, ThriftTileList) end, Move)),
+    ?assert(<<"Paul">> =:= Player),
+    ?assert(ReturnedScore =:= Score)
+    
+    %% Now do it again, with a Bingo!.
+    .
+
+play_move_wwf_test(_Config) ->
+    Client0 = get_thrift_client(),
+    {Client1, {ok, Fresh}} = thrift_client:call(Client0, 
+                                                new_game, 
+                                                [["Paul", "Sam"], 
+                                                 ?scrabbleCheat_GameName_LEXULOUS,
+                                                 ?scrabbleCheat_Dictionary_TWL06]),
+    TileList = [tile:new_tile({character, $H}, none, 7, 7), 
+                tile:new_tile({character, $O}, none, 7, 8), 
+                tile:new_tile({character, $L}, none, 7, 9), 
+                tile:new_tile({character, $E}, none, 7, 10)], 
+    ThriftTileList = lists:map(fun thrift_helper:native_to_thrift_tile/1, TileList),
+    Score = 7,
+    {_Client2, {ok, Gamestate}} = thrift_client:call(Client1, play_move, [ThriftTileList, Fresh]),
+
+    #gamestate{board = Board, scores = Scores, player_turn = CurrentTurn} = Gamestate,
+    #gamestate{turn_order = TurnOrder, history = History} = Gamestate,
+
+    %% Assert that the tiles are present.
+    NativeBoard = thrift_helper:thrift_to_native_board(Board),
+    ?assert(tile:is_occupied(board:get_tile(7,7, NativeBoard))),
+    ?assert(tile:is_occupied(board:get_tile(7,8, NativeBoard))),
+    ?assert(tile:is_occupied(board:get_tile(7,9, NativeBoard))),
+    ?assert(tile:is_occupied(board:get_tile(7,10, NativeBoard))),
+    ?assert(not tile:is_occupied(board:get_tile(7,11, NativeBoard))),
+    
+    %% Assert the scoring is correct.
+    ?assert(dict:fetch(<<"Paul">>, Scores) =:= Score),
+    ?assert(dict:fetch(<<"Sam">>, Scores) =:= 0),
+ 
+    %% Assert that the turn has moved.
+    ?assert(string:equal(CurrentTurn, <<"Sam">>)),
+    ?assert(TurnOrder =:= [<<"Paul">>, <<"Sam">>]),
+
+    %% Assert that the history has been augmented.
+    ?assert(length(History) =:= 1),
+    {turn, {move, Move, ReturnedScore}, Player} = hd(History),
+    ?assert(lists:all(fun (X) -> lists:any(fun (Y) -> X =:= Y end, ThriftTileList) end, Move)),
+    ?assert(<<"Paul">> =:= Player),
+    ?assert(ReturnedScore =:= Score)
+    
+    %% Now do it again, with a Bingo!.
+    .
+
 
 
 scrabblecheat_suggestions_test(_Config) ->
