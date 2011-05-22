@@ -17,9 +17,7 @@ SHORT-TERM:
     - Deploy?  Snap site that talks to the Erlang via Thrift, Snap provides the web presence?
 
     - Wildcard optimization.
-
     - Paralelization.
-
     - GADDAG minimization.
 
     ****************************************************************************************

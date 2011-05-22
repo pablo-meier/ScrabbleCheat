@@ -334,6 +334,8 @@ play_move(ThriftTiles, ThriftGamestate) ->
         Board = gamestate:get_gamestate_board(Gamestate),
         move:verify(Move, Board, Gamestate),
         WithMove = gamestate:play_move(Gamestate, Move),
+
+%%        gamestate:verify(WithMove),
         thrift_helper:gamestate_to_thrift(WithMove)
     catch
         throw:{not_valid_thrift_game, _} -> throw({badArgs, "Game name in Gamestate is invalid."});
