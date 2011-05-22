@@ -28,9 +28,11 @@
 
 -include("gameinfo.hrl").
 
--define(DICT_FILE, "../test/testdict.txt").
--define(LARGE_DICT_FILE, "priv/dicts/twl06.txt").
--define(DICT_BIN_PATH, "priv/twl06.gaddag").
+-define(DICT_PATH, "priv/dicts/").
+-define(DICT_OUT_PATH, "priv/").
+
+-define(TEST_DICT_FILE, "../tests/eunit/testdict.txt").
+
 -define(WILDCARD, $*).
 -define(SMALLEST_ASCII_CHARACTER, 33).
 -define(LARGEST_ASCII_CHARACTER, 126).
@@ -59,6 +61,7 @@
 
 %% SUPPORT API
 -export([get_master_gaddag/1,
+         get_gameinfo/1,
          make_binary_gaddag/0]).
 
 
@@ -68,10 +71,16 @@
 %% The program can be invoked to build the data structures and save them disk
 %% ahead of time.
 make_binary_gaddag() ->
-    dict_parser:output_to_file(?LARGE_DICT_FILE, ?DICT_BIN_PATH).
+    Paths = lists:map(fun(X) -> 
+                          AsStr = atom_to_list(X),
+                          {?DICT_PATH ++ AsStr ++ ".txt",
+                           ?DICT_OUT_PATH ++ AsStr ++ ".gaddag"}
+                      end, [twl06, sowpods, zynga]),
 
-
-
+    %% converts priv/dicts/twl06.txt -> priv/twl06.gaddag
+    lists:foreach(fun ({In,Out}) -> 
+                      dict_parser:output_to_file(In, Out)
+                  end, Paths).
 
 %% start :: () -> ()
 %%
@@ -106,30 +115,27 @@ start_link(Port) ->
 %%         gaddags -> {dictionary(), Gaddag}
 %%  word_functions -> {dictionary(), (Rack * Board -> [Move])}
 %%       gameinfos -> {game(), GameInfo}
-%% score_functions -> {game(), (Move * Board -> Int)}
 %%
 %% where
 %%   dictionary() = twl06 | sowpods | zynga
 %%         game() = scrabble | words_with_friends | lexulous
 configure_global_data() ->
 
-    Gaddag = get_or_make_gaddag(),
     make_named_table(gaddags),
-    ets:insert(gaddags, {twl06, Gaddag}),
-
-    WordFunction = get_best_move_function(Gaddag),
     make_named_table(word_functions),
-    ets:insert(word_functions, {twl06, WordFunction}),
+    lists:foreach(fun (GameName) ->
+                      G = get_or_make_gaddag(GameName),
+                      ets:insert(gaddags, {GameName, G}),
+                      WordFunction = get_best_move_function(G),
+                      ets:insert(word_functions, {GameName, WordFunction})
+                  end, [twl06]), %%, sowpods, zynga]), %% Commented out because of memory crap.
+
     
     GameInfos = lists:map(fun (X) -> {X, game_parser:parse_game(X)} end, 
                           [scrabble, lexulous, words_with_friends]),
     make_named_table(gameinfos),
-    lists:foreach(fun(X) -> ets:insert(gameinfos, X) end, GameInfos),
+    lists:foreach(fun(X) -> ets:insert(gameinfos, X) end, GameInfos).
     
-    ScoreFuns = lists:map(fun({X,Y}) -> {X, move:make_score_function(Y)} end, GameInfos),
-    make_named_table(score_functions),
-    lists:foreach(fun(X) -> ets:insert(score_functions, X) end, ScoreFuns).
-
 
 make_named_table(Name) ->
     ets:new(Name, [set, protected, named_table, {keypos, 1}]).
@@ -139,9 +145,10 @@ make_named_table(Name) ->
 %%
 %% Searches a few predefined paths for files to produce a dictionary Gaddag at
 %% boot time.  Either finds a predefined binary one, or produces one.
-get_or_make_gaddag() ->
+get_or_make_gaddag(GameName) ->
     PrivDir = code:priv_dir(scrabblecheat),
-    Path = string:concat(PrivDir, "/twl06.gaddag"),
+    AsStr = atom_to_list(GameName),
+    Path = string:concat(PrivDir, "/" ++ AsStr ++ ".gaddag"),
     case file:read_file_info(Path) of
         {ok, _} -> 
             io:format("Reading a dictionary, this may take a few seconds...~n"),
@@ -149,8 +156,8 @@ get_or_make_gaddag() ->
         {error, _} -> 
             io:format("Gaddag file not found!  Using test dictionary in meantime.~n"),
             io:format("run `make binary-gaddag` to generate the full dictionary.~n"),
-            case file:read_file_info(?DICT_FILE) of
-                {ok, _} -> dict_parser:parse(?DICT_FILE);
+            case file:read_file_info(?TEST_DICT_FILE) of
+                {ok, _} -> dict_parser:parse(?TEST_DICT_FILE);
                 {error, _} -> dict_parser:parse("test/testdict.txt")
             end
         end.
@@ -163,15 +170,6 @@ get_or_make_gaddag() ->
 get_search_function(Dict) ->
     [{Dict, Search}] = ets:lookup(word_functions, Dict),
     Search.
-
-
-%% get_search_function :: dictionary() -> (Board * Rack -> [Move])
-%%
-%% Returns a search function that takes a board and rack, and produces
-%% a list of moves.
-get_score_function(Game) ->
-    [{Game, Fun}] = ets:lookup(score_functions, Game),
-    Fun.
 
 
 %% get_master_gaddag :: dictionary() -> Gaddag
@@ -187,7 +185,9 @@ get_master_gaddag(Dict) ->
 %%
 %% Given a Game name, returns the struct of data for that associated game.
 get_gameinfo(GameName) ->
-    [{GameName, GameInfo}] = ets:lookup(gameinfos, GameName),
+    Value = ets:lookup(gameinfos, GameName),
+    io:format(user, "Value was ~p~n", [Value]),
+    [{GameName, GameInfo}] = Value,
     GameInfo.
 
 
@@ -200,7 +200,6 @@ get_gameinfo(GameName) ->
 stop(Server) ->
     ets:delete(gaddags),
     ets:delete(word_functions),
-    ets:delete(score_functions),
     ets:delete(gameinfos),
     thrift_socket_server:stop(Server).
 
@@ -362,9 +361,7 @@ get_scrabblecheat_suggestions(Rack, Board, ThriftName, ThriftDict) ->
     Search = get_search_function(Dict),
     Moves = Search(NativeBoard, RackAsString),
 
-    ScoreFun = get_score_function(GameName),
-
-    WithScores = lists:map(fun (X) -> {X, ScoreFun(X, NativeBoard)} end, Moves),
+    WithScores = lists:map(fun (X) -> {X, move:score(X, NativeBoard, GameName)} end, Moves),
     Sorted = reverse(keysort(2, WithScores)),
     lists:map(fun ({NativeMove, Score}) ->
                   Tiles = move:get_move_tiles(NativeMove),

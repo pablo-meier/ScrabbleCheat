@@ -22,7 +22,7 @@
 -include_lib("eunit/include/eunit.hrl").
 
 -import(move, [duplicate_moves/2, 
-               score/2, 
+               score/3, 
                new_move/0, 
                add_to_move/2]).
 
@@ -65,7 +65,7 @@ score_simple_test() ->
 			{{character, $L}, double_letter_score, {7,9}},
 			{{character, $E}, none, {7,10}}],
 	Move = foldl(fun move:add_to_move/2, new_move(), Tiles), 
-	Score = score(Move, new_board()),
+	Score = score(Move, new_board(), scrabble),
 	io:format("Score is ~p~n", [Score]),
 	?assert(Score =:= 8).
 
@@ -75,7 +75,7 @@ score_isolated_bonus_test() ->
 			{{character, $L}, none, {8,9}},
 			{{character, $E}, none, {8,10}}],
 	Move = foldl(fun move:add_to_move/2, new_move(), Tiles), 
-	Score = score(Move, new_board()),
+	Score = score(Move, new_board(), score),
 	io:format("Score is ~p~n", [Score]),
 	?assert(Score =:= 12).
 
@@ -83,7 +83,7 @@ score_parallel_test() ->
 	Tiles = [{{character, $A}, triple_letter_score, {6,6}}, 
 			{{character, $A}, none, {6,7}}],
 	Move = foldl(fun move:add_to_move/2, new_move(), Tiles),
-	Score = score(Move, place_word("ABLE", right, {5,6}, new_board())),
+	Score = score(Move, place_word("ABLE", right, {5,6}, new_board()), scrabble),
 	io:format("Score is ~p~n", [Score]),
 	?assert(Score =:= 12).
 	
@@ -98,7 +98,7 @@ score_bingos_test() ->
 			 {{character, $A}, none, {8,7}},
 			 {{character, $T}, double_word_score, {8,8}}],
 	Move = foldl(fun move:add_to_move/2, new_move(), Tiles),
-	Score = score(Move, place_word("ABLE", down, {5,9}, new_board())),
+	Score = score(Move, place_word("ABLE", down, {5,9}, new_board()), score),
 	io:format("Score is ~p~n", [Score]),
 	% 2(1 + 3 + 2 + 1 + 1 + 1 + 1 + 1) = 22
 	?assert(Score =:= 72).
@@ -110,7 +110,7 @@ score_along_wall_test() ->
 			{{character, $B}, none, {15,13}},
 			{{character, $A}, none, {15,12}}],
 	Move = foldl(fun move:add_to_move/2, new_move(), Tiles),
-	Score = score(Move, new_board()),
+	Score = score(Move, new_board(), scrabble),
 	io:format("Score is ~p~n", [Score]),
 	?assert(Score =:= 18).
 
@@ -123,7 +123,7 @@ score_parallel_many_bonuses_test() ->
 			{{character, $T}, none, {8,7}},
 			{{character, $E}, double_word_score, {8,8}}],
 	Move = foldl(fun move:add_to_move/2, new_move(), Tiles), 
-	Score = score(Move, place_word("ABLE", right, {7,7}, new_board())),
+	Score = score(Move, place_word("ABLE", right, {7,7}, new_board()), scrabble),
 	io:format("Score is ~p~n", [Score]),
 	?assert(Score =:= 56).
 

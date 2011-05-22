@@ -25,11 +25,10 @@ ct: compile binary-gaddag
 	[ -d rel ] || $(MAKE) release
 	mkdir -p .common_test/logs
 	mkdir -p .common_test/coverage
-	rel/scrabblecheat/bin/scrabblecheat start
-	sleep 10
+	ruby tests/common_test/server_util.rb started
 	cat test.spec.in | sed -e "s,@PATH@,$(PWD)," > test.spec
 	ct_run -pa ebin/ -pa lib/*/ebin -spec test.spec
-	rel/scrabblecheat/bin/scrabblecheat stop
+	# rel/scrabblecheat/bin/scrabblecheat stop
 
 
 release: binary-gaddag compile
@@ -75,9 +74,10 @@ binary-gaddag: compile
 
 clean:
 	rm -f include/thrift_*.hrl include/scrabbleCheat_*.hrl 
+	ruby tests/common_test/server_util.rb stopped
 	rm -rf $(RELEASE_DIR)
 	rm -rf $(SC_APP)
 	rm -rf .common_test test.spec tests/common_test/*.beam
-	rm -f priv/twl06.gaddag priv/sowpods.gaddag priv/zynga.gaddag
+	# rm -f priv/twl06.gaddag priv/sowpods.gaddag priv/zynga.gaddag
 	rebar clean || 0
 

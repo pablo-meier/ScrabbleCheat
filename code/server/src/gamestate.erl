@@ -111,7 +111,7 @@ play_move(GS, Move) ->
     Dict    = GS#gamestate.dict,
 
     {PlayerScore, NewTurn} = get_score_and_next(Scores, Turn),
-    MoveScore = move:score(Move, Board),
+    MoveScore = move:score(Move, Board, Game),
     AugmentedScore = MoveScore + PlayerScore,
     NewScores = update_score(AugmentedScore, Scores, Turn),
     NewHistory = [{Turn, Move, MoveScore}|History],
