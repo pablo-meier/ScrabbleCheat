@@ -28,10 +28,7 @@
 -behaviour(application).
 
 %% Application callbacks.
--export([start/2, stop/1, create_tables/0]).
-
--export([start_all/0, cold_start/0]).
-
+-export([start/2, stop/1]).
 
 %%====================================================================
 %% Application callbacks
@@ -66,31 +63,12 @@ stop(_State) ->
 
 
 %%--------------------------------------------------------------------
-%% Function: create_tables
-%% 
-%% Description: Creates new mnesia tables
-%%--------------------------------------------------------------------
-create_tables() ->
-    ok.
-
-
-%%--------------------------------------------------------------------
 %% Function: start_all
 %% 
 %% Description: Starts apps this depends on, then starts this
 %%--------------------------------------------------------------------
-start_all() ->
-    application:load(thrift),
-    application:start(thrift),
-    [application:start(scrabblecheat)].
+%%start_all() ->
+%%    application:load(thrift),
+%%    application:start(thrift),
+%%    [application:start(scrabblecheat)].
 
-
-%%--------------------------------------------------------------------
-%% Function: cold_start
-%%
-%% Description: Creates the database and then starts the server
-%%--------------------------------------------------------------------
-cold_start() ->
-    ok = mnesia:start(),
-    ok = create_tables(),
-    start_all().

@@ -39,10 +39,10 @@
 -import(lists, [map/2, filter/2, flatmap/2, flatten/1, append/2, foldl/3]).
 
 
--export([get_best_move_function/1,
-        generate_move_candidate_locations/1,
-        
-         get_zoomtiles/3
+-export([get_all_moves/3
+
+        , generate_move_candidate_locations/1
+        , get_zoomtiles/3
         , create_origin_followstructs/2
         , get_moves_from_candidate/5
         
@@ -73,16 +73,15 @@
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% get_best_move_function :: Gaddag -> (Board * Rack -> Move)
+%% get_all_moves :: Board * Rack * Gaddag -> [Move]
 %%
-%% We curry out the Gaddag so we make it once and don't have to worry about it.
-get_best_move_function(Gaddag) ->
-    fun (Board, Rack) ->
-        Candidates = generate_move_candidate_locations(Board),
-        MoveList = flatmap(fun (X) -> find_all_moves(X, Rack, Board, Gaddag) end, Candidates),
-        _Uniques = remove_duplicates(MoveList, fun move:duplicate_moves/2)
-        %select_best_move(Uniques, Board)
-    end.
+%% Returns all the possible moves given a board, rack, and a Gaddag representing 
+%% the dictionary we are playing with.
+get_all_moves(Board, Rack, Gaddag) ->
+    Candidates = generate_move_candidate_locations(Board),
+    MoveList = flatmap(fun (X) -> find_all_moves(X, Rack, Board, Gaddag) end, Candidates),
+    _Uniques = remove_duplicates(MoveList, fun move:duplicate_moves/2).
+    %select_best_move(Uniques, Board).
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

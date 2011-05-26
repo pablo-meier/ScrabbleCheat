@@ -20,18 +20,10 @@
 
 -module(scrabblecheat_main).
 
--import(movesearch, [get_best_move_function/1]).
--import(board, [print_board/1, place_move_on_board/2]).
--import(string_utils, [format_string_for_gaddag/1]).
--import(move, [score/2]).
--import(lists, [reverse/1,foreach/2, keysort/2, sort/2, map/2]).
-
 -include("gameinfo.hrl").
 
 -define(DICT_PATH, "priv/dicts/").
 -define(DICT_OUT_PATH, "priv/").
-
--define(TEST_DICT_FILE, "../tests/eunit/testdict.txt").
 
 -define(WILDCARD, $*).
 -define(SMALLEST_ASCII_CHARACTER, 33).
@@ -60,9 +52,9 @@
          quit/0]).
 
 %% SUPPORT API
--export([get_master_gaddag/1,
-         get_gameinfo/1,
-         make_binary_gaddag/0]).
+-export([get_gameinfo/1,
+         make_binary_gaddag/0,
+         create_gaddag_looper/0]).
 
 
 
@@ -82,7 +74,7 @@ make_binary_gaddag() ->
                       dict_parser:output_to_file(In, Out)
                   end, Paths).
 
-%% start :: () -> ()
+%% start_link :: () -> ()
 %%
 %% Starts a new ScrabbleCheat server on the default port.
 start_link() ->
@@ -109,76 +101,32 @@ start_link(Port) ->
 %% configure_global_data :: () -> ()
 %% 
 %% Sets up the ETS tables for fetching the various bits of data, such as
-%% parsed Gameinfos, score functions, and GADDAGs.  We do this with three
-%% ETS tables:  
+%% parsed Gameinfos.
 %%
-%%         gaddags -> {dictionary(), Gaddag}
-%%  word_functions -> {dictionary(), (Rack * Board -> [Move])}
 %%       gameinfos -> {game(), GameInfo}
 %%
 %% where
-%%   dictionary() = twl06 | sowpods | zynga
 %%         game() = scrabble | words_with_friends | lexulous
 configure_global_data() ->
 
-    make_named_table(gaddags),
-    make_named_table(word_functions),
-    lists:foreach(fun (GameName) ->
-                      G = get_or_make_gaddag(GameName),
-                      ets:insert(gaddags, {GameName, G}),
-                      WordFunction = get_best_move_function(G),
-                      ets:insert(word_functions, {GameName, WordFunction})
-                  end, [twl06]), %%, sowpods, zynga]), %% Commented out because of memory crap.
-
-    
     GameInfos = lists:map(fun (X) -> {X, game_parser:parse_game(X)} end, 
                           [scrabble, lexulous, words_with_friends]),
-    make_named_table(gameinfos),
-    lists:foreach(fun(X) -> ets:insert(gameinfos, X) end, GameInfos).
+    ets:new(gameinfos, [set, protected, named_table, {keypos, 1}]),
+    lists:foreach(fun(X) -> ets:insert(gameinfos, X) end, GameInfos),
     
-
-make_named_table(Name) ->
-    ets:new(Name, [set, protected, named_table, {keypos, 1}]).
+    spawn(?MODULE, create_gaddag_looper, []).   
 
 
-%% get_or_make_gaddag :: () -> Gaddag
-%%
-%% Searches a few predefined paths for files to produce a dictionary Gaddag at
-%% boot time.  Either finds a predefined binary one, or produces one.
-get_or_make_gaddag(GameName) ->
-    PrivDir = code:priv_dir(scrabblecheat),
-    AsStr = atom_to_list(GameName),
-    Path = string:concat(PrivDir, "/" ++ AsStr ++ ".gaddag"),
-    case file:read_file_info(Path) of
-        {ok, _} -> 
-            io:format("Reading a dictionary, this may take a few seconds...~n"),
-            dict_parser:read_from_binary(Path);
-        {error, _} -> 
-            io:format("Gaddag file not found!  Using test dictionary in meantime.~n"),
-            io:format("run `make binary-gaddag` to generate the full dictionary.~n"),
-            case file:read_file_info(?TEST_DICT_FILE) of
-                {ok, _} -> dict_parser:parse(?TEST_DICT_FILE);
-                {error, _} -> dict_parser:parse("test/testdict.txt")
-            end
-        end.
-
-
-%% get_search_function :: dictionary() -> (Board * Rack -> [Move])
-%%
-%% Returns a search function that takes a board and rack, and produces
-%% a list of moves.
-get_search_function(Dict) ->
-    [{Dict, Search}] = ets:lookup(word_functions, Dict),
-    Search.
-
-
-%% get_master_gaddag :: dictionary() -> Gaddag
-%%
-%% Get's a master, top-level Gaddag.  These are mostly used for verification
-%% of moves and boards.
-get_master_gaddag(Dict) ->
-    [{Dict, Gaddag}] = ets:lookup(gaddags, Dict),
-    Gaddag.
+create_gaddag_looper() ->
+    process_flag(trap_exit, true),
+    Pid = spawn_link(gaddag_looper, start_link, []),
+    register(gaddag_looper, Pid),
+    receive
+        {'EXIT', Pid, normal} -> ok;
+        {'EXIT', Pid, shutdown} -> ok;
+        {'EXIT', Pid, _} ->
+            create_gaddag_looper()
+    end.
 
 
 %% get_gameinfo :: gamename() -> GameInfo
@@ -186,20 +134,16 @@ get_master_gaddag(Dict) ->
 %% Given a Game name, returns the struct of data for that associated game.
 get_gameinfo(GameName) ->
     Value = ets:lookup(gameinfos, GameName),
-    io:format(user, "Value was ~p~n", [Value]),
     [{GameName, GameInfo}] = Value,
     GameInfo.
 
 
 %% EXTERNAL INTERFACE
 
-
 %% stop :: (or Name Pid) -> ()
 %%
 %% Stops the server named by the parameter, or its Pid.
 stop(Server) ->
-    ets:delete(gaddags),
-    ets:delete(word_functions),
     ets:delete(gameinfos),
     thrift_socket_server:stop(Server).
 
@@ -212,6 +156,11 @@ handle_function(Function, Args) when is_atom(Function), is_tuple(Args) ->
 
 debug(Format, Data) ->
     error_logger:info_msg(Format, Data).
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%  THRIFT DEFINITION INTERFACE
 
 
 %% new_game :: [String] -> Gamestate
@@ -235,20 +184,138 @@ new_game(Playerlist, ThriftGameName, ThriftDict) ->
     end.
 
 
-%% validate_pairing :: gamename() * dict() -> ok | EXCEPTION
+%% game_info :: gamename() -> GameInfo
 %%
-%% We throw a badargs exception of the player is trying to perform an operation
-%% with a disallowed pairing of game and dictionary, e.g. words_with_friends on
-%% twl06.
-validate_pairing(GameName, Dict) ->
-    Gameinfo = get_gameinfo(GameName),
-    AllowedDicts = Gameinfo#gameinfo.allowed_dicts,
-    Allowed = lists:any(fun (X) -> X =:= Dict end, AllowedDicts),
-    case Allowed of
-        true -> ok;
-        false -> 
-            throw({badArgsException, "Invalid Dictionary for the game you are playing."}) 
-     end.
+%% where gamename() :: scrabble | words_with_friends | lexulous
+%%
+%% A client may want to receive information about a game, such as the letter 
+%% distribution, or what its blank board looks like.  We give that data back 
+%% as a structure.
+game_info(ThriftName) ->
+    debug("Game_info for ~p~n", ThriftName),
+    try
+        GameName = thrift_helper:as_native_game(ThriftName),
+        Gameinfo = game_parser:parse_game(GameName),
+        thrift_helper:gameinfo_to_thrift(Gameinfo)
+    catch
+        throw:{not_valid_thrift_game, _} -> throw({badArgsException, "Game name is invalid."})
+    end.
+
+
+%% pass_turn :: Gamestate -> Gamestate
+%%
+%% Allows a Player to pass their turn without playing a move.  Advances the 
+%% current turn forward.
+pass_turn(Gamestate) ->
+    NativeGamestate = thrift_helper:thrift_to_gamestate(Gamestate),
+    verify_gamestate(NativeGamestate),
+    WithTurnPassed = gamestate:pass_turn(NativeGamestate),
+    thrift_helper:gamestate_to_thrift(WithTurnPassed).
+
+
+%% play_move :: [ThriftTile] * ThriftGamestate -> ThriftGamestate
+%%
+%% Given a set of tiles and a gamestate, returns a new gamestate with the tiles 
+%% placed as a move.  Throws BadMoveException, or BadGamestateException if incoming 
+%% data is invalid.
+play_move(ThriftTiles, ThriftGamestate) ->
+    io:format(user, "play_move for ~p tiles~n", [ThriftTiles]),
+    try
+        Tiles = lists:map(fun thrift_helper:thrift_to_native_tile/1, ThriftTiles),
+        Gamestate = thrift_helper:thrift_to_gamestate(ThriftGamestate),
+        io:format(user, "calling verify_gamestate", []),
+        case verify_gamestate(Gamestate) of
+            gamestate_ok -> ok;
+            {error, Reason} -> io:format(user, "play_move failed: ~p~n", [Reason]);
+            Other -> io:format(user, "unexpected response: ~p~n", [Other]) 
+        end,
+    
+        Move = move:from_list(Tiles),
+        case verify_move(Move, Gamestate) of
+            move_ok -> ok;
+            {error, Reason2} -> io:format(user, "play_move failed: ~p~n", [Reason2]);
+            Other2 -> io:format(user, "unexpected response: ~p~n", [Other2]) 
+        end,
+        WithMove = gamestate:play_move(Gamestate, Move),
+
+        case verify_gamestate(WithMove) of
+            gamestate_ok -> ok;
+            {error, Reason3} -> io:format(user, "play_move failed: ~p~n", [Reason3]);
+            Other3 -> io:format(user, "unexpected response: ~p~n", [Other3]) 
+        end,
+        thrift_helper:gamestate_to_thrift(WithMove)
+    catch
+        throw:{not_valid_thrift_game, _} -> throw({badArgs, "Game name in Gamestate is invalid."});
+        throw:{not_valid_thrift_dictionary, _} -> throw({badArgs, "Dictionary in Gamestate invalid."})
+    end.
+
+
+%% get_scrabblecheat_suggestions :: String * ThriftBoard -> [ThriftMove]
+%%
+%% Given a rack and a board, return a list of Thrift-compliant moves that 
+%% clients can use.  Throws BadArgsException and BadBoardException, if your
+%% incoming data sucks.
+get_scrabblecheat_suggestions(Rack, Board, ThriftName, ThriftDict) ->
+    debug("get_scrabblecheat_suggestions for rack ~p~n", [Rack]),
+    GameName = thrift_helper:as_native_game(ThriftName),
+    Dict = thrift_helper:as_native_dict(ThriftDict),
+
+    RackAsString = binary_to_list(Rack),
+    validate_rack(RackAsString, GameName),
+
+    NativeBoard = thrift_helper:thrift_to_native_board(Board),
+    verify_board(NativeBoard, Dict),
+
+    Moves = search_for_moves(NativeBoard, RackAsString, Dict),
+
+    WithScores = lists:map(fun (X) -> {X, move:score(X, NativeBoard, GameName)} end, Moves),
+    Sorted = lists:reverse(lists:keysort(2, WithScores)),
+    lists:map(fun ({NativeMove, Score}) ->
+                  Tiles = move:get_move_tiles(NativeMove),
+                  ThriftTiles = lists:map(fun thrift_helper:native_to_thrift_tile/1, Tiles),
+                  {move, ThriftTiles, Score}
+              end, Sorted).
+
+
+%% quit :: () -> ()
+%%
+%% Receive the quit notification from a client.  Should really take in a Pid or something.
+quit() ->
+    debug("Quit message received.~n", []),
+    ok.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%  SYNCHRONOUS CALLS TO GEN_SERVER 
+
+
+verify_gamestate(GS) ->
+    gen_server:call(gaddag_looper, {verify_gamestate, GS}).
+
+verify_move(Move, Gamestate) ->
+    gen_server:call(gaddag_looper, {verify_move, Move, Gamestate}).
+
+verify_board(Board, Dict) ->
+    gen_server:call(gaddag_looper, {verify_board, Board, Dict}).
+
+search_for_moves(Board, Rack, Dict) ->
+    gen_server:call(gaddag_looper, {search_for_moves, Board, Rack, Dict}).
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%  HELPERS
+validate_rack([], _) -> throw({badArgsException, "This rack is empty!"});
+validate_rack(Rack, GameName) ->
+    GameInfo = game_parser:parse_game(GameName),
+    MaxLength = GameInfo#gameinfo.racksize,
+    Len = (length(Rack) =< MaxLength),
+    Valid = lists:all(fun (X) -> (X >= $A andalso X =< $Z) orelse X =:= ?WILDCARD end, Rack),
+    case {Len, Valid} of
+        {true, true} -> ok;
+        {false, _} -> throw({badArgsException, "Rack is too long!"});
+        {_, false} -> throw({badArgsException, "There is an invalid character in your rack."})
+    end.
 
 
 %% validate_namelist :: [String] -> ()
@@ -288,107 +355,19 @@ validate_length(Name) ->
     end.
 
 
-
-%% game_info :: gamename() -> GameInfo
+%% validate_pairing :: gamename() * dict() -> ok | EXCEPTION
 %%
-%% where gamename() :: scrabble | words_with_friends | lexulous
-%%
-%% A client may want to receive information about a game, such as the letter 
-%% distribution, or what its blank board looks like.  We give that data back 
-%% as a structure.
-game_info(ThriftName) ->
-    debug("Game_info for ~p~n", ThriftName),
-    try
-        GameName = thrift_helper:as_native_game(ThriftName),
-        Gameinfo = game_parser:parse_game(GameName),
-        thrift_helper:gameinfo_to_thrift(Gameinfo)
-    catch
-        throw:{not_valid_thrift_game, _} -> throw({badArgsException, "Game name is invalid."})
-    end.
+%% We throw a badargs exception of the player is trying to perform an operation
+%% with a disallowed pairing of game and dictionary, e.g. words_with_friends on
+%% twl06.
+validate_pairing(GameName, Dict) ->
+    Gameinfo = get_gameinfo(GameName),
+    AllowedDicts = Gameinfo#gameinfo.allowed_dicts,
+    Allowed = lists:any(fun (X) -> X =:= Dict end, AllowedDicts),
+    case Allowed of
+        true -> ok;
+        false -> 
+            throw({badArgsException, "Invalid Dictionary for the game you are playing."}) 
+     end.
 
-
-%% pass_turn :: Gamestate -> Gamestate
-%%
-%% Allows a Player to pass their turn without playing a move.  Advances the 
-%% current turn forward.
-pass_turn(Gamestate) ->
-    NativeGamestate = thrift_helper:thrift_to_gamestate(Gamestate),
-    gamestate:verify(NativeGamestate),
-    WithTurnPassed = gamestate:pass_turn(NativeGamestate),
-    thrift_helper:gamestate_to_thrift(WithTurnPassed).
-
-
-%% play_move :: [ThriftTile] * ThriftGamestate -> ThriftGamestate
-%%
-%% Given a set of tiles and a gamestate, returns a new gamestate with the tiles 
-%% placed as a move.  Throws BadMoveException, or BadGamestateException if incoming 
-%% data is invalid.
-play_move(ThriftTiles, ThriftGamestate) ->
-    debug("play_move for ~p tiles~n", [ThriftTiles]),
-    try
-        Tiles = lists:map(fun thrift_helper:thrift_to_native_tile/1, ThriftTiles),
-        Gamestate = thrift_helper:thrift_to_gamestate(ThriftGamestate),
-        gamestate:verify(Gamestate),
-    
-        Move = move:from_list(Tiles),
-        Board = gamestate:get_gamestate_board(Gamestate),
-        move:verify(Move, Board, Gamestate),
-        WithMove = gamestate:play_move(Gamestate, Move),
-
-%%        gamestate:verify(WithMove),
-        thrift_helper:gamestate_to_thrift(WithMove)
-    catch
-        throw:{not_valid_thrift_game, _} -> throw({badArgs, "Game name in Gamestate is invalid."});
-        throw:{not_valid_thrift_dictionary, _} -> throw({badArgs, "Dictionary in Gamestate invalid."})
-    end.
-
-
-%% get_scrabblecheat_suggestions :: String * ThriftBoard -> [ThriftMove]
-%%
-%% Given a rack and a board, return a list of Thrift-compliant moves that 
-%% clients can use.  Throws BadArgsException and BadBoardException, if your
-%% incoming data sucks.
-get_scrabblecheat_suggestions(Rack, Board, ThriftName, ThriftDict) ->
-    debug("get_scrabblecheat_suggestions for rack ~p~n", [Rack]),
-    GameName = thrift_helper:as_native_game(ThriftName),
-    Dict = thrift_helper:as_native_dict(ThriftDict),
-
-    RackAsString = binary_to_list(Rack),
-    validate_rack(RackAsString, GameName),
-
-    NativeBoard = thrift_helper:thrift_to_native_board(Board),
-    Master = get_master_gaddag(Dict),
-    board:verify(NativeBoard, Master),
-
-    Search = get_search_function(Dict),
-    Moves = Search(NativeBoard, RackAsString),
-
-    WithScores = lists:map(fun (X) -> {X, move:score(X, NativeBoard, GameName)} end, Moves),
-    Sorted = reverse(keysort(2, WithScores)),
-    lists:map(fun ({NativeMove, Score}) ->
-                  Tiles = move:get_move_tiles(NativeMove),
-                  ThriftTiles = lists:map(fun thrift_helper:native_to_thrift_tile/1, Tiles),
-                  {move, ThriftTiles, Score}
-              end, Sorted).
-
-
-validate_rack([], _) -> throw({badArgsException, "This rack is empty!"});
-validate_rack(Rack, GameName) ->
-    GameInfo = game_parser:parse_game(GameName),
-    MaxLength = GameInfo#gameinfo.racksize,
-    Len = (length(Rack) =< MaxLength),
-    Valid = lists:all(fun (X) -> (X >= $A andalso X =< $Z) orelse X =:= ?WILDCARD end, Rack),
-    case {Len, Valid} of
-        {true, true} -> ok;
-        {false, _} -> throw({badArgsException, "Rack is too long!"});
-        {_, false} -> throw({badArgsException, "There is an invalid character in your rack."})
-    end.
-
-
-%% quit :: () -> ()
-%%
-%% Receive the quit notification from a client.  Should really take in a Pid or something.
-quit() ->
-    debug("Quit message received.~n", []),
-    ok.
 
