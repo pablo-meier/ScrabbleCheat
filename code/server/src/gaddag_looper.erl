@@ -22,7 +22,6 @@
 
 -behaviour(gen_server).
 
-
 -define(DICT_PATH, "priv/dicts/").
 -define(DICT_OUT_PATH, "priv/").
 
@@ -50,26 +49,11 @@
 %% values are the GADDAGs.
 
 
-
-%% Note that we initialize the GADDAGs in start_link rather than init()
-%% because the spawning process (scrabblecheat_main) needs to wait until
-%% the the GADDAG is loaded before it receives requests for the rest of
-%% it's functionality.
-%%
-%% It's a total hack. We're passing the Gaddag to init() via the third
-%% parameter of gen_server:start_link, and init will pretty much just return
-%% it.
 start_link() ->
-    try 
-        State = lists:foldl(fun (GameName, Orddict) ->
-                                G = get_or_make_gaddag(GameName),
-                                orddict:store(GameName, G, Orddict)
-                            end, orddict:new(), [twl06, sowpods, zynga]), 
-        gen_server:start_link(?MODULE, [], [State])
-    catch
-        _:_ -> {stop, "Couldn't load GADDAGS from files"} 
-    end.
-
+    gen_server:start_link({local, gaddag_looper}, 
+                          ?MODULE, 
+                          [], 
+                          [{spawn_opt, [{fullsweep_after, 0}]}]).
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -79,8 +63,18 @@ start_link() ->
 %%
 %% Establishes the orddict of Gaddags as it's state. Most of the real work is 
 %% in start_link.
-init(State) ->
-    {ok, State}.
+init(_Args) ->
+    try 
+        State = lists:foldl(fun (GameName, Orddict) ->
+                                G = get_or_make_gaddag(GameName),
+                                io:format(user, "entering ~p in ~p~n", [GameName, orddict:fetch_keys(Orddict)]),
+                                orddict:store(GameName, G, Orddict)
+                            end, orddict:new(), [twl06, sowpods, zynga]), 
+        io:format(user, "Keys in State from start_link is ~p~n", [orddict:fetch_keys(State)]),
+        {ok, State}
+    catch
+        _:_ -> {stop, "Couldn't load GADDAGS from files"} 
+    end.
 
 
 %% handle_call :: Request * From * State -> reply()
@@ -92,7 +86,7 @@ handle_call({verify_gamestate, GS}, _From, State) ->
         Board = gamestate:get_gamestate_board(GS),
         Dict = gamestate:get_gamestate_dict(GS),
         io:format(user, "Got gamestate data~n", []),
-        io:format(user, "Retrieving Gaddag~n", []),
+        io:format(user, "Retrieving Gaddag: ~p in ~p~n", [Dict, orddict:fetch_keys(State)]),
         Gaddag = orddict:find(Dict, State),
         io:format(user, "calling board:verify~n", []),
         board:verify(Board, Gaddag),
@@ -103,9 +97,11 @@ handle_call({verify_gamestate, GS}, _From, State) ->
 
 
 handle_call({verify_move, Move, Gamestate}, _From, State) ->
+    io:format(user, "State is ~p~n", [orddict:fetch_keys(State)]),
     Tiles = move:get_move_tiles(Move),
     Board = gamestate:get_gamestate_board(Gamestate),
     Dict = gamestate:get_gamestate_dict(Gamestate),
+    io:format(user, "Looking for ~p~n", [Dict]),
     case Tiles of
         [] -> {reply, {error, "The move is empty!"}, State};
         _Else ->

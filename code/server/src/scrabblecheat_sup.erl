@@ -36,7 +36,10 @@ start_link() ->
     supervisor:start_link({local, ?SERVER}, ?MODULE, []).
 
 init([]) ->
-    Children = {scrabblecheat_main, {scrabblecheat_main, start_link, []},
+    Children = [{scrabblecheat_main, {scrabblecheat_main, start_link, []},
                 permanent, 2000, worker, [scrabblecheat_main]},
-    RestartStrategy = {one_for_one, 0, 1},
-    {ok, {RestartStrategy, [Children]}}.
+                {gaddag_looper, {gaddag_looper, start_link, []},
+                permanent, 2000, worker, [scrabblecheat_main]}
+                ],
+    RestartStrategy = {one_for_all, 0, 1},
+    {ok, {RestartStrategy, Children}}.

@@ -53,8 +53,9 @@
 
 %% SUPPORT API
 -export([get_gameinfo/1,
-         make_binary_gaddag/0,
-         create_gaddag_looper/0]).
+         make_binary_gaddag/0
+        % create_gaddag_looper/0
+         ]).
 
 
 
@@ -112,21 +113,19 @@ configure_global_data() ->
     GameInfos = lists:map(fun (X) -> {X, game_parser:parse_game(X)} end, 
                           [scrabble, lexulous, words_with_friends]),
     ets:new(gameinfos, [set, protected, named_table, {keypos, 1}]),
-    lists:foreach(fun(X) -> ets:insert(gameinfos, X) end, GameInfos),
-    
-    spawn(?MODULE, create_gaddag_looper, []).   
+    lists:foreach(fun(X) -> ets:insert(gameinfos, X) end, GameInfos).
 
 
-create_gaddag_looper() ->
-    process_flag(trap_exit, true),
-    Pid = spawn_link(gaddag_looper, start_link, []),
-    register(gaddag_looper, Pid),
-    receive
-        {'EXIT', Pid, normal} -> ok;
-        {'EXIT', Pid, shutdown} -> ok;
-        {'EXIT', Pid, _} ->
-            create_gaddag_looper()
-    end.
+%% create_gaddag_looper() ->
+%%     process_flag(trap_exit, true),
+%%     Pid = spawn_link(gaddag_looper, start_link, []),
+%%     register(gaddag_looper, Pid),
+%%     receive
+%%         {'EXIT', Pid, normal} -> ok;
+%%         {'EXIT', Pid, shutdown} -> ok;
+%%         {'EXIT', Pid, _} ->
+%%             create_gaddag_looper()
+%%     end.
 
 
 %% get_gameinfo :: gamename() -> GameInfo
@@ -155,7 +154,7 @@ handle_function(Function, Args) when is_atom(Function), is_tuple(Args) ->
     end.
 
 debug(Format, Data) ->
-    error_logger:info_msg(Format, Data).
+    io:format(user, Format, Data).
 
 
 
@@ -169,7 +168,7 @@ debug(Format, Data) ->
 %% Throws BadArgsException if the list is empty, or the player's names are
 %% too long.
 new_game(Playerlist, ThriftGameName, ThriftDict) ->
-    debug("New Game for ~p~n", Playerlist),
+    debug("New Game for ~p~n", [Playerlist]),
     Stringlist = lists:map(fun binary_to_list/1, Playerlist),
     validate_namelist(Stringlist),
     try
@@ -192,7 +191,7 @@ new_game(Playerlist, ThriftGameName, ThriftDict) ->
 %% distribution, or what its blank board looks like.  We give that data back 
 %% as a structure.
 game_info(ThriftName) ->
-    debug("Game_info for ~p~n", ThriftName),
+    debug("Game_info for ~p~n", [ThriftName]),
     try
         GameName = thrift_helper:as_native_game(ThriftName),
         Gameinfo = game_parser:parse_game(GameName),
