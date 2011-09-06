@@ -28,7 +28,7 @@
 -behaviour(application).
 
 %% Application callbacks.
--export([start/2, stop/1]).
+-export([start/2, stop/1, start_all/0]).
 
 %%====================================================================
 %% Application callbacks
@@ -67,8 +67,9 @@ stop(_State) ->
 %% 
 %% Description: Starts apps this depends on, then starts this
 %%--------------------------------------------------------------------
-%%start_all() ->
-%%    application:load(thrift),
-%%    application:start(thrift),
-%%    [application:start(scrabblecheat)].
+start_all() ->
+    application:load(thrift),
+    application:start(thrift),
+    application:load(scrabblecheat),
+    application:start(scrabblecheat).
 

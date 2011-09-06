@@ -21,57 +21,74 @@
 -module(gaddag_tests).
 -include_lib("eunit/include/eunit.hrl").
 
--import(gaddag, [empty_gaddag/0, 
-			 	add_word/2, 
-				is_terminator/1, 
-				has_branch/2, 
-				get_branch/2,
-				has_word/2,
-				naive_path_search/2]).
+-define(TEMP_FILE_NAME, "../ebin/gaddag_test.dict").
 
 get_fixture_gaddag() ->
-	Words = ["ow", "wow", "paulie", "ox", "pamper", "wizard"],
-	lists:foldl(fun gaddag:add_word/2, empty_gaddag(), Words).
+    bin_trie:get_root().
+setup() ->
+    bin_trie:start_from_file(?TEMP_FILE_NAME).
+teardown() ->
+    case whereis(giant_bintrie) of
+        undefined -> ok;
+        Else -> unregister(giant_bintrie),
+                exit(Else, "Test finished")
+    end.
+
 
 has_branch_test() ->
-	Trie = get_fixture_gaddag(),
-	?assert(has_branch($o, Trie)),
-	?assert(has_branch($w, Trie)),
-	?assert(has_branch($e, Trie)),
-	?assert(has_branch($u, Trie)).
+    setup(),
+    Gaddag = get_fixture_gaddag(),
+    run_has_branch(Gaddag),
+    teardown().
+
+run_has_branch(Gaddag) ->
+    ?assert(gaddag:has_branch($O, Gaddag)),
+    ?assert(gaddag:has_branch($W, Gaddag)),
+    ?assert(gaddag:has_branch($E, Gaddag)),
+    ?assert(gaddag:has_branch($U, Gaddag)).
+ 
 
 get_branch_test() ->
-	Trie = get_fixture_gaddag(),
-	{branch, Trie1} = get_branch($w, Trie),
-	{branch, Trie2} = get_branch($o, Trie),
-	{branch, Trie3} = get_branch($u, Trie),
-	?assert(has_branch($o, Trie1)),
-	?assert(has_branch($&, Trie2)),
-	?assert(has_branch($a, Trie3)).
-	
-adding_test() ->
-	Trie = get_fixture_gaddag(),
-	New_Trie = add_word("always", Trie),
-	?assert(has_branch($y, New_Trie)),
-	{branch, Sub_Trie} = get_branch($a, New_Trie),
-	?assert(has_branch($w, Sub_Trie)).
+    setup(),
+    Gaddag = get_fixture_gaddag(),
+    run_get_branch(Gaddag),
+    teardown().
+
+run_get_branch(Gaddag) ->
+    {branch, Trie1} = gaddag:get_branch($W, Gaddag),
+    {branch, Trie2} = gaddag:get_branch($O, Gaddag),
+    {branch, Trie3} = gaddag:get_branch($U, Gaddag),
+    ?assert(gaddag:has_branch($O, Trie1)),
+    ?assert(gaddag:has_branch($&, Trie2)),
+    ?assert(gaddag:has_branch($A, Trie3)),
+    ?assert(gaddag:has_branch($T, Trie3) =:= false),
+    ?assert(gaddag:has_branch($T, Gaddag) =:= false).
+
+ 
 
 search_test() -> 
-	Gaddag = get_fixture_gaddag(),
-	?assert(has_word("pamper", Gaddag)),
-	?assert(has_word("wizard", Gaddag)),
-	?assert(has_word("ox", Gaddag)),
-	?assert(has_word("paulie", Gaddag)).
+    setup(),
+    Gaddag = get_fixture_gaddag(),
+    run_search(Gaddag),
+    teardown().
+
+run_search(Gaddag) ->
+    ?assert(gaddag:has_word("PAMPER", Gaddag)),
+    ?assert(gaddag:has_word("WIZARD", Gaddag)),
+    ?assert(gaddag:has_word("OX", Gaddag)),
+    ?assert(gaddag:has_word("PAULIE", Gaddag)),
+    ?assert(gaddag:has_word("PAULI", Gaddag) =:= false),
+    ?assert(gaddag:has_word("WIZ", Gaddag) =:= false),
+    ?assert(gaddag:has_word("AMPER", Gaddag) =:= false).
+ 
+
 
 one_letter_word_test() ->
-	Gaddag = get_fixture_gaddag(),
-	?assert(is_terminator(Gaddag) =:= false).
+    setup(),
+    Gaddag = get_fixture_gaddag(),
+    run_one_letter(Gaddag),
+    teardown().
 
-representations_test() ->
-	Words = ["silly", "putty", "as"],
-	Gaddag = lists:foldl(fun gaddag:add_word/2, empty_gaddag(), Words),
-	Rep1 = ["s&illy","is&lly", "lis&ly", "llis&y", "yllis&"],
-	Rep2 = ["p&utty", "up&tty", "tup&ty", "ttup&y", "yttup&"],
-	Rep3 = ["a&s", "sa&"],
-	Representations = Rep1 ++ Rep2 ++ Rep3,
-	lists:all(fun (X) -> naive_path_search(X, Gaddag) end, Representations).
+run_one_letter(Gaddag) ->
+    ?assert(gaddag:is_terminator(Gaddag) =:= false).
+

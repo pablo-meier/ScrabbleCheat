@@ -24,19 +24,28 @@
 %% Rebar runs Eunit tests from a .eunit directory;  cd out, maybe
 %% later find a way to more cleanly set $PROJECT_HOME or some such
 %% var.
--define(TESTDICT, "../tests/eunit/testdict.txt").
+-define(TESTDICT, "../ebin/testdict.dict").
 
 -import(game_parser, [new_board/0]).
 -import(board, [place_word/4, get_tile/3]).
--import(gaddag, [empty_gaddag/0, get_branch_from_string/2]).
+-import(gaddag, [get_branch_from_string/2]).
 -import(tile, [get_tile_location/1, new_tile/4]).
--import(dict_parser, [parse/1]).
 -import(move, [new_move/0, duplicate_moves/2]).
 -import(followstruct, [make_followstruct/5]).
 -import(movesearch, [generate_move_candidate_locations/1, 
 					get_zoomtiles/3,
 					create_origin_followstructs/2,
 					get_moves_from_candidate/5]). 
+
+
+
+get_fixture_gaddag() ->
+    case whereis(giant_bintrie) of
+        undefined -> ok;
+        Else -> unregister(giant_bintrie)
+    end,
+    bin_trie:start_from_file(?TESTDICT),
+    bin_trie:get_root().  
 
 
 
@@ -65,7 +74,7 @@ candidate_location2_test() ->
 %% Zoomtiles
 zoomtile_first_test() ->
 	Board = sample_board(),
-	Gaddag = empty_gaddag(),
+	Gaddag = get_fixture_gaddag(),
 	SolutionPairs = [{new_tile(none,none,6,7), [get_tile(10, 7, Board)]},
 					{new_tile(none,none,7,6), [get_tile(7, 7, Board)]},
 					{new_tile(none,none,8,6), [get_tile(8, 7, Board)]},
@@ -79,7 +88,7 @@ zoomtile_first_test() ->
 
 zoomtile_second_test() ->
 	Board = board:place_word("BLE", right, {8, 8}, sample_board()),
-	Gaddag = empty_gaddag(),
+	Gaddag = get_fixture_gaddag(),
 	SolutionPairs = [{new_tile(none,none,6,7), [get_tile(10, 7, Board)]},
 					{new_tile(none,none,7,6), [get_tile(7, 7, Board)]},
 					{new_tile(none,none,8,6), [get_tile(8, 10, Board)]},
@@ -97,7 +106,7 @@ zoomtile_second_test() ->
 %% Move Generation
 get_move_from_candidate_open_horiz_test() ->
 	Direction = left,
-	Gaddag = get_branch_from_string("ELBA", parse(?TESTDICT)),
+	Gaddag = get_branch_from_string("ELBA",get_fixture_gaddag()), 
 	Board = place_word("ABLE", right, {7,7}, new_board()),
 	Candidate = get_tile(7, 6, Board),
 
@@ -120,7 +129,7 @@ get_move_from_candidate_open_horiz_test() ->
 
 get_move_from_candidate_open_vert_test() ->
 	Direction = up,
-	Gaddag = get_branch_from_string("ELBA", parse(?TESTDICT)),
+	Gaddag = get_branch_from_string("ELBA", get_fixture_gaddag()),
 	Board = place_word("ABLE", down, {7,7}, new_board()),
 	Candidate = get_tile(6, 7, Board),
 
@@ -144,7 +153,7 @@ get_move_from_candidate_open_vert_test() ->
 %% Walls
 left_wall_candidate_generate_test() ->
 	Direction = right,
-	Gaddag = get_branch_from_string("A&BLE", parse(?TESTDICT)),
+	Gaddag = get_branch_from_string("A&BLE", get_fixture_gaddag()),
 	Board = place_word("ABLE", down, {7,1}, new_board()),
 	Candidate = get_tile(7, 5, Board),
 
@@ -163,7 +172,7 @@ left_wall_candidate_generate_test() ->
 
 right_wall_candidate_generate_test() ->
 	Direction = left,
-	Gaddag = get_branch_from_string("ELBA", parse(?TESTDICT)),
+	Gaddag = get_branch_from_string("ELBA", get_fixture_gaddag()),
 	Board = place_word("ABLE", down, {7,12}, new_board()),
 	Candidate = get_tile(7, 11, Board),
 
@@ -185,7 +194,7 @@ right_wall_candidate_generate_test() ->
 
 top_wall_candidate_generate_test() ->
 	Direction = down,
-	Gaddag = get_branch_from_string("A&BLE", parse(?TESTDICT)),
+	Gaddag = get_branch_from_string("A&BLE", get_fixture_gaddag()),
 	Board = place_word("ABLE", down, {1,7}, new_board()),
 	Candidate = get_tile(5,7, Board),
 
@@ -204,7 +213,7 @@ top_wall_candidate_generate_test() ->
 
 bottom_wall_candidate_generate_test() ->
 	Direction = up,
-	Gaddag = get_branch_from_string("ELBA", parse(?TESTDICT)),
+	Gaddag = get_branch_from_string("ELBA", get_fixture_gaddag()), 
 	Board = place_word("ABLE", down, {12,7}, new_board()),
 	Candidate = get_tile(11, 7, Board),
 
@@ -227,7 +236,7 @@ bottom_wall_candidate_generate_test() ->
 perpendicular_leftwise_test() ->
 
 	Direction = up,
-	Gaddag = parse(?TESTDICT),
+	Gaddag = get_fixture_gaddag(),
 	Board = place_word("ABLE", right, {7,7}, new_board()),
 	Candidate = get_tile(7, 6, Board),
 
@@ -250,7 +259,7 @@ perpendicular_leftwise_test() ->
 
 perpendicular_underside_test() ->
 	Direction = left,
-	Gaddag = parse(?TESTDICT),
+	Gaddag = get_fixture_gaddag(),
 	Board = place_word("ABLE", right, {7,7}, new_board()),
 	Candidate = get_tile(8, 7, Board),
 
@@ -274,7 +283,7 @@ perpendicular_underside_test() ->
 
 perpendicular_upperside_test() ->
 	Direction = left,
-	Gaddag = parse(?TESTDICT),
+	Gaddag = get_fixture_gaddag(),
 	Board = place_word("ABLE", right, {7,7}, new_board()),
 	Candidate = get_tile(6, 9, Board),
 
@@ -298,7 +307,7 @@ perpendicular_upperside_test() ->
 
 perpendicular_rightside_test() ->
 	Direction = up,
-	Gaddag = parse(?TESTDICT),
+	Gaddag = get_fixture_gaddag(),
 	Board = place_word("ABLE", right, {7,7}, new_board()),
 	Candidate = get_tile(7, 11, Board),
 
@@ -322,7 +331,7 @@ perpendicular_rightside_test() ->
 
 %% this has been crashing in the client, worth automating
 able_zygote_test() ->
-	Search = movesearch:get_best_move_function(parse(?TESTDICT)),
+	Search = movesearch:get_best_move_function(get_fixture_gaddag()),
 	Board = place_word("ZYGOTE", right, {8,4}, place_word("ABLE", right, {7,8}, new_board())),
 	Rack = "PAULIE",
 
@@ -332,7 +341,7 @@ able_zygote_test() ->
 
 %% this has been crashing in the client, worth automating
 sigma_perpendicular_test() ->
-	Search = movesearch:get_best_move_function(parse(?TESTDICT)),
+	Search = movesearch:get_best_move_function(get_fixture_gaddag()),
 	Board = place_word("ZYGOTE", right, {8,4}, place_word("ABLE", right, {7,8}, new_board())),
 	Rack = "SIGMA",
 
@@ -352,7 +361,7 @@ sigma_perpendicular_test() ->
 
 %% Another incorrect move generation, from not checking neighbors in same plane.
 stigma_peps_test() ->
-   	Search = movesearch:get_best_move_function(parse(?TESTDICT)),
+   	Search = movesearch:get_best_move_function(get_fixture_gaddag()),
    	LetterPlacements = [{"ABLE", right, {7,7}}, 
                         {"Z", down, {6,9}}, 
                         {"OTYS", down, {8,9}},
@@ -382,7 +391,7 @@ stigma_peps_test() ->
 
 
 island_1_test() ->
-   	Search = movesearch:get_best_move_function(parse(?TESTDICT)),
+   	Search = movesearch:get_best_move_function(get_fixture_gaddag()),
 	PreBoard = place_word("BAS", down, {7,8}, place_word("TERM", right, {10,7}, new_board())),
 	Board = place_word("TRA", down, {7,10}, PreBoard),
 	Rack = "TARYO",
@@ -402,7 +411,7 @@ island_1_test() ->
 %% Bug where we forget to remove 'none' values after get_adjacent calls
 %% in finding zoomtiles for candidates.  Below is a case where it failed.
 candidate_on_edge_test() ->
-   	Search = movesearch:get_best_move_function(parse(?TESTDICT)),
+   	Search = movesearch:get_best_move_function(get_fixture_gaddag()),
 	Board = place_word("AFOUL", down, {10,10}, new_board()),
 	Rack = "SLUANIQ",
 
@@ -416,7 +425,7 @@ candidate_on_edge_test() ->
 %% Wildcards
 wildcard_1_test() ->
    	Direction = left,
-	Gaddag = get_branch_from_string("ELBA", parse(?TESTDICT)),
+	Gaddag = get_branch_from_string("ELBA", get_fixture_gaddag()),
 	Board = place_word("ABLE", right, {7,7}, new_board()),
 	Candidate = get_tile(7, 6, Board),
 

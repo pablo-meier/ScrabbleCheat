@@ -8,16 +8,27 @@ THRIFT_PATH = ../../lib/ScrabbleCheat.thrift
 THRIFT_APP=lib/thrift
 RELEASE_DIR=rel
 
+
+EUNIT_PATH=tests/eunit
+
 # Silly silly silly shit to generate a release, but we do what works...
 SC_APP=lib/scrabblecheat
 SC_REL_EBIN=$(SC_APP)/ebin
 SC_REL_INCLUDE=$(SC_APP)/include
 SC_REL_PRIV=$(SC_APP)/priv
 
+PARSER_PATH=lib/bingad
+PARSER=$(PARSER_PATH)/bin/gaddag_parser
+DICTS=priv/dicts
+
 
 test: eunit ct
 
-eunit: compile 
+eunit: compile build-parser
+	$(PARSER) $(EUNIT_PATH)/gaddag_test.txt
+	mv $(EUNIT_PATH)/gaddag_test.dict ebin/
+	$(PARSER) $(EUNIT_PATH)/testdict.txt
+	mv $(EUNIT_PATH)/testdict.dict ebin/
 	rebar eunit
 
 
@@ -69,15 +80,21 @@ prepare:
 compile: thrift-generate
 	rebar compile
 
-binary-gaddag: compile
-	[ -f priv/twl06.gaddag ] || erl -noshell -pa ebin/ -s scrabblecheat_main make_binary_gaddag  -run erlang halt
+binary-gaddag: build-parser
+	[ -f $(DICTS)/twl06.dict ] || $(PARSER) $(DICTS)/twl06.txt $(DICTS)/zynga.txt $(DICTS)/sowpods.txt
+	mv $(DICTS)/*.dict priv/
+
+build-parser:
+	cd $(PARSER_PATH) && $(MAKE) compile
 
 clean:
 	rm -f include/thrift_*.hrl include/scrabbleCheat_*.hrl 
+	rm -f ebin/gaddag_test.dict
 	ruby tests/common_test/server_util.rb stopped
+	cd $(PARSER_PATH) && $(MAKE) clean
 	rm -rf $(RELEASE_DIR)
 	rm -rf $(SC_APP)
 	rm -rf .common_test test.spec tests/common_test/*.beam
-	# rm -f priv/twl06.gaddag priv/sowpods.gaddag priv/zynga.gaddag
+	# rm -f priv/*.dict
 	rebar clean || 0
 

@@ -1,0 +1,36 @@
+AB
+AC
+
+->
+
+A&B
+BA&
+A&C
+CA&
+
+
+ROOT -> A,B,C
+self -> 0
+
+FROM ROOT
+---------
+A -> &
+& -> BC, both terminators
+
+B -> A, non-terminator
+A -> &, terminator
+
+C -> A, non-terminator
+A -> terminator
+
+FORALL
+------
+Ensure offset 'self' from massive binary is, indeed, itself.
+
+
+------
+Y SO MANY TRAILING ZEROES?!?!
+
+Write a simple test_node function that extracts the binary segment of the node 
+it's currently looking at, and ensures that they all work as they should. 
+THIS MEANS TESTING THE POINTERS, SELF_REFERENCES, TERMINATORS.

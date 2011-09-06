@@ -20,34 +20,24 @@
 
 -module(gaddag).
 
--export([add_word/2, 
-         empty_gaddag/0, 
-         has_branch/2, 
+-export([has_branch/2, 
          get_branch/2, 
          delete_branch/2,
          has_word/2,
          is_terminator/1,
-         naive_path_search/2,
          keys/1,
+         naive_path_search/2,
          get_branch_from_string/2]).
 
--define(WILDCARD, $*).
+-define(WILDCARD,  $*).
 -define(SEPARATOR, $&).
-
--import(gb_trees, [empty/0, delete/2, lookup/2, is_defined/2, enter/3, to_list/1]).
--import(lists, [filter/2, reverse/1, foldl/3]).
--import(string, [concat/2]).
-
-%% Mostly a wrapper for gb_trees, allowing me to sub out if I like.
-%% The atom 'terminator' is used rather than a macro.
-
 
 
 %% has_branch :: Char * Trie -> Bool
 %%
 %% Asks whether the subtree (GADDAG) contains a branch for the parameter.
 has_branch(Char, Trie) ->
-    is_defined(Char, Trie).
+    bin_trie:is_key(Char, Trie).
 
 
 %% delete_branch :: Char * Gaddag -> Gaddag
@@ -55,17 +45,17 @@ has_branch(Char, Trie) ->
 %% Prunes a key from a gaddag, returning the gaddag with all other keys intact.
 %% Assumes the key exists, crashes otherwise.
 delete_branch(Key, Gaddag) ->
-    gb_trees:delete(Key, Gaddag).
+    bin_trie:erase(Key, Gaddag).
 
 
 %% get_branch :: Char * Trie -> Trie
 %%
 %% Gets the specified branch, or 'none' if it doesn't exist.
 get_branch(Char, Trie) ->
-    Result = lookup(Char, Trie),
+    Result = bin_trie:find(Char, Trie),
     case Result of
-        {value, Return} -> {branch, Return};
-        _Fail -> none
+        {branch_not_found, _Key} -> none;
+        Return -> {branch, Return}
     end.
 
 
@@ -73,13 +63,15 @@ get_branch(Char, Trie) ->
 %%
 %% Returns all the keys this Gaddag has.
 keys(Gaddag) ->
-    lists:filter(fun (X) -> X =/= terminator andalso X =/= ?SEPARATOR end, gb_trees:keys(Gaddag)).
+    lists:filter(fun (X) -> X =/= [?SEPARATOR] end, bin_trie:fetch_keys(Gaddag)).
+
 
 %% has_word :: String * Trie -> Bool
 %%
 %% Returns whether or not the Trie contains a word.  We do this by removing the
 %% first letter and separator, and doing a naive path search on the rest of the
 %% word.
+has_word([], _) -> false;
 has_word([H|T], Trie) ->
     case get_branch(H, Trie) of
         {branch, Next} -> 
@@ -96,76 +88,25 @@ has_word([H|T], Trie) ->
 %%
 %% Exported primarily for testing, DO NOT USE IN PRODUCTION. Checks whether a
 %% naive sequence of characters can be followed to completion on the Trie.
-naive_path_search([], Gaddag) -> is_terminator(Gaddag);
+naive_path_search([], Gaddag) -> 
+    is_terminator(Gaddag);
+
 naive_path_search([FirstChar|Rest], Gaddag) ->
     case get_branch(FirstChar, Gaddag) of
-        none -> false;
+        none -> 
+            false;
         {branch, NextGaddag} ->
             naive_path_search(Rest, NextGaddag)
     end.
+
 
 %% is_terminator :: Trie -> Bool
 %%
 %% Determines whether or not a word can end on this sub-GADDAG.
 is_terminator(Gaddag) ->
-    Terminator = has_branch(terminator, Gaddag), 
-    Separator = has_branch(?SEPARATOR, Gaddag),
-    case {Terminator, Separator} of
-        {_, true} -> {branch, Path} = get_branch(?SEPARATOR, Gaddag),
-                     is_terminator(Path);
-        {true, _} -> true;
-        _Else -> false
-    end.
+	bin_trie:is_terminator(Gaddag).
 
 
-
-%% empty_gaddag :: () -> Trie
-%%
-%% Is the GADDAG empty?
-empty_gaddag() ->
-    gb_trees:empty().
-
-
-%% add_word :: String * Trie -> Trie
-%%
-%% Returns a new GADDAG with all the prefix/suffix representations of a word represented.
-add_word(String, Trie) ->
-    foldl(fun (Rep, NewTrie) -> add_char_string(Rep, NewTrie) end, Trie, split_into_representations(String)).
-
-
-%% split_into_representations :: String -> [String]
-%%
-%% Splits a single string into its multiple representations.
-split_into_representations(Word) ->
-    Results = splitter([], Word, []),
-    Results.
-
-
-%% splitter :: String * String * [String] -> [String]
-splitter(_, [], Accum) -> Accum;
-splitter(Prefix, Suffix, Accum) ->
-    NewPrefix = concat(Prefix, [hd(Suffix)]),
-    NewSuffix = tl(Suffix),
-    NewAddition = concat(concat(reverse(NewPrefix), [?SEPARATOR]), NewSuffix),
-    splitter(NewPrefix, NewSuffix, [NewAddition|Accum]).
-    
-
-%% add_char_string :: String * Trie -> Trie
-%%
-%% Adds a string of characters (each a representation of a word) to the Trie, returns the new Trie.
-add_char_string([], Trie) -> enter(terminator, dummy, Trie);
-add_char_string(Word, Trie) ->
-    [Char|Rest] = Word,
-    case has_branch(Char, Trie) of  
-        true ->
-            {branch, Sub_Trie} = get_branch(Char, Trie),
-            New_Trie = add_char_string(Rest, Sub_Trie),
-            enter(Char, New_Trie, Trie);
-        _False ->
-            Empty_Trie = empty(),
-            New_Trie = add_char_string(Rest, Empty_Trie),
-            enter(Char, New_Trie, Trie)
-    end.
 
 %% get_branch_from_string :: Sting * Gaddag -> Gaddag
 %%
@@ -175,3 +116,4 @@ get_branch_from_string([], Gaddag) -> Gaddag;
 get_branch_from_string([H|T], Gaddag) -> 
     {branch, Follow} = get_branch(H, Gaddag),
     get_branch_from_string(T, Follow).
+

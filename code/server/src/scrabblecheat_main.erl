@@ -22,8 +22,7 @@
 
 -include("gameinfo.hrl").
 
--define(DICT_PATH, "priv/dicts/").
--define(DICT_OUT_PATH, "priv/").
+-define(DICT_PATH, "priv/").
 
 -define(WILDCARD, $*).
 -define(SMALLEST_ASCII_CHARACTER, 33).
@@ -52,28 +51,10 @@
          quit/0]).
 
 %% SUPPORT API
--export([get_gameinfo/1,
-         make_binary_gaddag/0
-        % create_gaddag_looper/0
-         ]).
+-export([get_gameinfo/1]).
+         
 
 
-
-%% make_binary_gaddag :: () -> File ()
-%%
-%% The program can be invoked to build the data structures and save them disk
-%% ahead of time.
-make_binary_gaddag() ->
-    Paths = lists:map(fun(X) -> 
-                          AsStr = atom_to_list(X),
-                          {?DICT_PATH ++ AsStr ++ ".txt",
-                           ?DICT_OUT_PATH ++ AsStr ++ ".gaddag"}
-                      end, [twl06, sowpods, zynga]),
-
-    %% converts priv/dicts/twl06.txt -> priv/twl06.gaddag
-    lists:foreach(fun ({In,Out}) -> 
-                      dict_parser:output_to_file(In, Out)
-                  end, Paths).
 
 %% start_link :: () -> ()
 %%
@@ -89,14 +70,15 @@ start_link() ->
 %% top-level data (reading Gameinfos, making score functions) as necessary.
 start_link(Port) ->
     io:format(user, "Scrabblecheat Server starting...~n", []),
-    configure_global_data(),
+    initialize_gameinfos(),
+    io:format(user, "made gameinfos~n", []),
+
     Handler = ?MODULE,
     thrift_socket_server:start([{handler, Handler},
                                 {service, scrabbleCheat_thrift},
                                 {port, Port},
                                 {socket_opts, [{recv_timeout, 600000}]},
                                 {name, scrabbleCheat_server}]).
-
 
 
 %% configure_global_data :: () -> ()
@@ -108,24 +90,12 @@ start_link(Port) ->
 %%
 %% where
 %%         game() = scrabble | words_with_friends | lexulous
-configure_global_data() ->
+initialize_gameinfos() ->
 
     GameInfos = lists:map(fun (X) -> {X, game_parser:parse_game(X)} end, 
                           [scrabble, lexulous, words_with_friends]),
     ets:new(gameinfos, [set, protected, named_table, {keypos, 1}]),
     lists:foreach(fun(X) -> ets:insert(gameinfos, X) end, GameInfos).
-
-
-%% create_gaddag_looper() ->
-%%     process_flag(trap_exit, true),
-%%     Pid = spawn_link(gaddag_looper, start_link, []),
-%%     register(gaddag_looper, Pid),
-%%     receive
-%%         {'EXIT', Pid, normal} -> ok;
-%%         {'EXIT', Pid, shutdown} -> ok;
-%%         {'EXIT', Pid, _} ->
-%%             create_gaddag_looper()
-%%     end.
 
 
 %% get_gameinfo :: gamename() -> GameInfo
@@ -260,7 +230,7 @@ get_scrabblecheat_suggestions(Rack, Board, ThriftName, ThriftDict) ->
     Dict = thrift_helper:as_native_dict(ThriftDict),
 
     RackAsString = binary_to_list(Rack),
-    validate_rack(RackAsString, GameName),
+    verify_rack(RackAsString, GameName),
 
     NativeBoard = thrift_helper:thrift_to_native_board(Board),
     verify_board(NativeBoard, Dict),
@@ -288,24 +258,28 @@ quit() ->
 %%  SYNCHRONOUS CALLS TO GEN_SERVER 
 
 
-verify_gamestate(GS) ->
-    gen_server:call(gaddag_looper, {verify_gamestate, GS}).
+verify_gamestate(_GS) ->
+    ok.
+%%    gen_server:call(gaddag_looper, {verify_gamestate, GS}).
 
-verify_move(Move, Gamestate) ->
-    gen_server:call(gaddag_looper, {verify_move, Move, Gamestate}).
+verify_move(_Move, _Gamestate) ->
+    ok.
+%%    gen_server:call(gaddag_looper, {verify_move, Move, Gamestate}).
 
-verify_board(Board, Dict) ->
-    gen_server:call(gaddag_looper, {verify_board, Board, Dict}).
+verify_board(_Board, _Dict) ->
+    ok.
+%%    gen_server:call(gaddag_looper, {verify_board, Board, Dict}).
 
-search_for_moves(Board, Rack, Dict) ->
-    gen_server:call(gaddag_looper, {search_for_moves, Board, Rack, Dict}).
+search_for_moves(_Board, _Rack, _Dict) ->
+    ok.
+%%    gen_server:call(gaddag_looper, {search_for_moves, Board, Rack, Dict}).
 
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  HELPERS
-validate_rack([], _) -> throw({badArgsException, "This rack is empty!"});
-validate_rack(Rack, GameName) ->
+verify_rack([], _) -> throw({badArgsException, "This rack is empty!"});
+verify_rack(Rack, GameName) ->
     GameInfo = game_parser:parse_game(GameName),
     MaxLength = GameInfo#gameinfo.racksize,
     Len = (length(Rack) =< MaxLength),

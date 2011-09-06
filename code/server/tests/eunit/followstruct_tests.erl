@@ -40,11 +40,23 @@
 %% Rebar runs Eunit tests from a .eunit directory;  cd out, maybe
 %% later find a way to more cleanly set $PROJECT_HOME or some such
 %% var.
--define(TESTDICT, "../tests/eunit/testdict.txt").
+-define(TESTDICT, "../ebin/testdict.dict").
+
+
+get_fixture_gaddag() ->
+    case whereis(giant_bintrie) of
+        undefined -> ok;
+        _Else -> unregister(giant_bintrie)
+    end,
+    bin_trie:start_from_file(?TESTDICT),
+    bin_trie:get_root().  
+
+
+
 
 flip_horiz_test() ->
 	Board = place_word("ABLE", right, {7,7}, new_board()),
-	Gaddag = get_branch_from_string("ELBA", parse(?TESTDICT)),
+	Gaddag = get_branch_from_string("ELBA", get_fixture_gaddag()),
 	Tile = get_tile(7,6, Board),
 	Followstruct = make_followstruct(Tile, left, Gaddag, Board, new_move()),
 	Flipped = flip_followstruct(Followstruct, get_tile(7, 10, Board)),
@@ -59,7 +71,7 @@ flip_horiz_test() ->
 
 flip_vert_test() ->
 	Board = place_word("TAR", down, {7,7}, new_board()),
-	Gaddag = get_branch_from_string("RAT", parse(?TESTDICT)),
+	Gaddag = get_branch_from_string("RAT", get_fixture_gaddag()),
 	Tile = get_tile(6,7, Board),
 	Followstruct = make_followstruct(Tile, up, Gaddag, Board, new_move()),
 	Flipped = flip_followstruct(Followstruct, get_tile(9, 7, Board)),
@@ -74,7 +86,7 @@ flip_vert_test() ->
 
 flip_south_border_test() ->
 	Board = place_word("TANK", down, {12,1}, new_board()),
-	Gaddag = get_branch_from_string("KNAT", parse(?TESTDICT)),
+	Gaddag = get_branch_from_string("KNAT", get_fixture_gaddag()),
 	Tile = get_tile(11,1, Board),
 	Followstruct = make_followstruct(Tile, up, Gaddag, Board, new_move()),
 	?assertException(throw, try_to_flip_past_board_edge, flip_followstruct(Followstruct, get_tile(15, 1, Board))).
@@ -82,7 +94,7 @@ flip_south_border_test() ->
 
 next_test() ->
 	Board = place_word("ABLE", right, {7,7}, new_board()),
-	Gaddag = get_branch_from_string("ELBA", parse(?TESTDICT)),
+	Gaddag = get_branch_from_string("ELBA", get_fixture_gaddag()),
 	Tile = get_tile(7,6, Board),
 	Followstruct = make_followstruct(Tile, left, Gaddag, Board, new_move()),
 	{success, Moved, _} = next(Followstruct, $T, Gaddag),

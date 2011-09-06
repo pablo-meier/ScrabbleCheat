@@ -36,10 +36,13 @@ start_link() ->
     supervisor:start_link({local, ?SERVER}, ?MODULE, []).
 
 init([]) ->
+    %Dict = code:priv_dir(scrabblecheat) ++ "/twl06.dict",
+    Dict = "priv" ++ "/twl06.dict",
+
     Children = [{scrabblecheat_main, {scrabblecheat_main, start_link, []},
                 permanent, 2000, worker, [scrabblecheat_main]},
-                {gaddag_looper, {gaddag_looper, start_link, []},
-                permanent, 2000, worker, [scrabblecheat_main]}
+                {bin_trie, {bin_trie, start_link_from_file, [Dict]},
+                permanent, 2000, worker, [bin_trie]}
                 ],
     RestartStrategy = {one_for_all, 0, 1},
     {ok, {RestartStrategy, Children}}.
