@@ -42,7 +42,7 @@
 get_fixture_gaddag() ->
     case whereis(giant_bintrie) of
         undefined -> ok;
-        Else -> unregister(giant_bintrie)
+        _Else -> unregister(giant_bintrie)
     end,
     bin_trie:start_from_file(?TESTDICT),
     bin_trie:get_root(twl06).
@@ -331,21 +331,21 @@ perpendicular_rightside_test() ->
 
 %% this has been crashing in the client, worth automating
 able_zygote_test() ->
-	Search = movesearch:get_best_move_function(get_fixture_gaddag()),
+	Gaddag = get_fixture_gaddag(),
 	Board = place_word("ZYGOTE", right, {8,4}, place_word("ABLE", right, {7,8}, new_board())),
 	Rack = "PAULIE",
 
-    Moves = Search(Board, Rack),
+    Moves = movesearch:get_all_moves(Board, Rack, Gaddag),
     ?assert(lists:any(fun (X) -> move:duplicate_moves(X, {move, [{{character, $A}, none, {9,5}}]}) end, Moves)).
 
 
 %% this has been crashing in the client, worth automating
 sigma_perpendicular_test() ->
-	Search = movesearch:get_best_move_function(get_fixture_gaddag()),
+	Gaddag = get_fixture_gaddag(),
 	Board = place_word("ZYGOTE", right, {8,4}, place_word("ABLE", right, {7,8}, new_board())),
 	Rack = "SIGMA",
 
-    Moves = Search(Board, Rack),
+    Moves = movesearch:get_all_moves(Board, Rack, Gaddag),
     ForbiddenMove = {move, [{{character, $S}, none, {8, 10}},
                             {{character, $I}, none, {9,10}},
                             {{character, $G}, triple_letter_score, {10,10}},
@@ -361,7 +361,7 @@ sigma_perpendicular_test() ->
 
 %% Another incorrect move generation, from not checking neighbors in same plane.
 stigma_peps_test() ->
-   	Search = movesearch:get_best_move_function(get_fixture_gaddag()),
+	Gaddag = get_fixture_gaddag(),
    	LetterPlacements = [{"ABLE", right, {7,7}}, 
                         {"Z", down, {6,9}}, 
                         {"OTYS", down, {8,9}},
@@ -369,7 +369,7 @@ stigma_peps_test() ->
     FirstBoard = lists:foldl(fun ({Word, Dir, Loc}, Accum) -> place_word(Word, Dir, Loc, Accum) end, new_board(), LetterPlacements), 
     Rack = "SIGMAT",
 
-    Moves = Search(FirstBoard, Rack),
+    Moves = movesearch:get_all_moves(FirstBoard, Rack, Gaddag),
     ForbiddenMove = {move, [{{character, $S}, none, {8,3}},
                             {{character, $T}, double_letter_score, {8,4}},
                             {{character, $I}, none, {8,5}},
@@ -380,7 +380,7 @@ stigma_peps_test() ->
     ?assert(lists:all(fun (X) -> not move:duplicate_moves(X, ForbiddenMove) end, Moves)),
     
     NextBoard = place_word("MIR", down, {8,11}, place_word("AS", down, {12,11}, FirstBoard)),
-    NewMoves = Search(NextBoard, "SLTNPEP"), % Salt-n-Pepa's here!
+    NewMoves = movesearch:get_all_moves(NextBoard, "SLTNPEP", Gaddag), % Salt-n-Pepa's here!
     
     Forbidden2 = {move, [{{character, $P}, none, {4,11}},
                          {{character, $E}, none, {5,11}},
@@ -391,12 +391,12 @@ stigma_peps_test() ->
 
 
 island_1_test() ->
-   	Search = movesearch:get_best_move_function(get_fixture_gaddag()),
+	Gaddag = get_fixture_gaddag(),
 	PreBoard = place_word("BAS", down, {7,8}, place_word("TERM", right, {10,7}, new_board())),
 	Board = place_word("TRA", down, {7,10}, PreBoard),
 	Rack = "TARYO",
 
-    Moves = Search(Board, Rack),
+    Moves = movesearch:get_all_moves(Board, Rack, Gaddag),
     %% The word BAT, between BASE and TRAM
     Connected1 = {move, [{{character, $A}, double_letter_score, {7, 9}}]},
     %% The word TARRY, between BASE and TRAM
@@ -411,12 +411,12 @@ island_1_test() ->
 %% Bug where we forget to remove 'none' values after get_adjacent calls
 %% in finding zoomtiles for candidates.  Below is a case where it failed.
 candidate_on_edge_test() ->
-   	Search = movesearch:get_best_move_function(get_fixture_gaddag()),
+	Gaddag = get_fixture_gaddag(),
 	Board = place_word("AFOUL", down, {10,10}, new_board()),
 	Rack = "SLUANIQ",
 
     %% Should not throw error -- function clause, get_tile_letter, [none]
-    Search(Board, Rack).
+    movesearch:get_all_moves(Board, Rack, Gaddag).
    
 
 %% No Moves?
