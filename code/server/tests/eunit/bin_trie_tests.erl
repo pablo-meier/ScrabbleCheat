@@ -22,20 +22,20 @@
 -include_lib("eunit/include/eunit.hrl").
 
 -define(TEST_KEYS, [$A, $D, $E, $G, $Z]).
--define(TEST_BINTRIE, <<5,
+-define(TEST_BINTRIE, {ticket, <<5,
 						$A,21,00,00,00,
 						$D,32,00,00,00,
 						$E,43,00,00,00,
 						$G,54,00,00,00,
 						$Z,82,00,00,00,
-						255>>).
+						255>>, twl06}).
 
 start_gen_server() ->
     case whereis(giant_bintrie) of
         undefined -> ok;
         Else -> unregister(Else)
     end,
-    bin_trie:start().
+    bin_trie:start_with_file("../ebin/testdict.dict").
 
 end_gen_server() ->
     case whereis(giant_bintrie) of
@@ -67,7 +67,10 @@ erase_test() ->
     ?assert(bin_trie:is_key($L, Test) =:= false),
     WithoutL = bin_trie:erase($L, Test),
     ?assert(bin_trie:is_key($L, WithoutL) =:= false),
-    ?assert(byte_size(WithoutL) =:= byte_size(Test)),
+
+    {ticket, Bin, _} = WithoutL,
+    {ticket, ExpectedBin, _} = Test,
+    ?assert(byte_size(Bin) =:= byte_size(ExpectedBin)),
    
     ?assertException(throw, {out_of_trie_range, 300}, bin_trie:erase(300, Test)).
 
@@ -75,22 +78,3 @@ erase_test() ->
 fetch_keys_test() ->
     ?assert(?TEST_KEYS =:= bin_trie:fetch_keys(?TEST_BINTRIE)).
 
-
-%% Not doing the heavy lifting -- we let GADDAG functions test it.
-%% Ensure the testdict is in place!
-find_test() ->
-    start_gen_server(),
-
-%%    Children = [$A,$B,$C],
-%%
-%%    lists:foreach(fun(X) -> 
-%%                      ?assert(bin_trie:is_key(X, WithChildren)),
-%%                      Child = bin_trie:find(X, WithChildren)
-%%                  end, Children),
-%%
-%%    lists:foreach(fun(X) ->
-%%                      Child = bin_trie:find(X, WithChildren),
-%%                      ?assert(bin_trie:is_key($A, Child))
-%%                  end, Children),
-%%
-    end_gen_server().

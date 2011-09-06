@@ -89,7 +89,7 @@ build-parser:
 
 clean:
 	rm -f include/thrift_*.hrl include/scrabbleCheat_*.hrl 
-	rm -f ebin/gaddag_test.dict
+	rm -f ebin/*.dict
 	ruby tests/common_test/server_util.rb stopped
 	cd $(PARSER_PATH) && $(MAKE) clean
 	rm -rf $(RELEASE_DIR)

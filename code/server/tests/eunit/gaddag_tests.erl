@@ -24,7 +24,7 @@
 -define(TEMP_FILE_NAME, "../ebin/gaddag_test.dict").
 
 get_fixture_gaddag() ->
-    bin_trie:get_root().
+    bin_trie:get_root(twl06).
 setup() ->
     bin_trie:start_from_file(?TEMP_FILE_NAME).
 teardown() ->

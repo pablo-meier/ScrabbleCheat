@@ -1,4 +1,4 @@
-%a Copyright (c) 2010 Paul Meier
+%% Copyright (c) 2010 Paul Meier
 %% 
 %% Permission is hereby granted, free of charge, to any person obtaining a copy
 %% of this software and associated documentation files (the "Software"), to deal
@@ -25,7 +25,7 @@
          erase/2,
          find/2,
          fetch_keys/1,
-         get_root/0,
+         get_root/1,
          is_terminator/1]).
 
 
@@ -44,6 +44,9 @@
          start_link_from_file/1,
          start_from_file/1,
          start/0]).
+
+%% What we pass around are a binary tag, and the name of the game.
+-record(ticket, {bin, name}).
 
 
 %% The motivation for this module is a response to a number of memory-related
@@ -92,22 +95,19 @@
 %%    structure.
 %%  * The after this, we have an 8-bit byte that is either uint8_t MAX_VALUE
 %%    or 0, representing whether this node is a terminator or not.
-%%  * The final value is an unsigned 32-bit number that is a reference to this
-%%    node in the trie. This is more an artifact of the first binary protocol
-%%    I'd defined -- it's unlikely it's still necessary.
 %%
 %% Note that this module has both the gen_server that keeps the global state,
 %% and the bin_trie methods to access its data.
 
 
--type bintrie() :: binary().
+-type bintrie() :: {binary(), atom()}.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% TRIE INTERFACE
 
 %% Returns true if the BinTrie points to a branch at the keyed value.
 -spec is_key(char(), bintrie()) -> boolean().
-is_key(Key, BinTrie) ->
+is_key(Key, #ticket{bin = BinTrie, name = _DictName}) ->
     case is_valid_key(Key) of
         true ->
             Keys = keys(BinTrie),
@@ -120,7 +120,7 @@ is_key(Key, BinTrie) ->
 %% Returns a version of this bintrie() with the key 'erased,' meaning we
 %% null out the values to zero.
 -spec erase(char(), bintrie()) -> bintrie().
-erase(Key, BinTrie) ->
+erase(Key, #ticket{bin = BinTrie, name = DictName}) ->
     case is_valid_key(Key) of
         true ->
             Without = lists:filter(fun ({K,_}) -> K =/= Key end, keys(BinTrie)),
@@ -129,9 +129,10 @@ erase(Key, BinTrie) ->
             %% we subtract by 1 because we just erased a key...
             Size = nodesize_bin(BinTrie) - 1, 
             IsTerminator = is_terminator_bin(BinTrie),
-            <<Size:8/little-unsigned-integer, 
-              AsBinKeys/binary, 
-              IsTerminator:8/little-unsigned-integer>>;
+            NewBin = <<Size:8/little-unsigned-integer, 
+                       AsBinKeys/binary, 
+                       IsTerminator:8/little-unsigned-integer>>,
+            {ticket, NewBin, DictName};
         false ->
             throw({out_of_trie_range, Key})
     end.
@@ -139,13 +140,14 @@ erase(Key, BinTrie) ->
 
 %% Given a key and a bintrie, returns the link if it has one.
 -spec find(char(), bintrie()) -> {ok, bintrie()} | none.
-find(Key, BinTrie) ->
+find(Key, #ticket{bin = BinTrie, name = DictName}) ->
     Keys = keys(BinTrie),
     Ret = lists:filter(fun ({K,_}) -> K =:= Key end, Keys),
     case Ret of
         [] -> {branch_not_found, Key};
         [{Key, Offset}] ->
-            from_master_offset(Offset);
+            NewBin = from_master_offset(Offset, DictName),
+            {ticket, NewBin, DictName};
         Else ->
             throw({multiple_instances_of_key, Key, Else})
     end.
@@ -153,34 +155,59 @@ find(Key, BinTrie) ->
 
 %% Fetches a list of keys the Bintrie has.
 -spec fetch_keys(bintrie()) -> list(char()).
-fetch_keys(BinTrie) ->
+fetch_keys(#ticket{bin = BinTrie, name = _DictName}) ->
     Keys = keys(BinTrie),
     lists:map(fun ({K,_}) -> K end, Keys).
 
 %% Fetches the root node.
--spec get_root() -> binary().
-get_root() ->
-    from_master_offset(0).
+-spec get_root(atom()) -> binary().
+get_root(DictName) ->
+    Binary = from_master_offset(0, DictName),
+    {ticket, Binary, DictName}.
+
+
+-spec is_terminator(bintrie()) -> boolean().
+is_terminator(#ticket{bin = BinTrie, name = _DictName}) ->
+    Value = is_terminator_bin(BinTrie),
+    Value =/= 0.
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% STARTING/STOPPING 
+make_state() ->
+    Games = [twl06, sowpods, zynga],
+    Storage = orddict:new(),
+
+    lists:foldl( fun (DictName, CurrStorage) ->
+               
+                     %%DictFile = lists:concat([code:priv_dir(scrabblecheat), DictName, ".dict"]),
+                     DictFile = lists:concat(["priv/", DictName, ".dict"]),
+                     {ok, Gaddag} = file:read_file(DictFile),
+                     orddict:store(DictName, Gaddag, CurrStorage)
+
+                 end, Storage, Games).
+
 
 start_link() ->
-    gen_server:start_link({local, giant_bintrie}, ?MODULE, [], []).
+    State = make_state(),
+    gen_server:start_link({local, giant_bintrie}, ?MODULE, State, []).
 
 start() ->
-    gen_server:start({local, giant_bintrie}, ?MODULE, [], []).
+    State = make_state(),
+    gen_server:start({local, giant_bintrie}, ?MODULE, State, []).
 
 
 %% Lets you start the GADDAG looper with a pre-made bintrie -- lets us only need
 %% to build it once.
 start_link_from_file(Filename) ->
-    {ok, State} = file:read_file(Filename),
-    gen_server:start_link({local, giant_bintrie}, ?MODULE, [State], []).
+    {ok, Binary} = file:read_file(Filename),
+    State = orddict:store(twl06, Binary, orddict:new()),
+    gen_server:start_link({local, giant_bintrie}, ?MODULE, State, []).
 
 start_from_file(Filename) ->
-    {ok, State} = file:read_file(Filename),
-    gen_server:start({local, giant_bintrie}, ?MODULE, [State], []).
+    {ok, Binary} = file:read_file(Filename),
+    State = orddict:store(twl06, Binary, orddict:new()),
+    gen_server:start({local, giant_bintrie}, ?MODULE, State, []).
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -188,20 +215,15 @@ start_from_file(Filename) ->
 
 %% init :: [Args] -> {ok, State} | {stop, Reason}
 init(Args) ->
-    case length(Args) of
-        1 -> 
-            State = hd(Args),
-            {ok, State};
-        _Else -> throw({wrong_number_of_arguments, Args})
-    end.
-
+    {ok, Args}.
 
 %% fetch :: char() * bintrie() -> bintrie()
 %%
 %% Given a key, fetches the associated BinTrie using it's data as an offset.
-handle_call({fetch, Offset}, _From, State) ->
-    Size = binary:at(State, Offset),
-    Return = binary:part(State, {Offset, (Size * 5) + 2}),
+handle_call({fetch, Offset, DictName}, _From, State) ->
+    {ok, Gaddag} = orddict:find(DictName, State),
+    Size = binary:at(Gaddag, Offset),
+    Return = binary:part(Gaddag, {Offset, (Size * 5) + 2}),
     {reply, {ok, Return}, State}.
 
 %% We don't really need the rest of the OTP interface...
@@ -222,9 +244,9 @@ code_change(_PreviousVersion, _State, _Extra) ->
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% HELPERS
 
--spec from_master_offset(number()) -> bintrie().
-from_master_offset(Offset) ->
-    {ok, Node} = gen_server:call(giant_bintrie, {fetch, Offset}),
+-spec from_master_offset(number(), atom()) -> bintrie().
+from_master_offset(Offset, DictName) ->
+    {ok, Node} = gen_server:call(giant_bintrie, {fetch, Offset, DictName}),
     Node.
 
 
@@ -255,11 +277,6 @@ extend_to_32_bits(Bin) when byte_size(Bin) < 4 ->
     extend_to_32_bits(<<Bin/binary, 0>>);
 extend_to_32_bits(Bin) ->
     throw({extending_too_large_value, Bin}).
-
-
-is_terminator(BinTrie) ->
-    Value = is_terminator_bin(BinTrie),
-    Value =/= 0.
 
 
 

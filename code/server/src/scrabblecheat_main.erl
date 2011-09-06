@@ -71,7 +71,6 @@ start_link() ->
 start_link(Port) ->
     io:format(user, "Scrabblecheat Server starting...~n", []),
     initialize_gameinfos(),
-    io:format(user, "made gameinfos~n", []),
 
     Handler = ?MODULE,
     thrift_socket_server:start([{handler, Handler},
@@ -94,6 +93,7 @@ initialize_gameinfos() ->
 
     GameInfos = lists:map(fun (X) -> {X, game_parser:parse_game(X)} end, 
                           [scrabble, lexulous, words_with_friends]),
+    %% lists:foreach(fun (X) -> io:format(user, "~p~n", [X]) end, GameInfos),
     ets:new(gameinfos, [set, protected, named_table, {keypos, 1}]),
     lists:foreach(fun(X) -> ets:insert(gameinfos, X) end, GameInfos).
 
@@ -235,7 +235,8 @@ get_scrabblecheat_suggestions(Rack, Board, ThriftName, ThriftDict) ->
     NativeBoard = thrift_helper:thrift_to_native_board(Board),
     verify_board(NativeBoard, Dict),
 
-    Moves = search_for_moves(NativeBoard, RackAsString, Dict),
+    Gaddag = bin_trie:get_root(Dict),
+    Moves = movesearch:get_all_moves(NativeBoard, RackAsString, Gaddag),
 
     WithScores = lists:map(fun (X) -> {X, move:score(X, NativeBoard, GameName)} end, Moves),
     Sorted = lists:reverse(lists:keysort(2, WithScores)),
@@ -252,27 +253,6 @@ get_scrabblecheat_suggestions(Rack, Board, ThriftName, ThriftDict) ->
 quit() ->
     debug("Quit message received.~n", []),
     ok.
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%  SYNCHRONOUS CALLS TO GEN_SERVER 
-
-
-verify_gamestate(_GS) ->
-    ok.
-%%    gen_server:call(gaddag_looper, {verify_gamestate, GS}).
-
-verify_move(_Move, _Gamestate) ->
-    ok.
-%%    gen_server:call(gaddag_looper, {verify_move, Move, Gamestate}).
-
-verify_board(_Board, _Dict) ->
-    ok.
-%%    gen_server:call(gaddag_looper, {verify_board, Board, Dict}).
-
-search_for_moves(_Board, _Rack, _Dict) ->
-    ok.
-%%    gen_server:call(gaddag_looper, {search_for_moves, Board, Rack, Dict}).
 
 
 
@@ -343,4 +323,46 @@ validate_pairing(GameName, Dict) ->
             throw({badArgsException, "Invalid Dictionary for the game you are playing."}) 
      end.
 
+
+verify_gamestate(GS) ->
+    try 
+        Board = gamestate:get_gamestate_board(GS),
+        Dict = gamestate:get_gamestate_dict(GS),
+
+        %% find the proper Gaddag...
+        Gaddag = bin_trie:get_root(Dict),
+        board:verify(Board, Gaddag),
+        ok
+    catch
+        throw:{_,_} -> {error, "The gamestate has a bad board"}
+    end.
+
+
+verify_move(Move, Gamestate) ->
+    Tiles = move:get_move_tiles(Move),
+    Board = gamestate:get_gamestate_board(Gamestate),
+    Dict = gamestate:get_gamestate_dict(Gamestate),
+    case Tiles of
+        [] -> {error, "The move is empty!"};
+        _Else ->
+            WithMove = board:place_move_on_board(Move, Board),
+            try
+                Gaddag = bin_trie:get_root(Dict),
+                board:verify(WithMove, Gaddag),
+                ok
+            catch
+                {badArgsException, _} -> 
+                    {error, "Not a valid move for this board"}
+            end
+    end.
+
+
+verify_board(Board, Dict) ->
+    Gaddag = bin_trie:get_root(Dict),
+    try
+        board:verify(Board, Gaddag),
+        ok
+    catch
+        throw:_ -> {error, "Not a valid board"}
+    end.
 

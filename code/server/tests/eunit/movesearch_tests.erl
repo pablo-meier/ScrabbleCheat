@@ -45,7 +45,7 @@ get_fixture_gaddag() ->
         Else -> unregister(giant_bintrie)
     end,
     bin_trie:start_from_file(?TESTDICT),
-    bin_trie:get_root().  
+    bin_trie:get_root(twl06).
 
 
 
