@@ -42,7 +42,9 @@ init([]) ->
     Children = [{scrabblecheat_main, {scrabblecheat_main, start_link, []},
                 permanent, 2000, worker, [scrabblecheat_main]},
                 {bin_trie, {bin_trie, start_link, []},
-                permanent, 2000, worker, [bin_trie]}
+                permanent, 2000, worker, [bin_trie]},
+                {gameinfo, {gameinfo, start_link, []},
+                permanent, 2000, worker, [gameinfo]}
                 ],
     RestartStrategy = {one_for_all, 0, 1},
     {ok, {RestartStrategy, Children}}.

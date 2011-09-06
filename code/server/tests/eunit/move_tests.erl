@@ -30,7 +30,22 @@
 -import(board, [place_word/4]).
 -import(game_parser, [new_board/0]).
 
+
+setup() ->
+    case whereis(gameinfos) of
+        undefined -> ok;
+        Else -> unregister(gameinfos)
+    end,
+ 
+    NamePaths = [{scrabble, "../priv/games/scrabble/"},
+                 {lexulous, "../priv/games/lexulous/"},
+                 {words_with_friends, "../priv/games/words_with_friends/"}],
+    gameinfo:start_from_paths(NamePaths).
+
+
 duplicate_move_1_test() ->
+	setup(),
+
 	Move1 = {move, [{{character, 67}, none, {6,7}},
 					{{character, 82}, none, {6,10}},
 					{{character, 91}, none, {6,11}}]},
@@ -58,8 +73,11 @@ duplicate_move_1_test() ->
 	?assert(duplicate_moves(Move3, Move4) =:= false),
 	?assert(duplicate_moves(Move4, Move1) =:= false),
 	?assert(duplicate_moves(Move4, AlsoMove4)).
+	
 
 score_simple_test() ->
+	setup(),
+
 	Tiles = [{{character, $A}, double_letter_score, {7,7}}, 
 			{{character, $B}, none, {7,8}},
 			{{character, $L}, double_letter_score, {7,9}},
@@ -69,17 +87,24 @@ score_simple_test() ->
 	io:format("Score is ~p~n", [Score]),
 	?assert(Score =:= 8).
 
+
 score_isolated_bonus_test() ->
+	setup(),
+
 	Tiles = [{{character, $A}, none, {8,7}}, 
 			{{character, $B}, double_word_score, {8,8}},
 			{{character, $L}, none, {8,9}},
 			{{character, $E}, none, {8,10}}],
 	Move = foldl(fun move:add_to_move/2, new_move(), Tiles), 
-	Score = score(Move, new_board(), score),
+	Score = score(Move, new_board(), scrabble),
 	io:format("Score is ~p~n", [Score]),
 	?assert(Score =:= 12).
 
+
+
 score_parallel_test() ->
+	setup(),
+
 	Tiles = [{{character, $A}, triple_letter_score, {6,6}}, 
 			{{character, $A}, none, {6,7}}],
 	Move = foldl(fun move:add_to_move/2, new_move(), Tiles),
@@ -87,9 +112,12 @@ score_parallel_test() ->
 	io:format("Score is ~p~n", [Score]),
 	?assert(Score =:= 12).
 	
+	
 
 %% Should add 50 for a bingo.  Here we use AMEERATE, latching onto ABLE
 score_bingos_test() ->
+	setup(),
+
     Tiles = [{{character, $A}, none, {8,2}},
 			 {{character, $M}, none, {8,3}},
 			 {{character, $E}, double_letter_score, {8,4}},
@@ -98,13 +126,16 @@ score_bingos_test() ->
 			 {{character, $A}, none, {8,7}},
 			 {{character, $T}, double_word_score, {8,8}}],
 	Move = foldl(fun move:add_to_move/2, new_move(), Tiles),
-	Score = score(Move, place_word("ABLE", down, {5,9}, new_board()), score),
+	Score = score(Move, place_word("ABLE", down, {5,9}, new_board()), scrabble),
 	io:format("Score is ~p~n", [Score]),
 	% 2(1 + 3 + 2 + 1 + 1 + 1 + 1 + 1) = 22
 	?assert(Score =:= 72).
+	
 
 
 score_along_wall_test() ->
+    setup(),
+  
 	Tiles = [{{character, $E}, triple_word_score, {15,15}}, 
 			{{character, $L}, none, {15,14}},
 			{{character, $B}, none, {15,13}},
@@ -113,9 +144,12 @@ score_along_wall_test() ->
 	Score = score(Move, new_board(), scrabble),
 	io:format("Score is ~p~n", [Score]),
 	?assert(Score =:= 18).
+	
 
 	
 score_parallel_many_bonuses_test() ->
+    setup(),
+
 	Tiles = [{{character, $Z}, none, {8,3}}, 
 			{{character, $Y}, double_letter_score, {8,4}},
 			{{character, $G}, none, {8,5}},
@@ -126,4 +160,5 @@ score_parallel_many_bonuses_test() ->
 	Score = score(Move, place_word("ABLE", right, {7,7}, new_board()), scrabble),
 	io:format("Score is ~p~n", [Score]),
 	?assert(Score =:= 56).
+	
 

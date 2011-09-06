@@ -50,11 +50,6 @@
          get_scrabblecheat_suggestions/4,
          quit/0]).
 
-%% SUPPORT API
--export([get_gameinfo/1]).
-         
-
-
 
 %% start_link :: () -> ()
 %%
@@ -70,7 +65,6 @@ start_link() ->
 %% top-level data (reading Gameinfos, making score functions) as necessary.
 start_link(Port) ->
     io:format(user, "Scrabblecheat Server starting...~n", []),
-    initialize_gameinfos(),
 
     Handler = ?MODULE,
     thrift_socket_server:start([{handler, Handler},
@@ -80,40 +74,12 @@ start_link(Port) ->
                                 {name, scrabbleCheat_server}]).
 
 
-%% configure_global_data :: () -> ()
-%% 
-%% Sets up the ETS tables for fetching the various bits of data, such as
-%% parsed Gameinfos.
-%%
-%%       gameinfos -> {game(), GameInfo}
-%%
-%% where
-%%         game() = scrabble | words_with_friends | lexulous
-initialize_gameinfos() ->
-
-    GameInfos = lists:map(fun (X) -> {X, game_parser:parse_game(X)} end, 
-                          [scrabble, lexulous, words_with_friends]),
-    %% lists:foreach(fun (X) -> io:format(user, "~p~n", [X]) end, GameInfos),
-    ets:new(gameinfos, [set, protected, named_table, {keypos, 1}]),
-    lists:foreach(fun(X) -> ets:insert(gameinfos, X) end, GameInfos).
-
-
-%% get_gameinfo :: gamename() -> GameInfo
-%%
-%% Given a Game name, returns the struct of data for that associated game.
-get_gameinfo(GameName) ->
-    Value = ets:lookup(gameinfos, GameName),
-    [{GameName, GameInfo}] = Value,
-    GameInfo.
-
-
 %% EXTERNAL INTERFACE
 
 %% stop :: (or Name Pid) -> ()
 %%
 %% Stops the server named by the parameter, or its Pid.
 stop(Server) ->
-    ets:delete(gameinfos),
     thrift_socket_server:stop(Server).
 
 %% THRIFT INTERFACE 
@@ -314,7 +280,7 @@ validate_length(Name) ->
 %% with a disallowed pairing of game and dictionary, e.g. words_with_friends on
 %% twl06.
 validate_pairing(GameName, Dict) ->
-    Gameinfo = get_gameinfo(GameName),
+    Gameinfo = gameinfo:get_gameinfo(GameName),
     AllowedDicts = Gameinfo#gameinfo.allowed_dicts,
     Allowed = lists:any(fun (X) -> X =:= Dict end, AllowedDicts),
     case Allowed of

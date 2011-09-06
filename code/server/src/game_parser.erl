@@ -22,7 +22,6 @@
 
 -export([parse_game/1, 
          parse_game_body/2,
-         default_dictionary/1,
          new_board/0]).
 
 -include("gameinfo.hrl").
@@ -52,16 +51,6 @@ parse_game(GameName) ->
 %%    GameInfoDir = lists:concat([code:priv_dir(scrabblecheat), "/games/", GameName, '/']),
     GameInfoDir = lists:concat(["priv/games/", GameName, '/']),
     parse_game_body(GameName, GameInfoDir).
-
-
-%% default_dictionary :: gamename() -> dict()
-%%
-%% Given a game name, retrieve the name of that game's default dictionary.
-%% NOTE: If we ever make gameinfo it's own proper datatype, we should move this 
-%% function to that module.
-default_dictionary(Game) ->
-    GameInfo = parse_game(Game),
-    hd(GameInfo#gameinfo.allowed_dicts).
 
 
 %% Separated out to aid in testing, with our unit tests. Provide a hard-coded 

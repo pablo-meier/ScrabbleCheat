@@ -92,7 +92,7 @@ check_integrity(Row, Col) ->
 %% function in Erlang are balls.  You'd have to Y-Combinator that shit up.  What I'd
 %% do for a letrec.
 score(Move, Board, GameName) ->
-    GameInfo = scrabblecheat_main:get_gameinfo(GameName),
+    GameInfo = gameinfo:get_gameinfo(GameName),
     ScoreDist = GameInfo#gameinfo.scoredist,
     ScoreFun = dict_as_function(ScoreDist),
 

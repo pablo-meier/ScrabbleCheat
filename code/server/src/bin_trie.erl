@@ -174,6 +174,7 @@ is_terminator(#ticket{bin = BinTrie, name = _DictName}) ->
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% STARTING/STOPPING 
+
 make_state() ->
     Games = [twl06, sowpods, zynga],
     Storage = orddict:new(),
@@ -197,8 +198,9 @@ start() ->
     gen_server:start({local, giant_bintrie}, ?MODULE, State, []).
 
 
-%% Lets you start the GADDAG looper with a pre-made bintrie -- lets us only need
-%% to build it once.
+%% These methods allow one to specify a filename from which to load, rather than
+%% doing it dynamically with code. This is only really useful for unit testing, 
+%% since code:priv_dir doesn't resolve unless you package a release.
 start_link_from_file(Filename) ->
     {ok, Binary} = file:read_file(Filename),
     State = orddict:store(twl06, Binary, orddict:new()),
