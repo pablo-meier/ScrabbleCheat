@@ -181,8 +181,7 @@ make_state() ->
 
     lists:foldl( fun (DictName, CurrStorage) ->
                
-                     %%DictFile = lists:concat([code:priv_dir(scrabblecheat), DictName, ".dict"]),
-                     DictFile = lists:concat(["priv/", DictName, ".dict"]),
+                     DictFile = lists:concat([code:priv_dir(scrabblecheat), DictName, ".dict"]),
                      {ok, Gaddag} = file:read_file(DictFile),
                      orddict:store(DictName, Gaddag, CurrStorage)
 

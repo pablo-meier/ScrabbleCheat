@@ -36,8 +36,6 @@ start_link() ->
     supervisor:start_link({local, ?SERVER}, ?MODULE, []).
 
 init([]) ->
-    %Dict = code:priv_dir(scrabblecheat) ++ "/twl06.dict",
-    Dict = "priv" ++ "/twl06.dict",
 
     Children = [{scrabblecheat_main, {scrabblecheat_main, start_link, []},
                 permanent, 2000, worker, [scrabblecheat_main]},

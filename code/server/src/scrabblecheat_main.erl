@@ -22,8 +22,6 @@
 
 -include("gameinfo.hrl").
 
--define(DICT_PATH, "priv/").
-
 -define(WILDCARD, $*).
 -define(SMALLEST_ASCII_CHARACTER, 33).
 -define(LARGEST_ASCII_CHARACTER, 126).

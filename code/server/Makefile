@@ -81,8 +81,8 @@ compile: thrift-generate
 	rebar compile
 
 binary-gaddag: build-parser
-	[ -f $(DICTS)/twl06.dict ] || $(PARSER) $(DICTS)/twl06.txt $(DICTS)/zynga.txt $(DICTS)/sowpods.txt
-	mv $(DICTS)/*.dict priv/
+	[ -f priv/twl06.dict ] || $(PARSER) $(DICTS)/twl06.txt $(DICTS)/zynga.txt $(DICTS)/sowpods.txt
+	[ -f priv/twl06.dict ] || mv $(DICTS)/*.dict priv/
 
 build-parser:
 	cd $(PARSER_PATH) && $(MAKE) compile
@@ -96,5 +96,5 @@ clean:
 	rm -rf $(SC_APP)
 	rm -rf .common_test test.spec tests/common_test/*.beam
 	# rm -f priv/*.dict
-	rebar clean || 0
+	rebar clean || echo "clean"
 

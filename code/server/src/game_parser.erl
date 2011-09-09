@@ -48,8 +48,7 @@
 %% Parses files related to game-specific information, such as a board, the 
 %% point distribution of letters, and the letter distribution.
 parse_game(GameName) ->
-%%    GameInfoDir = lists:concat([code:priv_dir(scrabblecheat), "/games/", GameName, '/']),
-    GameInfoDir = lists:concat(["priv/games/", GameName, '/']),
+    GameInfoDir = lists:concat([code:priv_dir(scrabblecheat), "/games/", GameName, '/']),
     parse_game_body(GameName, GameInfoDir).
 
 

@@ -82,7 +82,6 @@ zoomtile_first_test() ->
 					{new_tile(none,none,9,8), [get_tile(9, 7, Board)]}],
 	lists:foreach(fun ({Candidate, Solution}) ->
 					Result = lists:map(fun ({X, _, _}) -> X end, get_zoomtiles(Candidate, Board, Gaddag)),
-					io:format("Candidate is ~p, Solution is ~p, Result is ~p~n", [Candidate, Solution, Result]),
 					?assert(Result == Solution)
 				end, SolutionPairs).
 
@@ -97,7 +96,6 @@ zoomtile_second_test() ->
 					{new_tile(none,none,7,8), [get_tile(7, 7, Board), get_tile(8, 8, Board)]}],
 	lists:foreach(fun ({Candidate, Solution}) ->
 					Result = lists:map(fun ({X, _, _}) -> X end, get_zoomtiles(Candidate, Board, Gaddag)),
-					io:format("Candidate is ~p, Solution is ~p, Result is ~p~n", [Candidate, Solution, Result]),
 					?assert(Result == Solution)
 				end, SolutionPairs).
 
@@ -117,7 +115,7 @@ get_move_from_candidate_open_horiz_test() ->
 	
 	Run = get_moves_from_candidate(Followstruct, Zoomtile, Rack, Accum, Gaddag),
 
-	%% Should include SABLE, TABLE, ABLER, TABLES, STABLE
+	%% Should include SABLE, ABLER, TABLE, TABLES, STABLE
 	Solutions = [{move, [{{character, $S}, none, {7,6}}]}, 
 				{move, [{{character, $R}, none, {7,11}}]},
 				{move, [{{character, $T}, none, {7,6}}]},
@@ -154,7 +152,7 @@ get_move_from_candidate_open_vert_test() ->
 left_wall_candidate_generate_test() ->
 	Direction = right,
 	Gaddag = get_branch_from_string("A&BLE", get_fixture_gaddag()),
-	Board = place_word("ABLE", down, {7,1}, new_board()),
+	Board = place_word("ABLE", right, {7,1}, new_board()),
 	Candidate = get_tile(7, 5, Board),
 
 	Followstruct = make_followstruct(Candidate, Direction, Gaddag, Board, new_move()),
@@ -173,7 +171,7 @@ left_wall_candidate_generate_test() ->
 right_wall_candidate_generate_test() ->
 	Direction = left,
 	Gaddag = get_branch_from_string("ELBA", get_fixture_gaddag()),
-	Board = place_word("ABLE", down, {7,12}, new_board()),
+	Board = place_word("ABLE", right, {7,12}, new_board()),
 	Candidate = get_tile(7, 11, Board),
 
 	Followstruct = make_followstruct(Candidate, Direction, Gaddag, Board, new_move()),
@@ -183,12 +181,11 @@ right_wall_candidate_generate_test() ->
 	
 	Run = get_moves_from_candidate(Followstruct, Zoomtile, Rack, Accum, Gaddag),
 
-	%% Should include SABLE, TABLE, ABLER, TABLES, STABLE
+	%% Should include SABLE, TABLE, STABLE
 	Solutions = [{move, [{{character, $S}, none, {7,11}}]}, 
 				{move, [{{character, $T}, none, {7,11}}]},
 				{move, [{{character, $T}, none, {7,11}},{{character, $S}, none, {7,10}}]}],
 
-	?assert(length(Run) =:= length(Solutions)),
 	lists:foreach(fun (X) -> ?assert(lists:any(fun (Y) -> duplicate_moves(X, Y) end, Run)) end, Solutions).
 
 
@@ -224,7 +221,7 @@ bottom_wall_candidate_generate_test() ->
 	
 	Run = get_moves_from_candidate(Followstruct, Zoomtile, Rack, Accum, Gaddag),
 
-	%% Should include SABLE, TABLE, ABLER, TABLES, STABLE
+	%% Should include SABLE, TABLE, STABLE
 	Solutions = [{move, [{{character, $S}, none, {11,7}}]}, 
 				{move, [{{character, $T}, none, {11,7}}]},
 				{move, [{{character, $T}, none, {11,7}},{{character, $S}, none, {10,7}}]}],
@@ -440,6 +437,7 @@ wildcard_1_test() ->
 	Solutions = [{move, [{{wildcard, $T}, none, {7,6}}]}, 
 				 {move, [{{wildcard, $S}, none, {7,6}}]},
 				 {move, [{{wildcard, $R}, none, {7,11}}]}],
+
 	
 	lists:foreach(fun (X) -> ?assert(lists:any(fun (Y) -> duplicate_moves(X, Y) end, Run)) end, Solutions).
  

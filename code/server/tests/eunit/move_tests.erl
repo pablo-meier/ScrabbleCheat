@@ -34,7 +34,7 @@
 setup() ->
     case whereis(gameinfos) of
         undefined -> ok;
-        Else -> unregister(gameinfos)
+        _Else -> unregister(gameinfos)
     end,
  
     NamePaths = [{scrabble, "../priv/games/scrabble/"},

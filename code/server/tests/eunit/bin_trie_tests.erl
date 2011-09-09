@@ -29,20 +29,6 @@
 						$Z,82,00,00,00,
 						255>>, twl06}).
 
-start_gen_server() ->
-    case whereis(giant_bintrie) of
-        undefined -> ok;
-        Else -> unregister(giant_bintrie)
-    end,
-    bin_trie:start_with_file("../ebin/testdict.dict").
-
-end_gen_server() ->
-    case whereis(giant_bintrie) of
-        undefined -> ok;
-        Else -> unregister(giant_bintrie),
-                exit(Else, "Test finished")
-    end.
-
 is_key_test() ->
     Test = ?TEST_BINTRIE,
     ?assert(bin_trie:is_key($A, Test)),

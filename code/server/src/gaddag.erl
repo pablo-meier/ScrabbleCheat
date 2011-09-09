@@ -104,7 +104,13 @@ naive_path_search([FirstChar|Rest], Gaddag) ->
 %%
 %% Determines whether or not a word can end on this sub-GADDAG.
 is_terminator(Gaddag) ->
-	bin_trie:is_terminator(Gaddag).
+    ThisNodeTerminator = bin_trie:is_terminator(Gaddag),
+	case has_branch(?SEPARATOR, Gaddag) of
+	    false -> ThisNodeTerminator;
+	    true ->
+	        {branch, Past} = get_branch(?SEPARATOR, Gaddag),
+	        bin_trie:is_terminator(Past) orelse ThisNodeTerminator
+	end.
 
 
 
