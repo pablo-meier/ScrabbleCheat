@@ -176,16 +176,14 @@ is_terminator(#ticket{bin = BinTrie, name = _DictName}) ->
 %% STARTING/STOPPING 
 
 make_state() ->
-    Games = [twl06, sowpods, zynga],
+    Dicts = [twl06, sowpods, zynga],
     Storage = orddict:new(),
 
     lists:foldl( fun (DictName, CurrStorage) ->
-               
-                     DictFile = lists:concat([code:priv_dir(scrabblecheat), DictName, ".dict"]),
+                     DictFile = lists:concat([code:priv_dir(scrabblecheat), '/' , DictName, ".dict"]),
                      {ok, Gaddag} = file:read_file(DictFile),
                      orddict:store(DictName, Gaddag, CurrStorage)
-
-                 end, Storage, Games).
+                 end, Storage, Dicts).
 
 
 start_link() ->

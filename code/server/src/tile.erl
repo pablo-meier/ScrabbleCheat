@@ -34,7 +34,8 @@
          set_tile_bonus/2,
          set_tile_location/2,
          is_wildcard/1,
-         is_occupied/1]).
+         is_occupied/1,
+         belongs_to_board/2]).
 
 %% Datatype for a tile, which is what the board is composed of. Keeps track of 
 %% bonuses, and which letter is where.  
@@ -89,3 +90,12 @@ print_tile_skeleton(Letter, Bonus) ->
         double_letter_score -> io:format("_~s_", [[Letter]]);
         _false -> uh_oh
     end.
+
+
+belongs_to_board(Tile, Board) ->
+    Bonus = get_tile_bonus(Tile),
+    {Row, Col} = get_tile_location(Tile),
+    BoardTile = board:get_tile(Row, Col, Board),
+
+    Bonus =:= get_tile_bonus(BoardTile).
+

@@ -63,7 +63,6 @@ start_link() ->
 %% top-level data (reading Gameinfos, making score functions) as necessary.
 start_link(Port) ->
     io:format(user, "Scrabblecheat Server starting...~n", []),
-
     Handler = ?MODULE,
     thrift_socket_server:start([{handler, Handler},
                                 {service, scrabbleCheat_thrift},
@@ -156,30 +155,20 @@ play_move(ThriftTiles, ThriftGamestate) ->
     try
         Tiles = lists:map(fun thrift_helper:thrift_to_native_tile/1, ThriftTiles),
         Gamestate = thrift_helper:thrift_to_gamestate(ThriftGamestate),
-        io:format(user, "calling verify_gamestate", []),
-        case verify_gamestate(Gamestate) of
-            gamestate_ok -> ok;
-            {error, Reason} -> io:format(user, "play_move failed: ~p~n", [Reason]);
-            Other -> io:format(user, "unexpected response: ~p~n", [Other]) 
-        end,
+        verify_gamestate(Gamestate),
     
         Move = move:from_list(Tiles),
-        case verify_move(Move, Gamestate) of
-            move_ok -> ok;
-            {error, Reason2} -> io:format(user, "play_move failed: ~p~n", [Reason2]);
-            Other2 -> io:format(user, "unexpected response: ~p~n", [Other2]) 
-        end,
+        verify_move(Move, Gamestate),
+            
         WithMove = gamestate:play_move(Gamestate, Move),
 
-        case verify_gamestate(WithMove) of
-            gamestate_ok -> ok;
-            {error, Reason3} -> io:format(user, "play_move failed: ~p~n", [Reason3]);
-            Other3 -> io:format(user, "unexpected response: ~p~n", [Other3]) 
-        end,
+        verify_gamestate(WithMove),
         thrift_helper:gamestate_to_thrift(WithMove)
     catch
-        throw:{not_valid_thrift_game, _} -> throw({badArgs, "Game name in Gamestate is invalid."});
-        throw:{not_valid_thrift_dictionary, _} -> throw({badArgs, "Dictionary in Gamestate invalid."})
+        throw:{not_valid_thrift_game, _} -> 
+            throw({badArgsException, "Game name in Gamestate is invalid."});
+        throw:{not_valid_thrift_dictionary, _} -> 
+            throw({badArgsException, "Dictionary in Gamestate invalid."})
     end.
 
 
@@ -197,9 +186,9 @@ get_scrabblecheat_suggestions(Rack, Board, ThriftName, ThriftDict) ->
     verify_rack(RackAsString, GameName),
 
     NativeBoard = thrift_helper:thrift_to_native_board(Board),
-    verify_board(NativeBoard, Dict),
-
     Gaddag = bin_trie:get_root(Dict),
+
+    board:verify(NativeBoard, Gaddag),
     Moves = movesearch:get_all_moves(NativeBoard, RackAsString, Gaddag),
 
     WithScores = lists:map(fun (X) -> {X, move:score(X, NativeBoard, GameName)} end, Moves),
@@ -306,27 +295,23 @@ verify_move(Move, Gamestate) ->
     Tiles = move:get_move_tiles(Move),
     Board = gamestate:get_gamestate_board(Gamestate),
     Dict = gamestate:get_gamestate_dict(Gamestate),
+
+    case lists:all(fun(X) -> tile:belongs_to_board(X, Board) end, Tiles) of
+        false -> throw({badArgsException, <<"Move contains incorrect bonuses on tiles.">>});
+        _True -> ok
+    end,
+
     case Tiles of
         [] -> {error, "The move is empty!"};
         _Else ->
             WithMove = board:place_move_on_board(Move, Board),
+            Gaddag = bin_trie:get_root(Dict),
             try
-                Gaddag = bin_trie:get_root(Dict),
-                board:verify(WithMove, Gaddag),
-                ok
+                board:verify(WithMove, Gaddag)
             catch
-                {badArgsException, _} -> 
-                    {error, "Not a valid move for this board"}
+                %% We allow players to play bullshit moves, just no islands.
+                throw:{_, <<"Invalid word found on board">>} -> ok
             end
     end.
 
-
-verify_board(Board, Dict) ->
-    Gaddag = bin_trie:get_root(Dict),
-    try
-        board:verify(Board, Gaddag),
-        ok
-    catch
-        throw:_ -> {error, "Not a valid board"}
-    end.
 

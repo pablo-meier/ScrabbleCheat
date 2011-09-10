@@ -25,6 +25,9 @@
 -include("gameinfo.hrl").
 -include("scrabbleCheat_thrift.hrl").
 
+
+-define(check_for_exception(Thunk), ?assertException(throw, {_, {exception, {badArgsException, _}}}, Thunk())).
+
 %% Test server callbacks.
 -export([all/0,
          init_per_suite/1,
@@ -36,7 +39,7 @@
          gameinfo_test/1,
          play_move_scrabble_test/1,
          play_move_lexulous_test/1,
-%%         play_move_wwf_test/1,
+         play_move_wwf_test/1,
          play_move_bad_args/1,
          scrabblecheat_suggestions_test/1,
          bad_namelist_test/1,
@@ -87,10 +90,6 @@ get_thrift_client() ->
         Else -> throw({unexpected_client_value, Else})
     end.
     
-
-check_for_exception(Thunk) ->
-    ?assertException(throw, {_, {exception, {badArgsException, _}}}, Thunk()).
-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%                              NEW GAME TESTS                              %%
@@ -172,7 +171,7 @@ bad_namelist_test(_Config) ->
                                           GameName,
                                           Dict]) 
              end,
-    check_for_exception(Thunk2),
+    ?check_for_exception(Thunk2),
 
     Thunk3 = fun() -> thrift_client:call(Client0, 
                                          new_game, 
@@ -180,7 +179,7 @@ bad_namelist_test(_Config) ->
                                           GameName,
                                           Dict]) 
              end,
-    check_for_exception(Thunk3).
+    ?check_for_exception(Thunk3).
 
 
 bad_dicts_and_gamename_test(_Config) ->
@@ -189,8 +188,8 @@ bad_dicts_and_gamename_test(_Config) ->
     GoodName = ?scrabbleCheat_GameName_SCRABBLE,
     Thunk1 = fun() -> thrift_client:call(Client0, new_game, [["Paul", "Sam"], GoodName, 55]) end,
     Thunk2 = fun() -> thrift_client:call(Client0, new_game, [["Paul", "Sam"], 55, GoodDict]) end,
-    check_for_exception(Thunk1),
-    check_for_exception(Thunk2).
+    ?check_for_exception(Thunk1),
+    ?check_for_exception(Thunk2).
 
     
 unallowed_dicts_test(_Config) ->
@@ -198,7 +197,7 @@ unallowed_dicts_test(_Config) ->
     GoodName = ?scrabbleCheat_GameName_WORDS_WITH_FRIENDS,
     BadDict = ?scrabbleCheat_Dictionary_TWL06,  %% WWF only allows the Zynga dictionary
     Thunk1 = fun() -> thrift_client:call(Client0, new_game, [["Paul", "Sam"], GoodName, BadDict]) end,
-    check_for_exception(Thunk1).
+    ?check_for_exception(Thunk1).
     
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -254,7 +253,7 @@ gameinfo_test(_Config) ->
     test_gameinfo(ThriftGameInfoWWF, PropListWWF),
 
     BadThunk = fun() -> thrift_client:call(ClientBad, game_info, [55]) end,
-    check_for_exception(BadThunk).
+    ?check_for_exception(BadThunk).
 
 
 test_gameinfo(ThriftGameInfo, PropList) ->
@@ -510,7 +509,7 @@ play_move_bad_args(_Config) ->
                 tile:new_tile({character, $E}, triple_word_score, 7, 10)], 
     ThriftTileList = lists:map(fun thrift_helper:native_to_thrift_tile/1, TileList),
     BadThunk = fun () -> thrift_client:call(Client1, play_move, [ThriftTileList, Fresh]) end,
-    check_for_exception(BadThunk),
+    ?check_for_exception(BadThunk),
     
     GoodList = [tile:new_tile({character, $A}, double_letter_score, 7, 7), 
                 tile:new_tile({character, $B}, none, 7, 8), 
@@ -524,13 +523,13 @@ play_move_bad_args(_Config) ->
               tile:new_tile({character, $E}, none, 5, 10)],
     IL = lists:map(fun thrift_helper:native_to_thrift_tile/1, Island),
     IslandThunk = fun () -> thrift_client:call(Client1, play_move, [IL, WithMove]) end,
-    check_for_exception(IslandThunk),
+    ?check_for_exception(IslandThunk),
 
     %% Assert that a bullshit move passes.
     BSMove = [tile:new_tile({character, $X}, none, 6, 7), 
               tile:new_tile({character, $X}, none, 6, 8), 
               tile:new_tile({character, $R}, none, 6, 9), 
-              tile:new_tile({character, $E}, none, 6, 10)],
+              tile:new_tile({character, $E}, triple_letter_score, 6, 10)],
     BSL = lists:map(fun thrift_helper:native_to_thrift_tile/1, BSMove),
     _DontCrash = thrift_client:call(Client2, play_move, [BSL, WithMove]).
 
@@ -625,10 +624,10 @@ bad_rack_test(_Config) ->
                                           Dict]) 
              end,
 
-    check_for_exception(Thunk1),
-    check_for_exception(Thunk2),
-    check_for_exception(Thunk3),
-    check_for_exception(Thunk4).
+    ?check_for_exception(Thunk1),
+    ?check_for_exception(Thunk2),
+    ?check_for_exception(Thunk3),
+    ?check_for_exception(Thunk4).
 
 
 
@@ -672,9 +671,9 @@ bad_board_test(_Config) ->
     % Wrong word (Col)
     Thunk5 = fun() -> thrift_client:call(Client1, get_scrabblecheat_suggestions, [Rack, Board5, Name, Dict]) end,
 
-    check_for_exception(Thunk2),
-    check_for_exception(Thunk3),
-    check_for_exception(Thunk4),
-    check_for_exception(Thunk5).
+    ?check_for_exception(Thunk2),
+    ?check_for_exception(Thunk3),
+    ?check_for_exception(Thunk4),
+    ?check_for_exception(Thunk5).
 
 

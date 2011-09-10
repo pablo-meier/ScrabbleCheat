@@ -1,4 +1,3 @@
-%% Copyright (c) 2010 Paul Meier
 %% 
 %% Permission is hereby granted, free of charge, to any person obtaining a copy
 %% of this software and associated documentation files (the "Software"), to deal
@@ -384,8 +383,13 @@ subsequence_check([Fst|Rst], Gaddag) ->
             throw_badboard("Error with the board: Row begins with invalid character.");
         {true, false} ->
             {branch, Further} = gaddag:get_branch(Letter, Gaddag),
-            {branch, Forwards} = gaddag:get_branch($&, Further),
-            go_forwards(Rst, Forwards);
+
+            case gaddag:get_branch($&, Further) of 
+                {branch, Forwards} ->
+                    go_forwards(Rst, Forwards);
+                _Else ->
+                    throw_badboard("Invalid word found on board.")
+            end;
         {true, true} ->
             Rst
     end.

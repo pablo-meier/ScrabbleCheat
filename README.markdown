@@ -68,16 +68,16 @@ their own, here are the ones I know off the top of my head:
 Check out these git tags for particular milestones in the project.
 
 * WORDSEARCH -> This is your basic anagram solver.  Plug in letters and it 
-  returns a list of words you can generate with those letters.  Use '*' is 
+  returns a list of words you can generate with those letters.  Use '\*' is 
   for a wildcard.
 
-* GADDAG_WITH_CLIENT -> The first "real" "release," a simple ncurses UI
+* GADDAG\_WITH\_CLIENT -> The first "real" "release," a simple ncurses UI
   is provided to communicate to the Erlang backend, which allows you to
   either add moves (such as your opponent's) or query the game for the
   4 highest scoring moves given a rack.  Requires ncurses-ruby 
   package to use the client. 
 
-* WITH_THRIFT_V1 -> The GADDAG_WITH_CLIENT used a serialization scheme 
+* WITH\_THRIFT\_V1 -> The GADDAG\_WITH\_CLIENT used a serialization scheme 
   that I made up, and was brittle/insecure as a server.  I moved the
   client/server to use Apache Thrift, which while stil a little buggy
   (the server won't start unless manually started from the Erlang 

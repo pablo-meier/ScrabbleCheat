@@ -29,6 +29,21 @@
 -import(tile, [get_tile_letter/1, get_tile_bonus/1]).
 
 
+-define(TEMP_FILE_NAME, "../ebin/gaddag_test.dict").
+
+get_fixture_gaddag() ->
+    bin_trie:get_root(twl06).
+setup() ->
+    bin_trie:start_from_file(?TEMP_FILE_NAME).
+teardown() ->
+    case whereis(giant_bintrie) of
+        undefined -> ok;
+        Else -> unregister(giant_bintrie),
+                exit(Else, "Test finished")
+    end.
+
+
+
 
 placement_test() ->
 	Board = new_board(),
@@ -52,3 +67,23 @@ preservation_test() ->
 
 	?assertException(throw, {tile_already_occupied, $C}, place_letter_on_board(13, 4, $M, AndWithC, false)),
 	?assertException(throw, {tile_already_with_bonus, double_word_score}, place_bonus_on_board(13, 4, triple_letter_score, AndWithC)).
+
+
+verify_test() ->
+    setup(),
+
+	Board = new_board(),
+	WithAble = board:place_word("ABLE", right, {7,7}, Board),
+	WithIsland = board:place_word("ZYGOTE", down, {1,1}, WithAble),
+	Gaddag = get_fixture_gaddag(),
+
+	?assertException(throw, _, board:verify(WithIsland, Gaddag)),
+
+	WithNonsenseHoriz = board:place_word("MOROCLE", right, {7,3}, Board),
+	WithNonsenseVert = board:place_word("MOROCLE", down, {3,7}, Board),
+
+	?assertException(throw, _, board:verify(WithNonsenseHoriz, Gaddag)),
+	?assertException(throw, _, board:verify(WithNonsenseVert, Gaddag)),
+
+    teardown().
+

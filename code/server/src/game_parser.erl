@@ -176,7 +176,7 @@ line_looper(FileHandle, Lst) ->
 %%
 %% This code creates a new Scrabble board by default.  In theory, we'd like to do
 %% this by simply calling GameInfo#gameinfo.board on a Scrabble GameInfo, but 
-%% almost all test rely on this function, and their called with the gaminfo files
+%% almost all test rely on this function, and they're called with the gameinfo files
 %% in the OTP apps priv/ directory.  We should delete this code as soon as a 
 %% resolution is found, wherein we either test on the OTP app running the server
 %% (preferred) or hack it, via a debug build that searches for the files in a

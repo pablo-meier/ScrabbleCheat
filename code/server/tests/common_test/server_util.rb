@@ -36,8 +36,6 @@ status = (%x[#{REL}/bin/scrabblecheat ping]).chomp == "pong" ? :started : :stopp
 if status == :stopped && action == :started
    puts "Need to start the server"
    %x[#{REL}/bin/scrabblecheat start]
-   puts "Waiting 20 seconds while we load dictionaries..."
-   sleep 20
    msg = "Started Server when previously stopped."
 elsif status == :started && action == :stopped
     puts "Need to stop the server"
