@@ -53,13 +53,13 @@ public:
 		m_client->play_move(_return, tiles, gamestate);
 		printf("play_move successful\n");
 	}
-	
+
 	void pass_turn(Gamestate& _return, const Gamestate& gamestate) {
 		printf("pass_turn\n");
 		m_client->pass_turn(_return, gamestate);
 		printf("pass_turn returned!\n");
 	}
-	
+
 	void get_scrabblecheat_suggestions(std::vector<Move> & _return, 
 										const std::string& rack, 
 										const Board& board, 
@@ -69,7 +69,7 @@ public:
 		m_client->get_scrabblecheat_suggestions(_return, rack, board, game_name, dict);
 		printf("get_scrabblecheat_suggestions successful!\n");
 	}
-	
+
 	void quit() {
 		printf("quit\n");
 		m_client->quit();
