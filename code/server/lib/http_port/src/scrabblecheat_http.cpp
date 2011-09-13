@@ -3,6 +3,7 @@
 #include "ScrabbleCheat.h"
 #include <protocol/TBinaryProtocol.h>
 #include <server/TSimpleServer.h>
+#include <transport/THttpServer.h>
 #include <transport/TServerSocket.h>
 #include <transport/TBufferTransports.h>
 
@@ -85,12 +86,14 @@ int main(int argc, char **argv) {
 	int port = 9090;
 	shared_ptr<ScrabbleCheatHandler> handler(new ScrabbleCheatHandler());
 	shared_ptr<TProcessor> processor(new ScrabbleCheatProcessor(handler));
+
 	shared_ptr<TServerTransport> serverTransport(new TServerSocket(port));
-	shared_ptr<TTransportFactory> transportFactory(new TBufferedTransportFactory());
+	shared_ptr<TTransportFactory> transportFactory(new THttpServerTransportFactory());
 	shared_ptr<TProtocolFactory> protocolFactory(new TBinaryProtocolFactory());
 	
 	TSimpleServer server(processor, serverTransport, transportFactory, protocolFactory);
 	server.serve();
+
 	return 0;
 }
 
