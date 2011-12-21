@@ -5,21 +5,9 @@ Erlang's Thrift bindings don't support HTTP servers -- only the 'Basic' server,
 which is to say, communication through sockets on a local machine.  Until I
 or someone else augments the Thrift bindings to use something like mochiweb,
 ScrabbleCheat will only work for clients that are local, which makes most
-client use a bit of a hassle.
+client use a bit of a hassle, especially if we want to deploy as a webapp.
 
 This little wrapper will allows ScrabbleCheat to serve HTTP ports by using 
 Thrift language bindings which support HTTP (the C++ ones), and just forward 
 messages to and from the Erlang implementation.
-
-
-Isn't this technically a client, since it uses/relies on the server?
---------------------------------------------------------------------
-
-Great observation!  There was some internal debate whether or not to include 
-this with the server, or just call it a 'client' who's only purpose is to 
-facilitate HTTP calls. I may move it to the client implementations yet!
-
-However, for now, I'm considering HTTP support one of the core, necessary 
-features for this server, and with that idea in mind, we'll keep it here.
-
 

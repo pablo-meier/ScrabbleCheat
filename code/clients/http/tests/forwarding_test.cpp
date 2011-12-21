@@ -29,6 +29,8 @@
 
 #include <check.h>
 
+#include <iostream>
+
 #include "../bin/gen-cpp/ScrabbleCheat.h"
 
 using namespace std;
@@ -48,7 +50,7 @@ using namespace boost;
 // First test -- ensure new game with "Paul" and "Sam" comes back.
 START_TEST ( simple_new_game_test )
 {
-	string host("localhost");
+	string host("127.0.0.1");
 	shared_ptr<TTransport> transport(new THttpClient(host, 9090));
 	shared_ptr<TProtocol> protocol(new TBinaryProtocol(transport));
 	ScrabbleCheatClient client(protocol);

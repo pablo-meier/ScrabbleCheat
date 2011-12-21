@@ -11,6 +11,8 @@
 #include <transport/TTransportUtils.h>
 #include <protocol/TBinaryProtocol.h>
 
+#include <iostream>
+
 using namespace ::apache::thrift;
 using namespace ::apache::thrift::protocol;
 using namespace ::apache::thrift::transport;
@@ -18,11 +20,19 @@ using namespace ::apache::thrift::server;
 
 using boost::shared_ptr;
 
+using std::cout;
+using std::endl;
+
 class ScrabbleCheatHandler : virtual public ScrabbleCheatIf {
+
+private:
+
+    static const int32_t kLocalScrabbleCheatPort = 8888;
+	shared_ptr<ScrabbleCheatClient> m_client;
 
 public:
 	ScrabbleCheatHandler() {
-		shared_ptr<TTransport> socket(new TSocket("localhost", 8888));
+		shared_ptr<TTransport> socket(new TSocket("127.0.0.1", kLocalScrabbleCheatPort));
 		shared_ptr<TTransport> transport(new TBufferedTransport(socket));
 		shared_ptr<TProtocol> protocol(new TBinaryProtocol(transport));
 		
@@ -30,28 +40,28 @@ public:
 		m_client = client_initializer;
 
 		transport->open();
+		cout << "Opened the transport, connected to local server on port " << kLocalScrabbleCheatPort << endl;
 	}
 
 	void new_game(Gamestate& _return, 
 					const std::vector<std::string> & players, 
 					const GameName::type game_name, 
 					const Dictionary::type dict) {
-		printf("new_game\n");
-		// We just forward calls!
+		cout << "new_game" << endl;
 		m_client->new_game(_return, players, game_name, dict);
 		printf("new_game successful!");
 	}
 
 	void game_info(GameInfo& _return, const GameName::type game_name) {
-		printf("game_info\n");
+		cout << "game_info" << endl;
 		m_client->game_info(_return, game_name);
-		printf("game_info successful!\n");
+		cout << "game_info successful!" << endl;
 	}
 
 	void play_move(Gamestate& _return, const std::vector<Tile> & tiles, const Gamestate& gamestate) {
-		printf("play_move\n");
+		cout << "play_move" << endl;
 		m_client->play_move(_return, tiles, gamestate);
-		printf("play_move successful\n");
+		cout << "play_move successful" << endl;
 	}
 
 	void pass_turn(Gamestate& _return, const Gamestate& gamestate) {
@@ -65,19 +75,16 @@ public:
 										const Board& board, 
 										const GameName::type game_name, 
 										const Dictionary::type dict) {
-		printf("get_scrabblecheat_suggestions\n");
+		cout << "get_scrabblecheat_suggestions" << endl;
 		m_client->get_scrabblecheat_suggestions(_return, rack, board, game_name, dict);
-		printf("get_scrabblecheat_suggestions successful!\n");
+		cout << "get_scrabblecheat_suggestions successful!" << endl;
 	}
 
 	void quit() {
-		printf("quit\n");
+		cout << "quit" << endl;
 		m_client->quit();
-		printf("quit returned\n");
+		cout << "quit returned" << endl;
 	}
-	
-	private:
-	shared_ptr<ScrabbleCheatClient> m_client;
 };
 
 
@@ -92,6 +99,7 @@ int main(int argc, char **argv) {
 	shared_ptr<TProtocolFactory> protocolFactory(new TBinaryProtocolFactory());
 	
 	TSimpleServer server(processor, serverTransport, transportFactory, protocolFactory);
+	cout << "Serving HTTP requests on port " << port << endl;
 	server.serve();
 
 	return 0;

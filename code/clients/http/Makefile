@@ -1,4 +1,6 @@
 
+PROJECT_LIB=../../../lib
+
 CC=g++
 
 
@@ -13,14 +15,14 @@ compile-tests: compile
 compile: compile-thrift 
 	$(CC) -c -I/usr/local/include/thrift -I./bin/gen-cpp src/*.cpp
 	mv -f *.o bin
-	$(CC) -o bin/sc_http -lthrift -O2 bin/*.o
+	$(CC) -o bin/sc_http -lthrift -O2 bin/ScrabbleCheat.o bin/ScrabbleCheat_constants.o bin/ScrabbleCheat_types.o bin/scrabblecheat_http.o
 
 compile-thrift: generate-thrift
 	$(CC) -c -I/usr/local/include/thrift bin/gen-cpp/*.cpp
 	mv -f *.o bin
 
 generate-thrift: prepare
-	[ -d bin/gen-cpp ] || thrift -r --gen cpp ../../../../lib/ScrabbleCheat.thrift
+	[ -d bin/gen-cpp ] || thrift -r --gen cpp $(PROJECT_LIB)/ScrabbleCheat.thrift
 	rm -f gen-cpp/*.skeleton.cpp
 	[ -d bin/gen-cpp ] || mv gen-cpp bin
 
@@ -32,3 +34,4 @@ prepare: clean-thrift
 
 clean:
 	rm -rf bin gen-cpp
+
