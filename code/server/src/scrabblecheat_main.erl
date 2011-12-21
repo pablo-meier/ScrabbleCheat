@@ -26,7 +26,6 @@
 -define(SMALLEST_ASCII_CHARACTER, 33).
 -define(LARGEST_ASCII_CHARACTER, 126).
 
--define(TCP_OPTIONS, [binary, {packet, 0}, {active, false}, {reuseaddr, true}]).
 -define(PORT, 8888). %% Hard coded for testing, can make this command-line option.
 
 

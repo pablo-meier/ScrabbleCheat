@@ -12,13 +12,10 @@ SHORT-TERM:
 
     - Command line client:  Every app should have a CLI.  Also good for automation...
 
-    - Allow for null moves/lost turns.  Add to Thrift file, add to code.
-
     - Deploy?  Snap site that talks to the Erlang via Thrift, Snap provides the web presence?
 
     - Wildcard optimization.
     - Paralelization.
-    - GADDAG minimization.
 
     ****************************************************************************************
     *   Refactor the actual movesearch into a sub-application?  Let VM handle threading?   *
@@ -43,15 +40,6 @@ SERVER
     - Refactor/restructure the src/ directory for a clear separation of modules:  game (for things 
       like boards, tiles, etc), server (for things like serialization and/or database handling), 
       and ai (for movesearches, finding the best move, etc.).
-
-   - Generalize the board and board parser to take different default
-      configurations, such as a Lexulous board, Words With Friends, or a custom
-      board.  The hard-coding is more a result of the fact that I'm in a place with
-      no internet and can't consult the Regex library, and also because this is
-      slightly easier.  This will mostly involve changing the new_board to parse the
-      board in lib/, and changing the BOARD_HEIGHT and BOARD_LENGTH constants to
-      read from that file as well. Ideally, one could start a game parametrized by
-      game type (words_with_friends) and dictionary (twl, international) etc.
 
     - I might be missing something. grep TODO and FIXME in the source to find something to do!
 

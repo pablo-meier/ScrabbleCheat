@@ -1,8 +1,5 @@
 # Build document for scrabble-cheat, Erlang implementation.
 #   Summer 2010, pablo.a.meier@gmail.com
-#
-#
-# TODO: Convert to OTP + rebar
 
 THRIFT_PATH = ../../lib/ScrabbleCheat.thrift
 THRIFT_APP=lib/thrift
@@ -33,7 +30,7 @@ eunit: compile build-parser
 
 
 ct: compile binary-gaddag
-	[ -d rel ] || $(MAKE) release
+	[ -d $(RELEASE_DIR) ] || $(MAKE) release
 	mkdir -p .common_test/logs
 	mkdir -p .common_test/coverage
 	ruby tests/common_test/server_util.rb started

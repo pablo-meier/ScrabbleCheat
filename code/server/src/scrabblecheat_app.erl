@@ -19,11 +19,6 @@
 %% THE SOFTWARE.
 
 
-%% General application callback module for OTP compliance. Follows the template
-%% set forth from Todd's ThriftErlSkel: 
-%% https://github.com/toddlipcon/thrift_erl_skel.  With any luck, as time 
-%% progresses, these mysteries of the OTP will not be so unknown to me.
-
 -module(scrabblecheat_app).
 -behaviour(application).
 
