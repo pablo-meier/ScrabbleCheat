@@ -4,13 +4,19 @@ PROJECT_LIB=../../../lib
 CC=g++
 
 
-test: compile-tests
-	bin/test_http
+test: assemble-tests run
+	ruby -C bin/tests sc_test.rb
 
-compile-tests: compile
-	$(CC) -c -I/usr/local/include/thrift -I./bin/gen-cpp tests/*.cpp
-	mv -f *.o bin
-	$(CC) -o bin/test_http -lthrift -lcheck -O2 bin/forwarding_test.o bin/ScrabbleCheat.o bin/ScrabbleCheat_types.o bin/ScrabbleCheat_constants.o
+assemble-tests: compile
+	thrift --gen rb $(PROJECT_LIB)/ScrabbleCheat.thrift
+	[ -d bin/tests ] || mkdir bin/tests
+	cp -R tests/rb/*.rb bin/tests
+	cp -R gen-rb/*.rb bin/tests
+	[ -d bin/tests/lib ] || mkdir bin/tests/lib && cp -R tests/rb/lib bin/tests/lib
+	rm -rf gen-rb
+
+run: compile
+	bin/sc_http &
 
 compile: compile-thrift 
 	$(CC) -c -I/usr/local/include/thrift -I./bin/gen-cpp src/*.cpp
