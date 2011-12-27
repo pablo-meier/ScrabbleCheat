@@ -1,0 +1,19 @@
+
+
+
+Need to all-around test the system.
+    - Eunit
+    - Common Test
+
+Need to build a release
+
+
+Need to build a parser and dicts.
+
+
+Ideal heirarchy:
+    build/
+        results/
+            release/
+        intermediate/
+            ebin/

@@ -2,20 +2,16 @@
 SHORT-TERM:
 
     - OTP/Dialyzer/Rebar builds?
-        - Long-pole: Clean up release builds. Includes lots of std library we don't need.
-        - Long-pole: Testing of server not working with OTP stuff.  More hours into testing
-                     harness and tests.
-
-    - Flash/AIR client?
-        - Mochiweb for erl HTTP thrift server, we hope?
-        - Basic client for AS3 not working excellently...
+        * Clean up builds. The build/release cycle is a damn mess with intermediate
+          files all over the source. Same with testing.
+        * Modularize the code, paralelize the movesearches.
+        * Types with Dialyzer.
 
     - Command line client:  Every app should have a CLI.  Also good for automation...
 
     - Deploy?  Snap site that talks to the Erlang via Thrift, Snap provides the web presence?
 
     - Wildcard optimization.
-    - Paralelization.
 
     ****************************************************************************************
     *   Refactor the actual movesearch into a sub-application?  Let VM handle threading?   *
@@ -36,7 +32,6 @@ SERVER
                rather than the current one-sweep naive traversal (n^2-ish).
             -> Make better use of spawn(), especially on all the maps and foldls.  Paralellize 
                candidates, for example.
-    - Types with Dialyzer.
     - Refactor/restructure the src/ directory for a clear separation of modules:  game (for things 
       like boards, tiles, etc), server (for things like serialization and/or database handling), 
       and ai (for movesearches, finding the best move, etc.).
@@ -44,7 +39,7 @@ SERVER
     - I might be missing something. grep TODO and FIXME in the source to find something to do!
 
 
-CURSES CLIENT
+CLIENT
     - Rewrite in C?  Ruby-ncurses is crap, giving me memory corruption.
     - Undo/back.
     - Allow a turn to pass/skip.
