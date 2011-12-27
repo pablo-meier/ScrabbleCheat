@@ -63,7 +63,7 @@ all() ->
      play_move_scrabble_test,
      play_move_lexulous_test,
      play_move_bad_args,
-%%     play_move_wwf_test, %% Test disabled because of memory bullshit.
+     play_move_wwf_test, %% Test disabled because of memory bullshit.
      scrabblecheat_suggestions_test,
      annalisa_test,
      bad_namelist_test,
