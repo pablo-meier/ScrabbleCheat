@@ -28,8 +28,7 @@
                        get_followstruct_board/1,
                        get_followstruct_gaddag/1,
                        get_followstruct_direction/1,
-                       get_followstruct_tile/1,
-                       can_flip_followstruct/2]).
+                       get_followstruct_tile/1]).
 
 -import(board, [as_list/1, get_adjacents/2, get_adjacent/3, get_tile/3, flip/1, zoom/3, travel/4,
                 orthogonals/1, to_beginning/1]).
@@ -151,11 +150,17 @@ compare_candidate(Candidate1, Candidate2) ->
 find_all_moves(Candidate, Rack, Board, Gaddag) ->
     ZoomTriples = get_zoomtiles(Candidate, Board, Gaddag),
     StartLocations = map(fun (X) -> create_origin_followstructs(X, Board) end, ZoomTriples),
-    Perpendiculars = map(fun ({Followstruct, _}) -> make_perpendicular_followstructs(Followstruct, Gaddag) end, StartLocations),
-    Total = append(Perpendiculars, StartLocations),
-    flatmap(fun ({FollowStruct, ZoomTile}) -> 
-                get_moves_from_candidate(FollowStruct, ZoomTile, Rack, [], Gaddag)
-            end, Total).
+    case lists:any(fun ({X,_}) -> X =:= fail end, StartLocations) of
+        %% Returns 'true' for a bad board, such as one containing the word 'TTUBES' 
+        %% FIXME: Just as we should allow players to play bad moves (bluffing), the movesearch shouldn't
+        %% puke if the board contains non-words in it.
+        true -> throw({badArgsException, "Bad board supplied -- movesearch impossible"});
+        false ->
+            Perpendiculars = map(fun ({Followstruct, _}) -> make_perpendicular_followstructs(Followstruct, Gaddag) end, StartLocations),
+            flatmap(fun ({FollowStruct, ZoomTile}) -> 
+                        get_moves_from_candidate(FollowStruct, ZoomTile, Rack, [], Gaddag)
+                    end, lists:append(StartLocations, Perpendiculars))
+    end.
 
 
 %% get_zoomtiles :: Candidate * Board * Gaddag -> [{Tile, Direction, Gaddag}]
@@ -228,7 +233,7 @@ make_perpendicular_followstructs(Followstruct, Master) ->
                                              end
                                        end, NewGaddag, gaddag:keys(NewGaddag)),
                     {make_followstruct(Tile, BackPerpendicular, PrunedGaddag, Board, new_move()), NewZoomtile}
-             end
+            end
     end.
 
    
@@ -239,7 +244,7 @@ make_perpendicular_followstructs(Followstruct, Master) ->
 %% Given all the information, construct every possible move given your
 %% rack and the board by following using your followstruct, containing direction.
 get_moves_from_candidate(Followstruct, ZoomTile, Rack, Accum, Master) ->
-    ListOfMoves = case can_flip_followstruct(Followstruct, ZoomTile) of
+    ListOfMoves = case followstruct:can_flip_followstruct(Followstruct, ZoomTile) of
         false -> get_moves_from_candidate_recur(Followstruct, ZoomTile, Rack, Accum, Master);
         true -> append(get_moves_from_candidate_recur(Followstruct, ZoomTile, Rack, Accum, Master),
                        get_moves_from_candidate_recur(flip_followstruct(Followstruct, ZoomTile), ZoomTile, Rack, Accum, Master))
@@ -249,7 +254,7 @@ get_moves_from_candidate(Followstruct, ZoomTile, Rack, Accum, Master) ->
 
 %% The hairiest part of the movesearch algorithm.  The rest is just foreplay...
 get_moves_from_candidate_recur(Followstruct, ZoomTile, Rack, Accum, Master) ->
-   %% Fold the results into a unified list.  For every character in your rack...
+    %% Fold the results into a unified list.  For every character in your rack...
     foldl(fun (X, Y) -> 
               %% See if you can place that character per the data in the followstruct.
               case next(Followstruct, X, Master) of
@@ -276,7 +281,7 @@ get_moves_from_candidate_recur(Followstruct, ZoomTile, Rack, Accum, Master) ->
 get_move_helper(NewFollowstruct, ZoomTile, RestOfRack, NewAccum, Master) ->
     %% If you can swap to the other side,
     Tile = get_followstruct_tile(NewFollowstruct),
-    case can_flip_followstruct(NewFollowstruct, ZoomTile) andalso not is_occupied(Tile) of
+    case followstruct:can_flip_followstruct(NewFollowstruct, ZoomTile) andalso not is_occupied(Tile) of
         true ->
             %% Do so, and append the results of both the backwards and forwards direction.
             BranchFollowstruct = flip_followstruct(NewFollowstruct, ZoomTile),

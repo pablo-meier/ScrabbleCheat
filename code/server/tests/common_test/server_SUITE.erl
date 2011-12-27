@@ -42,6 +42,7 @@
          play_move_wwf_test/1,
          play_move_bad_args/1,
          scrabblecheat_suggestions_test/1,
+         annalisa_test/1,
          bad_namelist_test/1,
          bad_rack_test/1,
          various_games_test/1,
@@ -64,6 +65,7 @@ all() ->
      play_move_bad_args,
 %%     play_move_wwf_test, %% Test disabled because of memory bullshit.
      scrabblecheat_suggestions_test,
+     annalisa_test,
      bad_namelist_test,
      bad_rack_test,
      various_games_test,
@@ -575,7 +577,77 @@ scrabblecheat_suggestions_test(_Config) ->
 	lists:foreach(fun (X) -> ?assert(lists:any(fun (Y) -> move:duplicate_moves(X, Y) end, NativeMoves)) end, Solutions).
 
 
+%% Make sure the server throws an exception if you feed it a bad board. These were 
+%% taken when I tried to use the bot in an ad-hoc way, and fed it the wrong parameters. Hilarity (read: pain)
+%% ensued.
+annalisa_test(_Config) -> 
+    Client0 = get_thrift_client(),
+    {Client1, {ok, Fresh}} = thrift_client:call(Client0, 
+                                                new_game, 
+                                                [["Paul", "Sam"], 
+                                                 ?scrabbleCheat_GameName_SCRABBLE,
+                                                 ?scrabbleCheat_Dictionary_TWL06]),
 
+    Tiles = [{6, 10, $C},
+            {7, 10, $A},
+            {8, 10, $T},
+
+            {7, 9, $F},
+            {7, 11, $X},
+
+            {8, 8, $B},
+            {8, 9, $I},
+
+            {9, 8, $R},
+            {10, 8, $E},
+            {11, 8, $N},
+            {12, 8, $T},
+
+            {8, 12, $G},
+            {9, 12, $A},
+            {10, 12, $L},
+            {11, 12, $E},
+            {12, 12, $S},
+
+            {10, 7, $J},
+            {10, 9, $A},
+            {10, 10, $N},
+
+            {11, 6, $S},
+            {11, 7, $O},
+
+            {12, 7, $T},
+            {13, 7, $A},
+            {14, 7, $Y},
+
+            {13, 5, $K},
+
+            {13, 6, $A},
+
+            {12, 9, $U},
+            {12, 10, $B},
+            {12, 11, $E},
+
+            {13, 10, $U},
+            {14, 10, $M},
+
+            {14, 11, $U},
+            {14, 12, $S},
+            {14, 13, $E}
+           ],
+	BlankBoard = thrift_helper:thrift_to_native_board(Fresh#gamestate.board),
+    NativeBoard = lists:foldl(fun ({A,B,C}, Accum) -> tile_template(A,B,C,Accum) end, BlankBoard, Tiles),
+    ThriftBoard = thrift_helper:native_to_thrift_board(NativeBoard),
+    BadThunk = fun () -> thrift_client:call(Client1, 
+                                             get_scrabblecheat_suggestions, 
+                                             [<<"OOIAIIT">>, 
+                                             ThriftBoard, 
+                                             ?scrabbleCheat_GameName_SCRABBLE,
+                                             ?scrabbleCheat_Dictionary_TWL06]) end,
+    ?check_for_exception(BadThunk).
+
+tile_template(Row, Col, Char, Board) ->
+	board:place_letter_on_board(Row, Col, Char, Board, false).
 
 bad_rack_test(_Config) ->
     Client0 = get_thrift_client(),
