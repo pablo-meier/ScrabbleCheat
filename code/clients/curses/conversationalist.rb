@@ -36,13 +36,35 @@ class Conversationalist
         @thrift = ThriftLayer.new
     end
 
-    def new_game(namelist)
-        rslt = @thrift.new_game(namelist)
+    def new_game(namelist, gamename, dict)
+        thriftgame = native_to_thrift_gamename(gamename)
+        thriftdict = native_to_thrift_dict(dict)
+        rslt = @thrift.new_game(namelist, thriftdict)
         parse_new_game(rslt)
     end
 
     def parse_new_game(thrift_gamestate)
         thrift_to_native_gamestate(thrift_gamestate)
+    end
+
+
+    def game_info(gamename)
+        thriftname = native_to_thrift_gamename(gamename)
+
+        thriftinfo = @thrift.game_info(thriftname)
+
+        # THE FOLLOWING CODE SHOULD NOT BE
+        # Not using Thrift types natively was a terribad idea... a FIXME for later, perhaps
+        gameinfo = Hash.new
+        gameinfo[:name] = gamename
+        gameinfo[:rack_size] = thriftinfo.rack_size
+        gameinfo[:bingo_bonus] = thriftinfo.bingo_bonus
+        gameinfo[:letter_distribution] = thriftinfo.letter_distribution
+        gameinfo[:score_distribution] = thriftinfo.score_distribution
+        gameinfo[:allowed_dictionaries] = thriftinfo.allowed_dictionaries.map { |x| thrift_to_native_dict(x) }
+        gameinfo[:board_template] = Board.from_list(thriftinfo.board_template.map { |x| thrift_to_native_tile(x) } )
+
+        gameinfo
     end
 
 
@@ -53,15 +75,18 @@ class Conversationalist
         parse_play_move(rslt)
     end
 
+
     def parse_play_move(thrift_gamestate)
         thrift_to_native_gamestate(thrift_gamestate)
     end
 
 
     
-    def get_scrabblecheat_suggestions(rack, board)
+    def get_scrabblecheat_suggestions(rack, board, gamename, dict)
+        thriftgame = native_to_thrift_gamename(gamename)
+        thriftdict = native_to_thrift_dict(dict)
         thrift_board = board.to_list.map { |x| native_to_thrift_tile(x) }
-        rslt = @thrift.get_scrabblecheat_suggestions(rack, thrift_board)
+        rslt = @thrift.get_scrabblecheat_suggestions(rack, thrift_board, thriftgame, thriftdict)
         parse_get_scrabblecheat_suggestions(rslt)
     end
 
@@ -79,6 +104,53 @@ class Conversationalist
 
 
 private
+
+    def native_to_thrift_gamename(gamename)
+        case gamename
+            when :words_with_friends
+                GameName::WORDS_WITH_FRIENDS
+            when :scrabble
+                GameName::SCRABBLE
+            when :lexulous
+                GameName::LEXULOUS
+        end
+    end
+
+
+    def thrift_to_native_gamename(gamename)
+        case gamename
+            when GameName::WORDS_WITH_FRIENDS
+                :words_with_friends
+            when GameName::SCRABBLE
+                :scrabble
+            when GameName::LEXULOUS
+                :lexulous
+        end
+    end
+
+
+    def native_to_thrift_dict(dict)
+        case dict
+            when :twl06
+                Dictionary::TWL06
+            when :sowpods
+                Dictionary::SOWPODS
+            when :zynga
+                Dictionary::ZYNGA
+        end
+    end
+
+
+    def thrift_to_native_dict(dict)
+        case dict
+            when Dictionary::TWL06
+                :twl06
+            when Dictionary::SOWPODS
+                :sowpods
+            when Dictionary::ZYNGA
+                :zynga
+        end
+    end
 
     # 'native' tiles are simple hashes containing :letter_type, :letter, :bonus, :row, :col
     def native_to_thrift_tile(native_tile)
@@ -105,10 +177,12 @@ private
 
     def thrift_to_native_gamestate(thrift_gamestate)
         gamestate = Hash.new
-        gamestate[:board]   = Board.from_list(thrift_gamestate.board.map { |x| thrift_to_native_tile(x) } )
-        gamestate[:turn]    = thrift_gamestate.player_turn
-        gamestate[:scores]  = thrift_to_native_scores(thrift_gamestate.scores, thrift_gamestate.turn_order)
-        gamestate[:history] = thrift_to_native_history(thrift_gamestate.history)
+        gamestate[:board]    = Board.from_list(thrift_gamestate.board.map { |x| thrift_to_native_tile(x) } )
+        gamestate[:turn]     = thrift_gamestate.player_turn
+        gamestate[:scores]   = thrift_to_native_scores(thrift_gamestate.scores, thrift_gamestate.turn_order)
+        gamestate[:history]  = thrift_to_native_history(thrift_gamestate.history)
+        gamestate[:gamename] = thrift_to_native_gamename(gamestate.game_name)
+        gamestate[:dict]     = thrift_to_native_dict(gamestate.dict)
         gamestate
     end
 
@@ -119,6 +193,8 @@ private
         gamestate.board       = native_gamestate[:board].to_list.map { |x| native_to_thrift_tile(x) }
         gamestate.turn_order  = native_gamestate[:scores].map { |x| x[0] }
         gamestate.history     = native_to_thrift_history(native_gamestate[:history])
+        gamestate.game_name   = native_to_thrift_gamename(native_gamestate[:gamename])
+        gamestate.dict        = native_to_thrift_dict(native_gamestate[:dict])
 
         gamestate.scores      = Hash.new
         native_gamestate[:scores].each do |pair| 
@@ -236,5 +312,4 @@ private
                 :none
         end
     end
-
 end

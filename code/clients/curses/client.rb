@@ -20,6 +20,7 @@
 
 require 'conversationalist.rb'
 require 'painter.rb'
+require 'file_parser.rb'
 
 require 'socket'
 include Socket::Constants
@@ -48,14 +49,23 @@ class Client
 
     def initialize
         @connection = Conversationalist.new
+        @parser = FileParser.new(@connection)
         @painter = Painter.new
 
         @gamestates = []
         @gamestate_index = -1
-        @curr_state = {:state => :welcome, :data => nil}
+
+        if ARGV[0].nil?
+            @curr_state = {:state => :welcome, :data => nil}
+        else
+            filename = ARGV[0]
+            gamestate = @parser.parse(filename)
+            @curr_state = {:state => :action_choose, :data => gamestate}
+        end
 
         self.play_game
     end
+
 
     def play_game
         loop do

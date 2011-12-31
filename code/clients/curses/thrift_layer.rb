@@ -41,16 +41,20 @@ class ThriftLayer
         @transport.open()
     end
 
-    def new_game(playerlist)
-        @client.new_game(playerlist)
+    def new_game(playerlist, gamename, dict)
+        @client.new_game(playerlist, gamename, dict)
+    end
+
+    def game_info(gamename)
+        @client.game_info(gamename)
     end
 
     def play_move(tiles, gamestate)
         @client.play_move(tiles, gamestate)
     end
 
-    def get_scrabblecheat_suggestions(rack, board)
-        @client.get_scrabblecheat_suggestions(rack, board)
+    def get_scrabblecheat_suggestions(rack, board, gamename, dict)
+        @client.get_scrabblecheat_suggestions(rack, board, gamename, dict)
     end
 
     def quit
