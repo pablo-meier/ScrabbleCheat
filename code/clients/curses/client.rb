@@ -60,6 +60,7 @@ class Client
         else
             filename = ARGV[0]
             gamestate = @parser.parse(filename)
+            self.add_gamestate(gamestate)
             @curr_state = {:state => :action_choose, :data => gamestate}
         end
 
@@ -84,7 +85,10 @@ class Client
                 when :get_moves
                     rack = response[:data]
                     this_gamestate = @gamestates[@gamestate_index]
-                    moves = @connection.get_scrabblecheat_suggestions(rack, this_gamestate[:board])
+                    board = this_gamestate[:board]
+                    gamename = this_gamestate[:gamename]
+                    dict = this_gamestate[:dict]
+                    moves = @connection.get_scrabblecheat_suggestions(rack, board, gamename, dict)
                     @curr_state = {:state => :move_choose, :data => {:gamestate => this_gamestate, :moves => moves}}
                 when :quit
                     @connection.quit

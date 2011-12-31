@@ -311,8 +311,8 @@ make_array_indices(Num1, Num2) -> {Num1 - 1, Num2 - 1}.
 %% If the board is found to be invalid, we throw a badArgsException, defined
 %% in the ScrabbleCheat Thrift protocol.
 verify(Board, Master) ->
-    check_connectedness(Board),
-    check_valid_moves(Board, Master).
+    check_connectedness(Board).
+    %check_valid_moves(Board, Master).
 
 %% BFS from any tile, ensure that each occupied tile on board is contained in the BFS.
 check_connectedness(Board) ->
