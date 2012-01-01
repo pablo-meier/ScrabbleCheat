@@ -181,8 +181,8 @@ private
         gamestate[:turn]     = thrift_gamestate.player_turn
         gamestate[:scores]   = thrift_to_native_scores(thrift_gamestate.scores, thrift_gamestate.turn_order)
         gamestate[:history]  = thrift_to_native_history(thrift_gamestate.history)
-        gamestate[:gamename] = thrift_to_native_gamename(gamestate.game_name)
-        gamestate[:dict]     = thrift_to_native_dict(gamestate.dict)
+        gamestate[:gamename] = thrift_to_native_gamename(thrift_gamestate.game_name)
+        gamestate[:dict]     = thrift_to_native_dict(thrift_gamestate.dict)
         gamestate
     end
 

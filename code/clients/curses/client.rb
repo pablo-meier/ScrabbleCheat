@@ -74,7 +74,7 @@ class Client
             case response[:state]
                 when :new_game
                     names = response[:data]
-                    gamestate = @connection.new_game(names)
+                    gamestate = @connection.new_game(names, :scrabble, :twl06)
                     self.add_gamestate(gamestate)
                     @curr_state = {:state => :action_choose, :data => gamestate}
                 when :play_move
