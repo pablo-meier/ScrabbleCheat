@@ -2,8 +2,8 @@
 
 ## Revenge of the Verbally Challenged ##
 
-ScrabbleCheat is a tool I'm developing to finally beat my girlfriend in 
-Scrabble.  Developing it in Erlang, mostly for fun.  Use it yourself, or explore
+ScrabbleCheat is a tool I developed to finally beat a special someone
+in Scrabble.  Developing it in Erlang, mostly for fun.  Use it yourself, or explore
 the code!
 
 Originally development was considered in phases: generate words from your rack,
