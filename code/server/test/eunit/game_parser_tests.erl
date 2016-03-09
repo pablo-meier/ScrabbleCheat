@@ -31,10 +31,11 @@
 -define(LEXULOUS_POINT_DIST, make_dict([{$E,1},{$F,5},{$L,1},{$H,5},{$T,2},{$A,1}])).
 -define(WWF_POINT_DIST, make_dict([{$E,1},{$F,4},{$L,2},{$H,3},{$T,1},{$A,1}])).
 
-
+game_dir(Name) ->
+    lists:concat([code:priv_dir(scrabblecheat), "/games/", Name, '/']).
 
 scrabble_parse_test() ->
-    Gameinfo = game_parser:parse_game_body(scrabble, "../priv/games/scrabble/"),
+    Gameinfo = game_parser:parse_game_body(scrabble, game_dir("scrabble")),
     #gameinfo{board = _B, letterdist = LD, scoredist = SD, racksize = R} = Gameinfo,
     compare_dicts(LD, ?SCRABBLE_LETTER_DIST),
     compare_dicts(SD, ?SCRABBLE_POINT_DIST),
@@ -42,7 +43,7 @@ scrabble_parse_test() ->
 
 
 lexulous_parse_test() ->
-    Gameinfo = game_parser:parse_game_body(lexulous, "../priv/games/lexulous/"),
+    Gameinfo = game_parser:parse_game_body(lexulous, game_dir("lexulous")),
     #gameinfo{board = _B, letterdist = LD, scoredist = SD, racksize = R} = Gameinfo,
     compare_dicts(LD, ?LEXULOUS_LETTER_DIST),
     compare_dicts(SD, ?LEXULOUS_POINT_DIST),
@@ -50,7 +51,7 @@ lexulous_parse_test() ->
 
 
 wwf_parse_test() ->
-    Gameinfo = game_parser:parse_game_body(words_with_friends, "../priv/games/words_with_friends/"),
+    Gameinfo = game_parser:parse_game_body(words_with_friends, game_dir("words_with_friends")),
     #gameinfo{board = _B, letterdist = LD, scoredist = SD, racksize = R} = Gameinfo,
     compare_dicts(LD, ?WWF_LETTER_DIST),
     compare_dicts(SD, ?WWF_POINT_DIST),

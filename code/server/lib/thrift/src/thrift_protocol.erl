@@ -208,7 +208,6 @@ read_struct_loop(IProto0, SDict, RTuple) ->
                             skip_field(FType, IProto1, SDict, RTuple)
                     end;
                 _Else2 ->
-                    error_logger:info_msg("Skipping field ~p with unknown fid~n", [Fid]),
                     skip_field(FType, IProto1, SDict, RTuple)
             end
     end.
@@ -328,6 +327,12 @@ write(Proto, {{struct, {Module, StructureName}}, Data})
        is_atom(StructureName),
        element(1, Data) =:= StructureName ->
     write(Proto, {Module:struct_info(StructureName), Data});
+
+write(_, {{struct, {Module, StructureName}}, Data})
+  when is_atom(Module),
+       is_atom(StructureName) ->
+    erlang:error(struct_unmatched, {{provided, element(1, Data)},
+                             {expected, StructureName}});
 
 write(Proto0, {{list, Type}, Data})
   when is_list(Data) ->

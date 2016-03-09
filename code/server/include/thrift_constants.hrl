@@ -51,8 +51,4 @@
 -define(TApplicationException_WRONG_METHOD_NAME, 3).
 -define(TApplicationException_BAD_SEQUENCE_ID, 4).
 -define(TApplicationException_MISSING_RESULT, 5).
--define(TApplicationException_INTERNAL_ERROR, 6).
--define(TApplicationException_PROTOCOL_ERROR, 7).
--define(TApplicationException_INVALID_TRANSFORM, 8).
--define(TApplicationException_INVALID_PROTOCOL, 9).
--define(TApplicationException_UNSUPPORTED_CLIENT_TYPE, 10).
+

@@ -21,12 +21,12 @@
 -module(gaddag_tests).
 -include_lib("eunit/include/eunit.hrl").
 
--define(TEMP_FILE_NAME, "../ebin/gaddag_test.dict").
+-define(TESTDICT, lists:concat([code:priv_dir(scrabblecheat), "/gaddag_test.dict"])).
 
 get_fixture_gaddag() ->
     bin_trie:get_root(twl06).
 setup() ->
-    bin_trie:start_from_file(?TEMP_FILE_NAME).
+    bin_trie:start_from_file(?TESTDICT).
 teardown() ->
     case whereis(giant_bintrie) of
         undefined -> ok;

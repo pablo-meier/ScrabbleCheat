@@ -37,10 +37,14 @@ setup() ->
         _Else -> unregister(gameinfos)
     end,
  
-    NamePaths = [{scrabble, "../priv/games/scrabble/"},
-                 {lexulous, "../priv/games/lexulous/"},
-                 {words_with_friends, "../priv/games/words_with_friends/"}],
+    NamePaths = [{scrabble, game_dir("scrabble/")},
+                 {lexulous, game_dir("lexulous/")},
+                 {words_with_friends, game_dir("words_with_friends")}],
     gameinfo:start_from_paths(NamePaths).
+
+
+game_dir(Name) ->
+    lists:concat([code:priv_dir(scrabblecheat), "/games/", Name, '/']).
 
 
 duplicate_move_1_test() ->

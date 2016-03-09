@@ -40,7 +40,7 @@
 %% Rebar runs Eunit tests from a .eunit directory;  cd out, maybe
 %% later find a way to more cleanly set $PROJECT_HOME or some such
 %% var.
--define(TESTDICT, "../ebin/testdict.dict").
+-define(TESTDICT, lists:concat([code:priv_dir(scrabblecheat), "/testdict.dict"])).
 
 
 get_fixture_gaddag() ->
