@@ -19,8 +19,8 @@
 # THE SOFTWARE.
 
 
-require 'board.rb'
-require 'ncurses.rb'
+require_relative 'board'
+require 'ncurses'
 
 
 
@@ -85,7 +85,7 @@ class Painter
    ########################################################################
    #  WELCOME SCREEN 
 
-   def draw_welcome
+    def draw_welcome
         Ncurses.stdscr.clear
         draw_preamble
 
@@ -512,7 +512,7 @@ class Painter
                     break
                 else
                     if char < 256 && char.chr.match(/[a-zA-Z]/)
-                        rack_form.form_driver(char.chr.upcase[0])
+                        rack_form.form_driver(char.chr.upcase[0].ord)
                     end
             end
             presentation_win.wrefresh
@@ -602,7 +602,7 @@ class Painter
             Ncurses.redrawwin(menuwin[:window])
             Ncurses.wrefresh(boardwin)
             Ncurses.wrefresh(menuwin[:window])
-         end
+        end
 
         @debug = false
         

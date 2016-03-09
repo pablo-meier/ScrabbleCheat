@@ -18,9 +18,9 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-require 'conversationalist.rb'
-require 'painter.rb'
-require 'file_parser.rb'
+require_relative 'conversationalist'
+require_relative 'painter'
+require_relative 'file_parser'
 
 require 'socket'
 include Socket::Constants

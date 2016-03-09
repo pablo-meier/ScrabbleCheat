@@ -27,7 +27,7 @@
 $:.push('build/gen-rb')
 $:.unshift('lib/thrift-rb')
 
-require 'conversationalist.rb'
+require_relative 'conversationalist'
 
 class FileParser
 

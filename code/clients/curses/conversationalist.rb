@@ -25,8 +25,8 @@ $:.unshift('lib/thrift-rb')
 require 'thrift'
 require 'scrabble_cheat'
 
-require 'thrift_layer.rb'
-require 'board.rb'
+require_relative 'thrift_layer'
+require_relative 'board'
 
 
 # Main class for communicating with the server. Handles communication protocols
@@ -39,7 +39,7 @@ class Conversationalist
     def new_game(namelist, gamename, dict)
         thriftgame = native_to_thrift_gamename(gamename)
         thriftdict = native_to_thrift_dict(dict)
-        rslt = @thrift.new_game(namelist, thriftdict)
+        rslt = @thrift.new_game(namelist, thriftgame, thriftdict)
         parse_new_game(rslt)
     end
 
