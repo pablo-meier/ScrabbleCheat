@@ -4,8 +4,10 @@
   {registered, []},
   {mod, {'scrabblecheat_app', []}},
   {applications,
-   [kernel,
-    stdlib
+   [lager
+    , thrift
+    , kernel
+    , stdlib
    ]},
   {env,[]},
   {modules, []},

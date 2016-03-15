@@ -1,6 +1,13 @@
+%%%-------------------------------------------------------------------
+%% @doc Toplevel functionality of the ScrabbleCheat server.
+%% Module which implements the toplevel functionality of the Thrift interface.
+%% @end
+%% @author Pablo Meier <pablo.a.meier@gmail.com>
+%%%-------------------------------------------------------------------
 -module(scrabblecheat_main).
 
 -include("gameinfo.hrl").
+-include("scrabbleCheat_thrift.hrl").
 
 -define(WILDCARD, $*).
 -define(SMALLEST_ASCII_CHARACTER, 33).
@@ -8,8 +15,6 @@
 
 -define(PORT, 8888). %% Hard coded for testing, can make this command-line option.
 
-
--include("scrabbleCheat_thrift.hrl").
 
 %% APPLICATION API
 -export([start_link/0,
@@ -28,22 +33,18 @@
          quit/0]).
 
 
-%% start_link :: () -> ()
-%%
-%% Starts a new ScrabbleCheat server on the default port.
+%% @doc Starts a new ScrabbleCheat server on the default port.
 start_link() ->
     start_link(?PORT).
 
 
 
-%% start :: Int -> ()
-%%
-%% Starts a new ScrabbleCheat server on the parametrized port. Also sets up 
+%% @doc Starts a new ScrabbleCheat server on the parametrized port. Also sets up 
 %% top-level data (reading Gameinfos, making score functions) as necessary.
+%% @end
 start_link(Port) ->
-    io:format(user, "Scrabblecheat Server starting...~n", []),
-    Handler = ?MODULE,
-    thrift_socket_server:start([{handler, Handler},
+    lager:info("Scrabblecheat Server starting..."),
+    thrift_socket_server:start([{handler, ?MODULE},
                                 {service, scrabbleCheat_thrift},
                                 {port, Port},
                                 {socket_opts, [{recv_timeout, 600000}]},
@@ -52,9 +53,7 @@ start_link(Port) ->
 
 %% EXTERNAL INTERFACE
 
-%% stop :: (or Name Pid) -> ()
-%%
-%% Stops the server named by the parameter, or its Pid.
+%% @doc Stops the server named by the parameter, or its Pid.
 stop(Server) ->
     thrift_socket_server:stop(Server).
 
@@ -64,10 +63,6 @@ handle_function(Function, Args) when is_atom(Function), is_tuple(Args) ->
         ok -> ok;
         Reply -> {reply, Reply}
     end.
-
-debug(Format, Data) ->
-    io:format(user, Format, Data).
-
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -80,7 +75,7 @@ debug(Format, Data) ->
 %% Throws BadArgsException if the list is empty, or the player's names are
 %% too long.
 new_game(Playerlist, ThriftGameName, ThriftDict) ->
-    debug("New Game for ~p~n", [Playerlist]),
+    lager:debug("New Game for ~p~n", [Playerlist]),
     Stringlist = lists:map(fun binary_to_list/1, Playerlist),
     validate_namelist(Stringlist),
     try
@@ -103,7 +98,7 @@ new_game(Playerlist, ThriftGameName, ThriftDict) ->
 %% distribution, or what its blank board looks like.  We give that data back 
 %% as a structure.
 game_info(ThriftName) ->
-    debug("Game_info for ~p~n", [ThriftName]),
+    lager:debug("Game_info for ~p~n", [ThriftName]),
     try
         GameName = thrift_helper:as_native_game(ThriftName),
         Gameinfo = game_parser:parse_game(GameName),
@@ -130,7 +125,7 @@ pass_turn(Gamestate) ->
 %% placed as a move.  Throws BadMoveException, or BadGamestateException if incoming 
 %% data is invalid.
 play_move(ThriftTiles, ThriftGamestate) ->
-    io:format(user, "play_move for ~p tiles~n", [ThriftTiles]),
+    lager:debug("play_move for ~p tiles~n", [ThriftTiles]),
     try
         Tiles = lists:map(fun thrift_helper:thrift_to_native_tile/1, ThriftTiles),
         Gamestate = thrift_helper:thrift_to_gamestate(ThriftGamestate),
@@ -157,7 +152,7 @@ play_move(ThriftTiles, ThriftGamestate) ->
 %% clients can use.  Throws BadArgsException and BadBoardException, if your
 %% incoming data sucks.
 get_scrabblecheat_suggestions(Rack, Board, ThriftName, ThriftDict) ->
-    debug("get_scrabblecheat_suggestions for rack ~p~n", [Rack]),
+    lager:debug("get_scrabblecheat_suggestions for rack ~p", [Rack]),
     GameName = thrift_helper:as_native_game(ThriftName),
     Dict = thrift_helper:as_native_dict(ThriftDict),
 
@@ -183,7 +178,7 @@ get_scrabblecheat_suggestions(Rack, Board, ThriftName, ThriftDict) ->
 %%
 %% Receive the quit notification from a client.  Should really take in a Pid or something.
 quit() ->
-    debug("Quit message received.~n", []),
+    lager:debug("Quit message received."),
     ok.
 
 
@@ -292,5 +287,3 @@ verify_move(Move, Gamestate) ->
                 throw:{_, <<"Invalid word found on board">>} -> ok
             end
     end.
-
-
