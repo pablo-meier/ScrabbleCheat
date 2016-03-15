@@ -18,8 +18,6 @@ Friends dictionaries.
 
 ### TODO
 
-* make Releases work
-* * make Thrift a plugin?
 * make env_vars a thing.
 * Move bingad to c_src?
 * Check in `.dict`s?
