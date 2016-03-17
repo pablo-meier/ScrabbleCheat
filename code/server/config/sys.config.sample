@@ -1,0 +1,21 @@
+[
+  {ghostlight_db, [
+    {'PGHOST', "where to find Postgres"},
+    {'PGUSER', "who is logging in"},
+    {'PGPASSWORD', "credentials for whom is logging in"},
+    {'PGDATABASE', "name of the DB"}
+  ]},
+  {ghostlight, [
+    {sanitizer_node_name, "Name of node running the HTML sanitizer"},
+    {ghostlight_port, "Port to run on"}
+  ]},
+  {lager, [
+    {colored, true},
+    {log_root, "./log"},
+    {handlers, [
+      {lager_console_backend, info},
+      {lager_file_backend, [{file, "error.log"}, {level, error}]},
+      {lager_file_backend, [{file, "console.log"}, {level, info}]}
+    ]}
+  ]}
+].
