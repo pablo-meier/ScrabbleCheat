@@ -1,0 +1,4 @@
+* Extract baseUrl.
+* Fetch fresh from model.
+* Simplify error handling.
+

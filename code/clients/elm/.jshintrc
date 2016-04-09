@@ -1,0 +1,8 @@
+{
+  "latedef": "nofunc",
+  "globals": {
+    "$": true,
+    "_": true 
+  },
+  "esnext": true
+}
