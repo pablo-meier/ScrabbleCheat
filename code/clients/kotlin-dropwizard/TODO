@@ -1,0 +1,29 @@
+* Rest of the endpoints/actions.
+* JDBI/Postgres for Real Persistence
+
+* Dagger?
+* Tests?
+
+From Java Common
+    compile "io.dropwizard:dropwizard-assets:${dropwizardVersion}"
+    compile "io.dropwizard:dropwizard-auth:${dropwizardVersion}"
+    compile "io.dropwizard:dropwizard-configuration:${dropwizardVersion}"
+    compile "io.dropwizard:dropwizard-db:${dropwizardVersion}"
+    compile "io.dropwizard:dropwizard-jdbi:${dropwizardVersion}"
+    compile "io.dropwizard:dropwizard-migrations:${dropwizardVersion}"
+
+    compile "com.fasterxml.jackson.datatype:jackson-datatype-guava:${jacksonVersion}"
+    compile "com.fasterxml.jackson.datatype:jackson-datatype-joda:${jacksonVersion}"
+    compile "com.fasterxml.jackson.datatype:jackson-datatype-guava:${jacksonVersion}"
+    compile "com.fasterxml.jackson.datatype:jackson-datatype-joda:${jacksonVersion}"
+
+    compile 'org.jdbi:jdbi:2.63.1'
+    compile 'org.postgresql:postgresql:9.4-1201-jdbc41'
+    compile "com.google.guava:guava:${guavaVersion}"
+    compile "joda-time:joda-time:${jodaTimeVersion}"
+
+    // for SQL IN clause support with
+    compile 'org.antlr:stringtemplate:3.2'
+}
+
+
