@@ -1,7 +1,12 @@
 package com.morepaul.scrabblecheat.api
 
 import com.fasterxml.jackson.annotation.JsonProperty
-import com.morepaul.scrabblecheat.external.thriftgenerated.Gamestate
+import com.morepaul.scrabblecheat.ScrabbleCheatWebappApplication
+import com.morepaul.scrabblecheat.external.thriftgenerated.*
+import com.morepaul.scrabblecheat.external.thriftgenerated.Dictionary
+import org.skife.jdbi.v2.StatementContext
+import org.skife.jdbi.v2.tweak.ResultSetMapper
+import java.sql.ResultSet
 import java.util.*
 
 /**
@@ -41,6 +46,37 @@ data class ApiGamestate(
                     g.playerTurn,
                     g.turnOrder,
                     g.scores)
+        }
+
+        @JvmStatic
+        fun toGamestate(g : ApiGamestate) : Gamestate {
+            var mappedBoard : ArrayList<Tile> = ArrayList()
+            for (t in g.board) {
+                mappedBoard.add(ApiTile.toTile(t))
+            }
+
+            var mappedHistory : ArrayList<Turn> = ArrayList()
+            for (t in g.history) {
+                mappedHistory.add(ApiTurn.toTurn(t))
+            }
+
+           return Gamestate(
+                   mappedBoard,
+                   g.scores,
+                   g.turn,
+                   g.turnOrder,
+                   mappedHistory,
+                   GameName.findByValue(g.gameName),
+                   Dictionary.findByValue(g.dictionary))
+        }
+
+        class ApiGamestateMapper : ResultSetMapper<ApiGamestate> {
+            override fun map(index: Int, r: ResultSet?, ctx: StatementContext?): ApiGamestate? {
+                val asString : String = r!!.getString("gamestate");
+                val mapper = ScrabbleCheatWebappApplication.objectMapper;
+                val gs : ApiGamestate? = mapper.readValue(asString, ApiGamestate::class.java)
+                return gs
+            }
         }
     }
 }

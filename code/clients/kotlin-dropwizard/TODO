@@ -1,8 +1,11 @@
-* Rest of the endpoints/actions.
 * JDBI/Postgres for Real Persistence
+* * Tests for JSON repesentation.
+* * Integration tests to CRUD GSes.
 
 * Dagger?
 * Tests?
+
+* Users and user auth.
 
 From Java Common
     compile "io.dropwizard:dropwizard-assets:${dropwizardVersion}"
@@ -25,5 +28,3 @@ From Java Common
     // for SQL IN clause support with
     compile 'org.antlr:stringtemplate:3.2'
 }
-
-

@@ -12,5 +12,10 @@ data class ApiTurn(
         fun fromTurn(t : Turn) : ApiTurn {
             return ApiTurn(t.player, ApiMove.fromMove(t.move))
         }
+
+        @JvmStatic
+        fun toTurn(t : ApiTurn) : Turn {
+            return Turn(ApiMove.toMove(t.move), t.player)
+        }
     }
 }

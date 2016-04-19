@@ -1,2 +1,6 @@
-template: Hello, %s!
-defaultName: Stranger
+
+database:
+  driverClass: org.postgresql.Driver
+  user: pablo
+  password:
+  url: jdbc:postgresql://127.0.0.1/scrabblecheat

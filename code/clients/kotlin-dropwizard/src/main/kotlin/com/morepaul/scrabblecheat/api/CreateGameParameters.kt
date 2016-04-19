@@ -7,5 +7,5 @@ import com.fasterxml.jackson.annotation.JsonProperty
  */
 data class CreateGameParameters(
         @JsonProperty("names") val names: List<String>,
-        @JsonProperty("game") val game: Int,
+        @JsonProperty("game_name") val game: Int,
         @JsonProperty("dict") val dict: Int)
