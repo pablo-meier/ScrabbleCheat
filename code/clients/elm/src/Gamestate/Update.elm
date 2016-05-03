@@ -19,6 +19,9 @@ update action model =
     HopAction _ ->
       (model.gamestates, Effects.none)
 
+    CreateGamestateGatherParams ->
+      hopTo "/games/new" model
+
     CreateGamestate ->
       (model.gamestates, create new)
 

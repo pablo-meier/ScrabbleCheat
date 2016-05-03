@@ -1,4 +1,22 @@
-* Extract baseUrl.
+* Extract baseUrl, port. Config file?
 * Fetch fresh from model.
 * Simplify error handling.
+
+* CRUD
+
+
+Creating a new page/route:
+
+src/Routing.elm
+* Add the route to Routes ADT
+* Add a matcher function
+* Add the matcher to the matchers list
+* Add the View 'page function' (forwarding to proper module) to View.elm
+* Add that page's view function
+* Add an Action to the Actions of that type (Gamestate.Action)
+* Add an update to the Update to navigate to that page from an Action
+
+
+src/View.elm
+* Add the Routing case to the `page` function to forward to the resources' function
 

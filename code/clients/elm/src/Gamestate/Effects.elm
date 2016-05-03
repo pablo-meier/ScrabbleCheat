@@ -11,15 +11,42 @@ import Task
 import Gamestate.Models exposing (..)
 import Gamestate.Actions exposing (..)
 
+domain : String
+domain =
+    "http://localhost"
+
+portNumber : String
+portNumber =
+  toString 8080
+
+baseUrl : String
+baseUrl =
+  domain ++ ":" ++ portNumber
+
+fetchAllUrl : String
+fetchAllUrl =
+  baseUrl ++ "/games"
+
+createUrl : String
+createUrl =
+  baseUrl ++ "/games"
+
+deleteUrl : GamestateId -> String
+deleteUrl gamestateId =
+  baseUrl ++ "/games/" ++ (toString gamestateId)
+
+saveUrl : GamestateId -> String
+saveUrl gamestateId =
+  baseUrl ++ "/games/" ++ (toString gamestateId)
+
+
+
 fetchAll : Effects Action
 fetchAll =
   Http.get collectionDecoder fetchAllUrl
     |> Task.toResult
     |> Task.map FetchAllDone
     |> Effects.task
-
-fetchAllUrl : String
-fetchAllUrl = "http://localhost:4000/games"
 
 collectionDecoder : Decode.Decoder (List Gamestate)
 collectionDecoder =
@@ -88,9 +115,6 @@ create gamestate =
       |> Task.map CreateGamestateDone
       |> Effects.task
 
-
-createUrl : String
-createUrl = "http://localhost:4000/games"
 
 memberEncoded : Gamestate -> Encode.Value
 memberEncoded gamestate =
@@ -204,15 +228,6 @@ deleteTask gamestateId =
     Http.send Http.defaultSettings config
       |> Http.fromJson (Decode.succeed ())
 
-
-deleteUrl : GamestateId -> String
-deleteUrl gamestateId =
-  "http://localhost:4000/games/" ++ (toString gamestateId)
-
-
-saveUrl : GamestateId -> String
-saveUrl gamestateId =
-  "http://localhost:4000/games/" ++ (toString gamestateId)
 
 saveTask : Gamestate -> Task.Task Http.Error Gamestate
 saveTask player =

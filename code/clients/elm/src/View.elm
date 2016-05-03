@@ -7,6 +7,7 @@ import Actions exposing (..)
 import Models exposing (..)
 import Routing
 import Gamestate.List
+import Gamestate.NewGameParams
 import Gamestate.Models exposing (GamestateId)
 import Players.List
 import Players.Edit
@@ -33,6 +34,9 @@ page address model =
     Routing.GamestatesRoute ->
       gamestatePage address model
 
+    Routing.GamestateParamsRoute ->
+      gamestateParamPage address model
+
     Routing.NotFoundRoute ->
       notFoundView
 
@@ -53,6 +57,11 @@ gamestatePage address model =
     viewModel = { games = model.games }
   in
     Gamestate.List.view (Signal.forwardTo address GamestateAction) viewModel
+
+
+gamestateParamPage : Signal.Address Action -> AppModel -> Html
+gamestateParamPage address model =
+  Gamestate.NewGameParams.view address model
 
 
 playerEditPage : Signal.Address Action -> AppModel -> PlayerId -> Html

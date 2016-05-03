@@ -16,6 +16,7 @@ import Players.Models exposing (PlayerId)
 type Route
   = PlayersRoute
   | GamestatesRoute
+  | GamestateParamsRoute
   | PlayerEditRoute PlayerId
   | NotFoundRoute
 
@@ -61,6 +62,10 @@ gamestatesMatcher =
   match1 GamestatesRoute "/games"
 
 
+gamestateParamMatcher : PathMatcher Route
+gamestateParamMatcher =
+  match1 GamestateParamsRoute "/games/new"
+
 playersMatcher : PathMatcher Route
 playersMatcher =
   match1 PlayersRoute "/players"
@@ -76,6 +81,8 @@ matchers =
   [ indexMatcher
   , playersMatcher
   , playerEditMatch
+  , gamestateParamMatcher
+  , gamestatesMatcher
   ]
 
 {- Hop router -}

@@ -20,7 +20,10 @@ import org.apache.thrift.protocol.TBinaryProtocol
 import org.apache.thrift.protocol.TProtocol
 import org.apache.thrift.transport.TSocket
 import org.apache.thrift.transport.TTransport
+import org.eclipse.jetty.servlets.CrossOriginFilter
 import org.skife.jdbi.v2.DBI
+import java.util.*
+import javax.servlet.DispatcherType
 
 class ScrabbleCheatWebappApplication() : Application<ScrabbleCheatWebappConfiguration>() {
 
@@ -74,6 +77,7 @@ class ScrabbleCheatWebappApplication() : Application<ScrabbleCheatWebappConfigur
 
         val gamesResource = GamesResource(provideScClient(env), dao)
 
+        configureCors(env)
         env.jersey().register(gamesResource)
     }
 
@@ -87,5 +91,15 @@ class ScrabbleCheatWebappApplication() : Application<ScrabbleCheatWebappConfigur
         env.lifecycle().manage(ManagedThriftTransport(transport))
         val protocol : TProtocol = TBinaryProtocol(transport)
         return ScrabbleCheat.Client(protocol)
+    }
+
+    private fun configureCors(environment: Environment) {
+        val filter = environment.servlets().addFilter("CORS", CrossOriginFilter::class.java)
+        filter.addMappingForUrlPatterns(EnumSet.allOf(DispatcherType::class.java), true, "/*")
+        filter.setInitParameter(CrossOriginFilter.ALLOWED_METHODS_PARAM, "GET,PUT,POST,PATCH,DELETE,OPTIONS")
+        filter.setInitParameter(CrossOriginFilter.ALLOWED_ORIGINS_PARAM, "*")
+        filter.setInitParameter(CrossOriginFilter.ACCESS_CONTROL_ALLOW_ORIGIN_HEADER, "*")
+        filter.setInitParameter("allowedHeaders", "Content-Type,Authorization,X-Requested-With,Content-Length,Accept,Origin")
+        filter.setInitParameter("allowCredentials", "true")
     }
 }

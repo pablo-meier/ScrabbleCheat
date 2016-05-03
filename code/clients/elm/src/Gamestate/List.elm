@@ -1,5 +1,6 @@
 module Gamestate.List (..) where
 
+import Dict
 import Html exposing (..)
 import Html.Attributes exposing (class)
 import Html.Events exposing (onClick)
@@ -54,18 +55,34 @@ gameRow address model gamestate =
   tr
     []
     [ td [] [ text (toString gamestate.id) ]
-    , td [] [ text "Placeholder" ]
+    , td [] [ summaryCard gamestate ]
     , td
         []
         [ deleteBtn address gamestate ]
     ]
 
+summaryCard : Gamestate -> Html.Html
+summaryCard gs =
+  table [] (List.map (scoreToTableRow gs.playerTurn) (Dict.toList gs.scores))
+
+scoreToTableRow : String -> (String, Int) -> Html.Html
+scoreToTableRow current pair =
+  tr [] [
+    td [] [ playerLabel (fst pair) current ]
+    , td [] [ text (pair |> snd |> toString) ]
+  ]
+
+playerLabel : String -> String -> Html.Html
+playerLabel player current =
+  if player == current then span [] [ i [class "fa fa-star"] [], text player] else text player
+
+
 addBtn : Signal.Address Action -> ViewModel -> Html.Html
 addBtn address model =
   button
-    [ class "btn", onClick address CreateGamestate ]
+    [ class "btn", onClick address CreateGamestateGatherParams ]
     [ i [ class "fa fa-plus-circle mr1" ] []
-    , text "Add Game"
+    , text "New Game"
     ]
 
 deleteBtn : Signal.Address Action -> Gamestate -> Html.Html
