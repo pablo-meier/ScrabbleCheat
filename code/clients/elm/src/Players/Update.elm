@@ -52,7 +52,7 @@ update action model =
             in if updatedPlayer.level > 0 then
               save updatedPlayer
             else 
-                Effects.none
+              Effects.none
 
         fx = List.map fxForPlayer model.players
                |> Effects.batch

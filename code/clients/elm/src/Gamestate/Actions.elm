@@ -1,14 +1,23 @@
 module Gamestate.Actions(..) where
 
 import Http
-import Gamestate.Models exposing (Gamestate, GamestateId)
+import Gamestate.Models exposing (Gamestate, GamestateId, GameName, Dictionary)
 import Hop
+
+type NewGameParamsUpdateAction =
+  NewGameNoOp
+  | EditPlayerName Int String
+  | SetGame GameName
+  | SetDictionary Dictionary
+  | SubmitParams Gamestate.Models.NewGameParamsModel
+
 
 type Action
   = NoOp
   | HopAction ()
 
   | CreateGamestateGatherParams
+  | UpdateGamestateParams NewGameParamsUpdateAction
   | CreateGamestate
   | CreateGamestateDone (Result Http.Error Gamestate)
 

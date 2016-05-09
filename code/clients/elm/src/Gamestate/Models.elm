@@ -2,6 +2,7 @@ module Gamestate.Models (..) where
 
 import Dict exposing (Dict)
 
+
 type Dictionary = 
     TWL06
     | SOWPODS
@@ -76,6 +77,15 @@ type alias Gamestate =
   , game : GameName
   , dictionary : Dictionary
   }
+
+
+type alias NewGameParamsModel =
+  {
+    players : List String
+  , game : GameName
+  , dict : Dictionary
+  }
+
 
 new : Gamestate
 new =

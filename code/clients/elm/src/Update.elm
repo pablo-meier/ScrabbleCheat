@@ -26,12 +26,13 @@ update action model =
       let
         updateModel =
           {gamestates = model.games
+          , newGameParams = model.newGameParams
           , showErrorAddress = Signal.forwardTo actionsMailbox.address ShowError
           , deleteConfirmationAddress = askDeleteConfirmationMailbox.address
           }
-        (updatedGames, fx) = Gamestate.Update.update subAction updateModel
+        (updatedGames, updatedGameParams, fx) = Gamestate.Update.update subAction updateModel
       in
-        ({model | games = updatedGames}, Effects.map GamestateAction fx)
+        ({model | games = updatedGames, newGameParams = updatedGameParams}, Effects.map GamestateAction fx)
 
     RoutingAction subAction ->
       let

@@ -1,12 +1,12 @@
 package com.morepaul.scrabblecheat.resources
 
 import com.codahale.metrics.annotation.Timed
-import com.google.common.collect.Lists
-import com.morepaul.scrabblecheat.ScrabbleCheatWebappApplication
 import com.morepaul.scrabblecheat.api.*
 import com.morepaul.scrabblecheat.external.thriftgenerated.*
 import com.morepaul.scrabblecheat.external.thriftgenerated.Dictionary
 import com.morepaul.scrabblecheat.jdbi.GamestateDAO
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import java.util.*
 import javax.validation.Valid
 import javax.validation.constraints.NotNull
@@ -23,6 +23,7 @@ class GamesResource(
         val scClient :ScrabbleCheat.Client,
         val dao : GamestateDAO) {
 
+    val LOGGER : Logger = LoggerFactory.getLogger(GamesResource::class.java)
 
     @Timed
     @GET
@@ -42,14 +43,17 @@ class GamesResource(
     @Timed
     @POST
     fun createGame(@NotNull @Valid params : CreateGameParameters) : ApiGamestate {
+        LOGGER.info("Got params: $params, calling client.")
         val gs = scClient.newGame(
                 params.names,
                 GameName.findByValue(params.game),
                 Dictionary.findByValue(params.dict))
 
+        LOGGER.info("New gamestate: $gs")
         val newId = dao.getHighestId() + 1
         val newGs = ApiGamestate.fromGamestate(gs, newId)
         dao.insertGamestate(newId, newGs)
+        LOGGER.info("Shit inserted with ID: $newId")
 
         return newGs
     }

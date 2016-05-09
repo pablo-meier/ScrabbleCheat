@@ -1,73 +1,47 @@
 module Gamestate.NewGameParams (..) where
 
-import Html exposing (..)
-import Signal
 import Debug
+import Html exposing (..)
+import String
+import Effects exposing (Effects)
+import Signal
 import Json.Decode
+import Json.Encode as Encode
 import Html.Attributes exposing (..)
 import Html.Events exposing (onClick, on, targetValue)
 import Gamestate.Actions exposing (..)
 import Gamestate.Models exposing (..)
-import Actions
-import Models
+import Gamestate.Effects
+import Task
+import Http
 
-
-type alias ViewModel = 
-  { 
-    players : List String
-  , game : GameName
-  , dict : Dictionary
-  , toplevelAddress : Signal.Address Actions.Action
-  , toplevelModel : Models.AppModel
-  }
-
-type ViewAction = 
-  NoOp
-  | EditPlayerName Int String
-  | SetGame GameName
-  | SetDictionary Dictionary
-  | SubmitParams
-
-
-inbox : Signal.Mailbox ViewAction
-inbox =
-  Signal.mailbox NoOp
-
-
-defaultModel : Signal.Address Actions.Action -> Models.AppModel -> ViewModel
-defaultModel toplevelAddress toplevelModel =
+defaultModel : NewGameParamsModel
+defaultModel =
   {
     players = ["", "", "", ""]
     , game = Scrabble
     , dict = TWL06
-    , toplevelAddress = toplevelAddress
-    , toplevelModel = toplevelModel
   }
 
-update : ViewAction -> ViewModel -> ViewModel
+update : NewGameParamsUpdateAction -> NewGameParamsModel -> (NewGameParamsModel, Effects Action)
 update action model =
   case action of
-    NoOp ->
-      model
+    NewGameNoOp ->
+      (model, Effects.none)
     EditPlayerName index str ->
       let
         oldPlayers = model.players
         newPlayers = List.concat [(List.take index oldPlayers), [str], (List.drop (index + 1) oldPlayers)]
       in
-        Debug.log "New players:" { model | players = newPlayers }
-    SetGame game -> Debug.log "New game" { model | game = game }
-    SetDictionary dict -> Debug.log "New dict" { model | dict = dict }
-    SubmitParams ->
-      model
+        ({ model | players = newPlayers }, Effects.none)
+    SetGame game -> ({ model | game = game }, Effects.none)
+    SetDictionary dict -> ({ model | dict = dict }, Effects.none)
+    SubmitParams model ->
+      Debug.log "Called SubmitParams" (defaultModel, save model)
 
 
-view : Signal.Address Actions.Action -> Models.AppModel -> Html.Html
-view topLevelAddress toplevelModel  =
-  viewLocal inbox.address (defaultModel topLevelAddress toplevelModel)
-
-
-viewLocal : Signal.Address ViewAction -> ViewModel -> Html.Html
-viewLocal address model =
+view : Signal.Address Action -> NewGameParamsModel -> Html.Html
+view address model =
   let
     input1 = input [ id "Player1", type' "text", changeHandler 0 address model ] []
     input2 = input [ id "Player2", type' "text", changeHandler 1 address model ] []
@@ -95,28 +69,31 @@ viewLocal address model =
             , option [ value "SOWPODS" ] [ text "SOWPODS" ]
             , option [ value "Words With Friends" ] [ text "Words With Friends" ]
           ]
-        , div [ class "button" ] [ text "Create!" ]
+        , button [ class "btn", submitHandler address model ] [ text "Create!" ]
       ]
 
 
 
 {- Takes and index and sets and Action to change the Model to reflect the current player name -}
-changeHandler : Int -> Signal.Address ViewAction -> ViewModel -> Attribute
+changeHandler : Int -> Signal.Address Action -> NewGameParamsModel -> Attribute
 changeHandler index address model =
-  on "change" targetValue (\str -> Signal.message address (EditPlayerName index str))
+  on "keyup" targetValue (\str -> 
+      EditPlayerName index str
+      |> UpdateGamestateParams 
+      |> Signal.message address)
 
 
-gameHandler : Signal.Address ViewAction -> ViewModel -> Attribute
+gameHandler : Signal.Address Action -> NewGameParamsModel -> Attribute
 gameHandler address model =
   dropDownHandler (intToGame address model)
 
 
-dictHandler : Signal.Address ViewAction -> ViewModel -> Attribute
+dictHandler : Signal.Address Action -> NewGameParamsModel -> Attribute
 dictHandler address model =
   dropDownHandler (intToDict address model)
 
 
-intToGame : Signal.Address ViewAction -> ViewModel -> Int -> Signal.Message
+intToGame : Signal.Address Action -> NewGameParamsModel -> Int -> Signal.Message
 intToGame address model key =
   let
     value = case key of
@@ -124,9 +101,9 @@ intToGame address model key =
               2 -> SetGame Lexulous
               _ -> SetGame Scrabble
   in
-    Signal.message address value
+    Signal.message address (UpdateGamestateParams value)
 
-intToDict : Signal.Address ViewAction -> ViewModel -> Int -> Signal.Message
+intToDict : Signal.Address Action -> NewGameParamsModel -> Int -> Signal.Message
 intToDict address model key =
   let
     value = case key of
@@ -134,7 +111,7 @@ intToDict address model key =
               2 -> SetDictionary Zynga
               _ -> SetDictionary TWL06
   in
-    Signal.message address value
+    Signal.message address (UpdateGamestateParams value)
 
 
 dropDownHandler : (Int -> Signal.Message) -> Attribute
@@ -146,3 +123,49 @@ dropDownHandler fun =
   Send the changeHandler to the "local" address?
   Build out the proper submitHandler that goes back to app-level?
 -}
+submitHandler : Signal.Address Action -> NewGameParamsModel -> Attribute
+submitHandler address model =
+  onClick address (UpdateGamestateParams (SubmitParams model))
+
+
+save : NewGameParamsModel -> Effects Action
+save model =
+  saveTask model
+    |> Task.toResult
+    |> Task.map SaveDone
+    |> Effects.task
+
+saveTask : NewGameParamsModel -> Task.Task Http.Error Gamestate
+saveTask model =
+  let
+    body = newGamestateEncode model
+             |> Encode.encode 0
+             |> Http.string
+    config = {
+        verb = "POST"
+        , headers = [("Content-Type", "application/json")]
+        , url = newGameUrl
+        , body = body
+    }
+  in
+    Http.send Http.defaultSettings config
+      |> Http.fromJson Gamestate.Effects.memberDecoder
+
+
+newGameUrl : String
+newGameUrl =
+  "http://localhost:8080/games"
+
+
+newGamestateEncode : NewGameParamsModel -> Encode.Value
+newGamestateEncode model =
+  let
+    names = model.players
+              |> List.filter (\x -> not (String.isEmpty x))
+              |> List.map Encode.string
+    list = [("names", Encode.list names)
+           ,("game_name", Encode.int (Gamestate.Effects.gameCode model.game))
+           ,("dict", Encode.int (Gamestate.Effects.dictCode model.dict))]
+  in
+    list |> Encode.object
+

@@ -61,7 +61,10 @@ gamestatePage address model =
 
 gamestateParamPage : Signal.Address Action -> AppModel -> Html
 gamestateParamPage address model =
-  Gamestate.NewGameParams.view address model
+  let
+    viewModel = model.newGameParams
+  in
+    Gamestate.NewGameParams.view (Signal.forwardTo address GamestateAction) viewModel
 
 
 playerEditPage : Signal.Address Action -> AppModel -> PlayerId -> Html
