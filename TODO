@@ -1,3 +1,6 @@
+Ruby should have gemfile, bundler, compatible with RVM.
+(current is enter `gem install thrift` && `gem install ruby-ncurses` globally, Obviously Bad).
+
 ------
 SHORT-TERM:
 
