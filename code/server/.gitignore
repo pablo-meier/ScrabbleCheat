@@ -17,5 +17,7 @@ _plugins
 _tdeps
 logs
 _build
-config/sys.config
 bin
+priv/twl06.dict
+priv/sowpods.dict
+priv/zynga.dict

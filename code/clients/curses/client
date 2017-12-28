@@ -1,3 +1,0 @@
-#!/bin/sh
-
-ruby -I lib/ client.rb $@

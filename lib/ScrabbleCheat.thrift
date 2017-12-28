@@ -5,7 +5,6 @@
  */
 
 namespace erl ScrabbleCheat
-namespace as3 com.morepaul.ScrabbleCheat
 
 
 /** 

@@ -1,0 +1,15 @@
+GEM
+  remote: https://rubygems.org/
+  specs:
+    ncurses-ruby (1.2.4)
+    thrift (0.10.0.0)
+
+PLATFORMS
+  ruby
+
+DEPENDENCIES
+  ncurses-ruby
+  thrift
+
+BUNDLED WITH
+   1.16.1
