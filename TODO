@@ -1,55 +1,15 @@
-Ruby should have gemfile, bundler, compatible with RVM.
-(current is enter `gem install thrift` && `gem install ruby-ncurses` globally, Obviously Bad).
-
-------
-SHORT-TERM:
-
-    - OTP/Dialyzer/Rebar builds?
-        * Clean up builds. The build/release cycle is a damn mess with intermediate
-          files all over the source. Same with testing.
-        * Modularize the code, paralelize the movesearches.
-        * Types with Dialyzer.
-
-    - Command line client:  Every app should have a CLI.  Also good for automation...
-
-    - Deploy?  Snap site that talks to the Erlang via Thrift, Snap provides the web presence?
-
-    - Wildcard optimization.
-
-    ****************************************************************************************
-    *   Refactor the actual movesearch into a sub-application?  Let VM handle threading?   *
-    ****************************************************************************************
-    
-    - Optional word verification as a gamestate bit, allowing a player to challenge?
-    
-    - Integrate the bug list/this file with the Github issue tracker, API?
-
 SERVER
-    - Better, more rigorous testing.  Mostly in movesearches, and the most recent features (wildcards, 
-      dumping previous computation to disk).  Use abstractions!
-    - Optimize, optimize, optimize.  Especially with wildcards.
-        Immediate, obvious optimizations:
-            -> Don't check candidate tiles on the right/bottom of an occupied tile
-               unless there isn't another way of reaching it, i.e. from above or from the right.
-            -> Remove duplicate candidates and duplicate moves with a sort-and-filter (nlog(n)),
-               rather than the current one-sweep naive traversal (n^2-ish).
-            -> Make better use of spawn(), especially on all the maps and foldls.  Paralellize 
-               candidates, for example.
-    - Refactor/restructure the src/ directory for a clear separation of modules:  game (for things 
-      like boards, tiles, etc), server (for things like serialization and/or database handling), 
-      and ai (for movesearches, finding the best move, etc.).
+  - Make the Erlang clean and tractable (lots of old bad patterns, IMO, go module-by-module).
+    - Dialyzer
+  - Parallelize the movesearches.
+  - HTTP client.
 
-    - I might be missing something. grep TODO and FIXME in the source to find something to do!
-
+  - Bananagrams (greedy on board building).
 
 CLIENT
-    - Rewrite in C?  Ruby-ncurses is crap, giving me memory corruption.
-    - Undo/back.
-    - Allow a turn to pass/skip.
-    - Allow save/resume games.
-    - Allow to check move validity on play_move.
-    - Show history.
-
-    - HOLY SHIT REFACTOR (if you want to preserve the client at all)
-        - At the very least, generalize board printing code with some kind of board_window coordinates, 
-          rather than duplicating  your hackey logic everywhere (most areas that print to the board).
+  - lol write one for a browser. Pick a framework, dammit; it could be React, or even Glimmer or just fuckin' jQuery/Backbone.
+  - Undo/back.
+  - Allow a turn to pass/skip.
+  - Allow save/resume games.
+  - Allow to check move validity on play_move.
+  - Show history.
