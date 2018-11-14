@@ -15,7 +15,6 @@
 -import(gaddag, [get_branch/2]).
 -import(followstruct, [make_followstruct/5]).
 -import(move, [new_move/0]).
--import(lists, [flatten/1]).
 
 -export([place_bonus_on_board/4,
          place_letter_on_board/5,
@@ -371,14 +370,14 @@ subsequence_check([Fst|Rst], Gaddag) ->
                 _Else ->
                     throw_badboard("Invalid word found on board.")
             end;
-        {true, true} ->
-            Rst
+        {true, true} -> Rst
     end.
 
+go_forwards([], _) -> [];
 go_forwards(Tiles, Gaddag) ->
     Top = hd(Tiles),
     case tile:is_occupied(Top) of
-       true ->
+        true ->
             Letter = tile:get_tile_letter(Top),
             case gaddag:has_branch(Letter, Gaddag) of
                 true -> 
@@ -387,12 +386,12 @@ go_forwards(Tiles, Gaddag) ->
                 false ->
                     throw_badboard("Invalid word found on board")
             end;
-       false -> 
-           case gaddag:is_terminator(Gaddag) of
-               true -> Tiles;
-               false -> throw_badboard("Error with the board: Row or col ends with invalid word.")
-           end
-     end.
+        false ->
+            case gaddag:is_terminator(Gaddag) of
+                true -> Tiles;
+                false -> throw_badboard("Error with the board: Row or col ends with invalid word.")
+            end
+    end.
 
 
 throw_badboard(Str) ->

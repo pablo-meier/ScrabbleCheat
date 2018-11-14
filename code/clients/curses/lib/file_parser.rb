@@ -101,12 +101,12 @@ class FileParser
 
 
     def is_upcase(str)
-        ascii = str[0]
+        ascii = str[0].ord
         ascii >= 65 && ascii <= 90
     end
 
     def is_downcase(str)
-        ascii = str[0]
+        ascii = str[0].ord
         ascii >= 97 && ascii <= 122
     end
 end
